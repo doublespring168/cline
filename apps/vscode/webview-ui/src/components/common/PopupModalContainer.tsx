@@ -1,5 +1,6 @@
 import styled from "styled-components"
-import { CODE_BLOCK_BG_COLOR } from "./CodeBlock"
+
+const POPUP_MODAL_BACKGROUND = "#ffffff"
 
 interface PopupModalContainerProps {
 	$menuPosition: number
@@ -14,13 +15,13 @@ interface PopupModalContainerProps {
  */
 const PopupModalContainer = styled.div<PopupModalContainerProps>`
 	position: fixed;
-	left: 10px;
-	right: 10px;
+	left: 0;
+	right: 0;
 	bottom: ${(props) => `calc(100vh - ${props.$menuPosition}px + ${props.$bottomOffset ?? 6}px)`};
 	display: flex;
 	flex-direction: column;
 	max-height: ${(props) => props.$maxHeight ?? "calc(100vh - 100px)"};
-	background: ${CODE_BLOCK_BG_COLOR};
+	background: ${POPUP_MODAL_BACKGROUND};
 	border: 1px solid var(--vscode-editorGroup-border);
 	border-bottom: none;
 	border-radius: 6px 6px 0 0;
@@ -48,7 +49,7 @@ const PopupModalContainer = styled.div<PopupModalContainerProps>`
 		transform: rotate(45deg);
 		border-right: 1px solid var(--vscode-editorGroup-border);
 		border-bottom: 1px solid var(--vscode-editorGroup-border);
-		background: ${CODE_BLOCK_BG_COLOR};
+		background: ${POPUP_MODAL_BACKGROUND};
 		z-index: -1;
 	}
 `

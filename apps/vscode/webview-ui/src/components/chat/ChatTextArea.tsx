@@ -1373,9 +1373,9 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			.replace(/.$/, (match) => match.toUpperCase())
 
 		return (
-			<div className="w-[99%] mx-auto">
+			<div className="w-full">
 				<div
-					className="relative flex transition-colors ease-in-out duration-100 px-3.5 py-2.5"
+					className="relative flex transition-colors ease-in-out duration-100 py-2.5"
 					onDragEnter={handleDragEnter}
 					onDragLeave={handleDragLeave}
 					onDragOver={onDragOver}
@@ -1423,7 +1423,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						</div>
 					)}
 					<div
-						className="absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-[6px] overflow-hidden border border-input-border bg-input-background left-3.5 right-3.5"
+						className="absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-[6px] overflow-hidden border border-input-border bg-input-background left-2 right-2"
 						ref={highlightLayerRef}
 						style={{
 							position: "absolute",

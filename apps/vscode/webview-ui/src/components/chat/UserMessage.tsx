@@ -92,7 +92,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 			className="p-2.5 pr-1 my-1 text-badge-foreground rounded-xs"
 			onClick={handleClick}
 			style={{
-				backgroundColor: isEditing ? "unset" : "var(--vscode-badge-background)",
+				backgroundColor: isEditing ? "unset" : "rgba(0, 0, 0, 0.05)",
 				whiteSpace: "pre-line",
 				wordWrap: "break-word",
 			}}>
