@@ -16,7 +16,7 @@ export const name = "cline"
 
 The change has been applied and saved to the file.
 </result>
-</attempt_completion>`
+</attempt_completion>`;
 
 const edit_request = `<thinking>
 The user wants me to replace the name "john" with "cline" in the test.ts file. I can see the file content provided:
@@ -44,13 +44,13 @@ export const name = "john"
 export const name = "cline"
 +++++++ REPLACE
 </diff>
-</replace_in_file>`
+</replace_in_file>`;
 
 export const E2E_MOCK_API_RESPONSES = {
-	DEFAULT: "Hello! I'm a mock Cline API response.",
+	DEFAULT: "Hello! I'm a mock coderX API response.",
 	REPLACE_REQUEST: replace_in_file,
 	EDIT_REQUEST: edit_request,
-}
+};
 
 export const E2E_MOCK_CLINE_RECOMMENDED_MODELS = {
 	free: [
@@ -69,7 +69,7 @@ export const E2E_MOCK_CLINE_RECOMMENDED_MODELS = {
 			tags: ["BEST"],
 		},
 	],
-}
+};
 
 export const E2E_MOCK_CLINE_MODELS = [
 	{
@@ -112,4 +112,4 @@ export const E2E_MOCK_CLINE_MODELS = [
 		},
 		supported_parameters: ["include_reasoning"],
 	},
-]
+];

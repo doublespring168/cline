@@ -14,10 +14,13 @@ source ~/cg/sh/common_util.sh
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
-cd ../
+cd "$PROJECT_DIR"
 
 dir=`pwd`
 logh "打包目录"
@@ -67,7 +70,8 @@ npx vsce --version
 
 logh "生成安装包"
 mkdir -p dist
-npx vsce package --out dist/cline-4.0.8-260713-$time_second.vsix
+package_version=$(node -p "require('./package.json').version")
+npx vsce package --allow-missing-repository --out "dist/coderx-${package_version}-${time_second}.vsix"
 
 logh "安装包文件列表"
 ls -lh dist/*.vsix

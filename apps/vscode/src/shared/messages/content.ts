@@ -21,7 +21,7 @@ interface ClineSharedMessageParam {
 export const REASONING_DETAILS_PROVIDERS = ["cline", "openrouter"];
 
 /**
- * An extension of Anthropic.MessageParam that includes Cline-specific fields: reasoning_details.
+ * An extension of Anthropic.MessageParam that includes coderX-specific fields: reasoning_details.
  * This ensures backward compatibility where the messages were stored in Anthropic format with additional
  * fields unknown to Anthropic SDK.
  */
@@ -91,9 +91,9 @@ export type ClineAssistantContent =
 export type ClineContent = ClineUserContent | ClineAssistantContent;
 
 /**
- * An extension of Anthropic.MessageParam that includes Cline-specific fields.
+ * An extension of Anthropic.MessageParam that includes coderX-specific fields.
  * This ensures backward compatibility where the messages were stored in Anthropic format,
- * while allowing for additional metadata specific to Cline to avoid unknown fields in Anthropic SDK
+ * while allowing for additional metadata specific to coderX to avoid unknown fields in Anthropic SDK
  * added by ignoring the type checking for those fields.
  */
 export interface ClineStorageMessage extends Anthropic.MessageParam {
@@ -121,8 +121,8 @@ export interface ClineStorageMessage extends Anthropic.MessageParam {
 }
 
 /**
- * Converts ClineStorageMessage to Anthropic.MessageParam by removing Cline-specific fields
- * Cline-specific fields (like modelInfo, reasoning_details) are properly omitted.
+ * Converts ClineStorageMessage to Anthropic.MessageParam by removing coderX-specific fields
+ * coderX-specific fields (like modelInfo, reasoning_details) are properly omitted.
  */
 export function convertClineStorageToAnthropicMessage(
 	clineMessage: ClineStorageMessage,
@@ -140,7 +140,7 @@ export function convertClineStorageToAnthropicMessage(
 		(b) => b.type !== "thinking" || !!b.signature,
 	);
 
-	// Handle array content - strip Cline-specific fields for non-reasoning_details providers
+	// Handle array content - strip coderX-specific fields for non-reasoning_details providers
 	const shouldCleanContent = !REASONING_DETAILS_PROVIDERS.includes(provider);
 	const cleanedContent = shouldCleanContent
 		? filteredContent.map(cleanContentBlock)
@@ -150,9 +150,9 @@ export function convertClineStorageToAnthropicMessage(
 }
 
 /**
- * Cline stores images as base64, so an image block's source is always a base64 source.
+ * coderX stores images as base64, so an image block's source is always a base64 source.
  * The Anthropic SDK types the source as a Base64ImageSource | URLImageSource union, so this
- * narrows to the base64 variant for the transform layer. URL sources are not produced by Cline,
+ * narrows to the base64 variant for the transform layer. URL sources are not produced by coderX,
  * so they degrade to empty values rather than throwing.
  */
 export function getBase64ImageSource(
@@ -175,10 +175,10 @@ export function getImageDataUrl(
 }
 
 /**
- * Clean a content block by removing Cline-specific fields and returning only Anthropic-compatible fields
+ * Clean a content block by removing coderX-specific fields and returning only Anthropic-compatible fields
  */
 export function cleanContentBlock(block: ClineContent): Anthropic.ContentBlock {
-	// Fast path: if no Cline-specific fields exist, return as-is
+	// Fast path: if no coderX-specific fields exist, return as-is
 	const hasClineFields =
 		"reasoning_details" in block ||
 		"call_id" in block ||
@@ -189,7 +189,7 @@ export function cleanContentBlock(block: ClineContent): Anthropic.ContentBlock {
 		return block as Anthropic.ContentBlock;
 	}
 
-	// Removes Cline-specific fields & the signature field that's added for Gemini.
+	// Removes coderX-specific fields & the signature field that's added for Gemini.
 	const { reasoning_details, call_id, summary, ...rest } = block as any;
 
 	// Remove signature from non-thinking blocks that were added for Gemini

@@ -4,31 +4,37 @@ import {
 	RULE_SOURCE_PREFIX,
 	RuleLoadResultWithInstructions,
 	synchronizeRuleToggles,
-} from "@core/context/instructions/user-instructions/rule-helpers"
-import { formatResponse } from "@core/prompts/responses"
-import { ensureRulesDirectoryExists, GlobalFileNames } from "@core/storage/disk"
-import { ClineRulesToggles } from "@shared/cline-rules"
-import { fileExistsAtPath, isDirectory, readDirectory } from "@utils/fs"
-import fs from "fs/promises"
-import path from "path"
-import { Controller } from "@/core/controller"
-import { Logger } from "@/shared/services/Logger"
-import { parseYamlFrontmatter } from "./frontmatter"
-import { evaluateRuleConditionals, type RuleEvaluationContext } from "./rule-conditionals"
+} from "@core/context/instructions/user-instructions/rule-helpers";
+import { formatResponse } from "@core/prompts/responses";
+import {
+	ensureRulesDirectoryExists,
+	GlobalFileNames,
+} from "@core/storage/disk";
+import { ClineRulesToggles } from "@shared/cline-rules";
+import { fileExistsAtPath, isDirectory, readDirectory } from "@utils/fs";
+import fs from "fs/promises";
+import path from "path";
+import { Controller } from "@/core/controller";
+import { Logger } from "@/shared/services/Logger";
+import { parseYamlFrontmatter } from "./frontmatter";
+import {
+	evaluateRuleConditionals,
+	type RuleEvaluationContext,
+} from "./rule-conditionals";
 
 export const getGlobalClineRules = async (
 	globalClineRulesFilePath: string,
 	toggles: ClineRulesToggles,
 	opts?: { evaluationContext?: RuleEvaluationContext },
 ): Promise<RuleLoadResultWithInstructions> => {
-	let combinedContent = ""
-	const activatedConditionalRules: ActivatedConditionalRule[] = []
+	let combinedContent = "";
+	const activatedConditionalRules: ActivatedConditionalRule[] = [];
 
 	// 1. Get file-based rules
 	if (await fileExistsAtPath(globalClineRulesFilePath)) {
 		if (await isDirectory(globalClineRulesFilePath)) {
 			try {
-				const rulesFilePaths = await readDirectory(globalClineRulesFilePath)
+				const rulesFilePaths = await readDirectory(globalClineRulesFilePath);
 				// Note: ruleNamePrefix explicitly set to "global" for clarity (matches the default)
 				const rulesFilesTotal = await getRuleFilesTotalContentWithMetadata(
 					rulesFilePaths,
@@ -38,123 +44,177 @@ export const getGlobalClineRules = async (
 						evaluationContext: opts?.evaluationContext,
 						ruleNamePrefix: "global",
 					},
-				)
+				);
 				if (rulesFilesTotal.content) {
-					combinedContent = rulesFilesTotal.content
-					activatedConditionalRules.push(...rulesFilesTotal.activatedConditionalRules)
+					combinedContent = rulesFilesTotal.content;
+					activatedConditionalRules.push(
+						...rulesFilesTotal.activatedConditionalRules,
+					);
 				}
 			} catch {
-				Logger.error(`Failed to read .clinerules directory at ${globalClineRulesFilePath}`)
+				Logger.error(
+					`Failed to read .coderxrules directory at ${globalClineRulesFilePath}`,
+				);
 			}
 		} else {
-			Logger.error(`${globalClineRulesFilePath} is not a directory`)
+			Logger.error(`${globalClineRulesFilePath} is not a directory`);
 		}
 	}
 
 	// 2. Return formatted instructions
 	if (!combinedContent) {
-		return { instructions: undefined, activatedConditionalRules: [] }
+		return { instructions: undefined, activatedConditionalRules: [] };
 	}
 
 	return {
-		instructions: formatResponse.clineRulesGlobalDirectoryInstructions(globalClineRulesFilePath, combinedContent),
+		instructions: formatResponse.clineRulesGlobalDirectoryInstructions(
+			globalClineRulesFilePath,
+			combinedContent,
+		),
 		activatedConditionalRules,
-	}
-}
+	};
+};
 
 export const getLocalClineRules = async (
 	cwd: string,
 	toggles: ClineRulesToggles,
 	opts?: { evaluationContext?: RuleEvaluationContext },
 ): Promise<RuleLoadResultWithInstructions> => {
-	const clineRulesFilePath = path.resolve(cwd, GlobalFileNames.clineRules)
+	const clineRulesFilePath = path.resolve(cwd, GlobalFileNames.clineRules);
 
-	let instructions: string | undefined
-	const activatedConditionalRules: ActivatedConditionalRule[] = []
+	let instructions: string | undefined;
+	const activatedConditionalRules: ActivatedConditionalRule[] = [];
 
 	if (await fileExistsAtPath(clineRulesFilePath)) {
 		if (await isDirectory(clineRulesFilePath)) {
 			try {
 				const rulesFilePaths = await readDirectory(clineRulesFilePath, [
-					[".clinerules", "workflows"],
-					[".clinerules", "hooks"],
-					[".clinerules", "skills"],
-				])
+					[".coderxrules", "workflows"],
+					[".coderxrules", "hooks"],
+					[".coderxrules", "skills"],
+				]);
 
-				const rulesFilesTotal = await getRuleFilesTotalContentWithMetadata(rulesFilePaths, cwd, toggles, {
-					evaluationContext: opts?.evaluationContext,
-					ruleNamePrefix: "workspace",
-				})
+				const rulesFilesTotal = await getRuleFilesTotalContentWithMetadata(
+					rulesFilePaths,
+					cwd,
+					toggles,
+					{
+						evaluationContext: opts?.evaluationContext,
+						ruleNamePrefix: "workspace",
+					},
+				);
 				if (rulesFilesTotal.content) {
-					instructions = formatResponse.clineRulesLocalDirectoryInstructions(cwd, rulesFilesTotal.content)
-					activatedConditionalRules.push(...rulesFilesTotal.activatedConditionalRules)
+					instructions = formatResponse.clineRulesLocalDirectoryInstructions(
+						cwd,
+						rulesFilesTotal.content,
+					);
+					activatedConditionalRules.push(
+						...rulesFilesTotal.activatedConditionalRules,
+					);
 				}
 			} catch {
-				Logger.error(`Failed to read .clinerules directory at ${clineRulesFilePath}`)
+				Logger.error(
+					`Failed to read .coderxrules directory at ${clineRulesFilePath}`,
+				);
 			}
 		} else {
 			try {
-				if (clineRulesFilePath in toggles && toggles[clineRulesFilePath] !== false) {
-					const raw = (await fs.readFile(clineRulesFilePath, "utf8")).trim()
+				if (
+					clineRulesFilePath in toggles &&
+					toggles[clineRulesFilePath] !== false
+				) {
+					const raw = (await fs.readFile(clineRulesFilePath, "utf8")).trim();
 					if (raw) {
-						// Keep single-file .clinerules behavior consistent with directory/remote rules:
+						// Keep single-file .coderxrules behavior consistent with directory/remote rules:
 						// - Parse YAML frontmatter (fail-open on parse errors)
 						// - Evaluate conditionals against the request's evaluation context
-						const parsed = parseYamlFrontmatter(raw)
+						const parsed = parseYamlFrontmatter(raw);
 						if (parsed.hadFrontmatter && parsed.parseError) {
 							// Fail-open: preserve the raw contents so the LLM can still see the author's intent.
-							instructions = formatResponse.clineRulesLocalFileInstructions(cwd, raw)
+							instructions = formatResponse.clineRulesLocalFileInstructions(
+								cwd,
+								raw,
+							);
 						} else {
 							const { passed, matchedConditions } = evaluateRuleConditionals(
 								parsed.data,
 								opts?.evaluationContext ?? {},
-							)
+							);
 							if (passed) {
-								instructions = formatResponse.clineRulesLocalFileInstructions(cwd, parsed.body.trim())
-								if (parsed.hadFrontmatter && Object.keys(matchedConditions).length > 0) {
+								instructions = formatResponse.clineRulesLocalFileInstructions(
+									cwd,
+									parsed.body.trim(),
+								);
+								if (
+									parsed.hadFrontmatter &&
+									Object.keys(matchedConditions).length > 0
+								) {
 									activatedConditionalRules.push({
 										name: `${RULE_SOURCE_PREFIX.workspace}:${GlobalFileNames.clineRules}`,
 										matchedConditions,
-									})
+									});
 								}
 							}
 						}
 					}
 				}
 			} catch {
-				Logger.error(`Failed to read .clinerules file at ${clineRulesFilePath}`)
+				Logger.error(
+					`Failed to read .coderxrules file at ${clineRulesFilePath}`,
+				);
 			}
 		}
 	}
 
-	return { instructions, activatedConditionalRules }
-}
+	return { instructions, activatedConditionalRules };
+};
 
 export async function refreshClineRulesToggles(
 	controller: Controller,
 	workingDirectory: string,
 ): Promise<{
-	globalToggles: ClineRulesToggles
-	localToggles: ClineRulesToggles
+	globalToggles: ClineRulesToggles;
+	localToggles: ClineRulesToggles;
 }> {
 	// Global toggles
-	const globalClineRulesToggles = controller.stateManager.getGlobalSettingsKey("globalClineRulesToggles")
-	const globalClineRulesFilePath = await ensureRulesDirectoryExists()
-	const updatedGlobalToggles = await synchronizeRuleToggles(globalClineRulesFilePath, globalClineRulesToggles)
-	controller.stateManager.setGlobalState("globalClineRulesToggles", updatedGlobalToggles)
+	const globalClineRulesToggles = controller.stateManager.getGlobalSettingsKey(
+		"globalClineRulesToggles",
+	);
+	const globalClineRulesFilePath = await ensureRulesDirectoryExists();
+	const updatedGlobalToggles = await synchronizeRuleToggles(
+		globalClineRulesFilePath,
+		globalClineRulesToggles,
+	);
+	controller.stateManager.setGlobalState(
+		"globalClineRulesToggles",
+		updatedGlobalToggles,
+	);
 
 	// Local toggles
-	const localClineRulesToggles = controller.stateManager.getWorkspaceStateKey("localClineRulesToggles")
-	const localClineRulesFilePath = path.resolve(workingDirectory, GlobalFileNames.clineRules)
-	const updatedLocalToggles = await synchronizeRuleToggles(localClineRulesFilePath, localClineRulesToggles, "", [
-		[".clinerules", "workflows"],
-		[".clinerules", "hooks"],
-		[".clinerules", "skills"],
-	])
-	controller.stateManager.setWorkspaceState("localClineRulesToggles", updatedLocalToggles)
+	const localClineRulesToggles = controller.stateManager.getWorkspaceStateKey(
+		"localClineRulesToggles",
+	);
+	const localClineRulesFilePath = path.resolve(
+		workingDirectory,
+		GlobalFileNames.clineRules,
+	);
+	const updatedLocalToggles = await synchronizeRuleToggles(
+		localClineRulesFilePath,
+		localClineRulesToggles,
+		"",
+		[
+			[".coderxrules", "workflows"],
+			[".coderxrules", "hooks"],
+			[".coderxrules", "skills"],
+		],
+	);
+	controller.stateManager.setWorkspaceState(
+		"localClineRulesToggles",
+		updatedLocalToggles,
+	);
 
 	return {
 		globalToggles: updatedGlobalToggles,
 		localToggles: updatedLocalToggles,
-	}
+	};
 }

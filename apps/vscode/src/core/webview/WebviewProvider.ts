@@ -1,43 +1,47 @@
-import path from "node:path"
-import { Controller } from "@core/controller/index"
-import axios from "axios"
-import { readFile } from "fs/promises"
-import { HostProvider } from "@/hosts/host-provider"
-import { ClineExtensionContext } from "@/shared/cline"
-import { ShowMessageType } from "@/shared/proto/host/window"
-import { Logger } from "@/shared/services/Logger"
-import { getNonce } from "./getNonce"
+import path from "node:path";
+import { Controller } from "@core/controller/index";
+import axios from "axios";
+import { readFile } from "fs/promises";
+import { HostProvider } from "@/hosts/host-provider";
+import { ClineExtensionContext } from "@/shared/cline";
+import { ShowMessageType } from "@/shared/proto/host/window";
+import { Logger } from "@/shared/services/Logger";
+import { getNonce } from "./getNonce";
 
 export abstract class WebviewProvider {
-	private static instance: WebviewProvider | null = null
-	controller: Controller
+	private static instance: WebviewProvider | null = null;
+	controller: Controller;
 
 	constructor(readonly context: ClineExtensionContext) {
-		WebviewProvider.instance = this
+		WebviewProvider.instance = this;
 
 		// Create controller with cache service
-		this.controller = new Controller(context)
+		this.controller = new Controller(context);
 	}
 
 	async dispose() {
-		await this.controller.dispose()
-		WebviewProvider.instance = null
+		await this.controller.dispose();
+		WebviewProvider.instance = null;
 	}
 
 	public static getInstance(): WebviewProvider {
 		if (!WebviewProvider.instance) {
-			throw new Error("WebviewProvider instance not initialized. Make sure to create a WebviewProvider instance first.")
+			throw new Error(
+				"WebviewProvider instance not initialized. Make sure to create a WebviewProvider instance first.",
+			);
 		}
-		return WebviewProvider.instance
+		return WebviewProvider.instance;
 	}
 
 	public static getVisibleInstance(): WebviewProvider | undefined {
-		return WebviewProvider.instance?.isVisible() ? WebviewProvider.instance : undefined
+		return WebviewProvider.instance?.isVisible()
+			? WebviewProvider.instance
+			: undefined;
 	}
 
 	public static async disposeAllInstances() {
 		if (WebviewProvider.instance) {
-			await WebviewProvider.instance.dispose()
+			await WebviewProvider.instance.dispose();
 		}
 	}
 
@@ -47,21 +51,21 @@ export abstract class WebviewProvider {
 	 * @param path - The local path to convert
 	 * @returns A URL that can be used within the webview
 	 */
-	abstract getWebviewUrl(path: string): string
+	abstract getWebviewUrl(path: string): string;
 
 	/**
 	 * Gets the Content Security Policy source for the webview.
 	 *
 	 * @returns The CSP source string to be used in the webview's Content-Security-Policy
 	 */
-	abstract getCspSource(): string
+	abstract getCspSource(): string;
 
 	/**
 	 * Checks if the webview is currently visible to the user.
 	 *
 	 * @returns True if the webview is visible, false otherwise
 	 */
-	abstract isVisible(): boolean
+	abstract isVisible(): boolean;
 
 	/**
 	 * Defines and returns the HTML that should be rendered within the webview panel.
@@ -76,16 +80,32 @@ export abstract class WebviewProvider {
 		// Get the local path to main script run in the webview,
 		// then convert it to a url we can use in the webview.
 		// The JS file from the React build output
-		const scriptUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.js")
+		const scriptUrl = this.getExtensionUrl(
+			"webview-ui",
+			"build",
+			"assets",
+			"index.js",
+		);
 
 		// The CSS file from the React build output
-		const stylesUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.css")
+		const stylesUrl = this.getExtensionUrl(
+			"webview-ui",
+			"build",
+			"assets",
+			"index.css",
+		);
 
 		// The codicon font from the React build output
 		// https://github.com/microsoft/vscode-extension-samples/blob/main/webview-codicons-sample/src/extension.ts
 		// we installed this package in the extension so that we can access it how its intended from the extension (the font file is likely bundled in vscode), and we just import the css fileinto our react app we don't have access to it
 		// don't forget to add font-src ${webview.cspSource};
-		const codiconsUrl = this.getExtensionUrl("node_modules", "@vscode", "codicons", "dist", "codicon.css")
+		const codiconsUrl = this.getExtensionUrl(
+			"node_modules",
+			"@vscode",
+			"codicons",
+			"dist",
+			"codicon.css",
+		);
 
 		// Use a nonce to only allow a specific script to be run.
 		/*
@@ -98,7 +118,7 @@ export abstract class WebviewProvider {
 
 				in meta tag we add nonce attribute: A cryptographic nonce (only used once) to allow scripts. The server must generate a unique nonce value each time it transmits a policy. It is critical to provide a nonce that cannot be guessed as bypassing a resource's policy is otherwise trivial.
 				*/
-		const nonce = getNonce()
+		const nonce = getNonce();
 
 		// Tip: Install the es6-string-html VS Code extension to enable code highlighting below
 		return /*html*/ `
@@ -111,12 +131,12 @@ export abstract class WebviewProvider {
 				<link rel="stylesheet" type="text/css" href="${stylesUrl}">
 				<link href="${codiconsUrl}" rel="stylesheet" />
 				<meta http-equiv="Content-Security-Policy" content="default-src 'none';
-					connect-src https://*.cline.bot;
+					connect-src 'none';
 					font-src ${this.getCspSource()} data:; 
 					style-src ${this.getCspSource()} 'unsafe-inline'; 
 					img-src ${this.getCspSource()} https: data:; 
 					script-src 'nonce-${nonce}' 'unsafe-eval';">
-				<title>Cline</title>
+				<title>coderX</title>
 			</head>
 			<body>
 				<noscript>You need to enable JavaScript to run this app.</noscript>
@@ -124,7 +144,7 @@ export abstract class WebviewProvider {
 				<script type="module" nonce="${nonce}" src="${scriptUrl}"></script>
 			</body>
 		</html>
-		`
+		`;
 	}
 
 	/**
@@ -133,23 +153,25 @@ export abstract class WebviewProvider {
 	 * If the file doesn't exist or can't be read, it resolves to the default port
 	 */
 	private getDevServerPort(): Promise<number> {
-		const DEFAULT_PORT = 25463
+		const DEFAULT_PORT = 25463;
 
-		const portFilePath = path.join(__dirname, "..", "webview-ui", ".vite-port")
+		const portFilePath = path.join(__dirname, "..", "webview-ui", ".vite-port");
 
 		return readFile(portFilePath, "utf8")
 			.then((portFile) => {
-				const port = Number.parseInt(portFile.trim()) || DEFAULT_PORT
-				Logger.info(`[getDevServerPort] Using dev server port ${port} from .vite-port file`)
+				const port = Number.parseInt(portFile.trim()) || DEFAULT_PORT;
+				Logger.info(
+					`[getDevServerPort] Using dev server port ${port} from .vite-port file`,
+				);
 
-				return port
+				return port;
 			})
 			.catch((_err) => {
 				Logger.warn(
 					`[getDevServerPort] Port file not found or couldn't be read at ${portFilePath}, using default port: ${DEFAULT_PORT}`,
-				)
-				return DEFAULT_PORT
-			})
+				);
+				return DEFAULT_PORT;
+			});
 	}
 
 	/**
@@ -160,31 +182,42 @@ export abstract class WebviewProvider {
 	 * rendered within the webview panel
 	 */
 	protected async getHMRHtmlContent(): Promise<string> {
-		const localPort = await this.getDevServerPort()
-		const localServerUrl = `localhost:${localPort}`
+		const localPort = await this.getDevServerPort();
+		const localServerUrl = `localhost:${localPort}`;
 
 		// Check if local dev server is running.
 		try {
-			await axios.get(`http://${localServerUrl}`)
+			await axios.get(`http://${localServerUrl}`);
 		} catch (_error) {
 			// Only show the error message when in development mode.
 			if (process.env.IS_DEV) {
 				HostProvider.window.showMessage({
 					type: ShowMessageType.ERROR,
 					message:
-						"Cline: Local webview dev server is not running, HMR will not work. Please run 'npm run dev:webview' before launching the extension to enable HMR. Using bundled assets.",
-				})
+						"coderX: Local webview dev server is not running, HMR will not work. Please run 'npm run dev:webview' before launching the extension to enable HMR. Using bundled assets.",
+				});
 			}
 
-			return this.getHtmlContent()
+			return this.getHtmlContent();
 		}
 
-		const nonce = getNonce()
-		const stylesUrl = this.getExtensionUrl("webview-ui", "build", "assets", "index.css")
-		const codiconsUrl = this.getExtensionUrl("node_modules", "@vscode", "codicons", "dist", "codicon.css")
+		const nonce = getNonce();
+		const stylesUrl = this.getExtensionUrl(
+			"webview-ui",
+			"build",
+			"assets",
+			"index.css",
+		);
+		const codiconsUrl = this.getExtensionUrl(
+			"node_modules",
+			"@vscode",
+			"codicons",
+			"dist",
+			"codicon.css",
+		);
 
-		const scriptEntrypoint = "src/main.tsx"
-		const scriptUrl = `http://${localServerUrl}/${scriptEntrypoint}`
+		const scriptEntrypoint = "src/main.tsx";
+		const scriptUrl = `http://${localServerUrl}/${scriptEntrypoint}`;
 
 		const reactRefresh = /*html*/ `
 			<script nonce="${nonce}" type="module">
@@ -194,7 +227,7 @@ export abstract class WebviewProvider {
 				window.$RefreshSig$ = () => (type) => type
 				window.__vite_plugin_react_preamble_installed__ = true
 			</script>
-		`
+		`;
 
 		const csp = [
 			"default-src 'none'",
@@ -203,7 +236,7 @@ export abstract class WebviewProvider {
 			`img-src ${this.getCspSource()} https: data:`,
 			`script-src 'unsafe-eval' https://* http://${localServerUrl} http://0.0.0.0:${localPort} 'nonce-${nonce}'`,
 			`connect-src https://* ws://${localServerUrl} ws://0.0.0.0:${localPort} http://${localServerUrl} http://0.0.0.0:${localPort}`,
-		]
+		];
 
 		return /*html*/ `
 			<!DOCTYPE html>
@@ -215,7 +248,7 @@ export abstract class WebviewProvider {
 					<meta http-equiv="Content-Security-Policy" content="${csp.join("; ")}">
 					<link rel="stylesheet" type="text/css" href="${stylesUrl}">
 					<link href="${codiconsUrl}" rel="stylesheet" />
-					<title>Cline</title>
+					<title>coderX</title>
 				</head>
 				<body>
 					<div id="root"></div>
@@ -223,7 +256,7 @@ export abstract class WebviewProvider {
 					<script type="module" src="${scriptUrl}"></script>
 				</body>
 			</html>
-		`
+		`;
 	}
 	/**
 	 * A helper function which will get the webview URL of a given file or resource in the extension directory.
@@ -235,7 +268,10 @@ export abstract class WebviewProvider {
 	 * @returns A URL pointing to the file/resource
 	 */
 	private getExtensionUrl(...pathList: string[]): string {
-		const assetPath = path.resolve(HostProvider.get().extensionFsPath, ...pathList)
-		return this.getWebviewUrl(assetPath)
+		const assetPath = path.resolve(
+			HostProvider.get().extensionFsPath,
+			...pathList,
+		);
+		return this.getWebviewUrl(assetPath);
 	}
 }

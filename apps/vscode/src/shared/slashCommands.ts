@@ -1,7 +1,7 @@
 export interface SlashCommand {
-	name: string
-	description?: string
-	section?: "default" | "custom" | "mcp"
+	name: string;
+	description?: string;
+	section?: "default" | "custom" | "mcp";
 }
 
 export const BASE_SLASH_COMMANDS: SlashCommand[] = [
@@ -22,16 +22,17 @@ export const BASE_SLASH_COMMANDS: SlashCommand[] = [
 	},
 	{
 		name: "newrule",
-		description: "Create a new Cline rule based on your conversation",
+		description: "Create a new coderX rule based on your conversation",
 		section: "default",
 	},
-]
+];
 
 // VS Code-only slash commands
 export const VSCODE_ONLY_COMMANDS: SlashCommand[] = [
 	{
 		name: "explain-changes",
-		description: "Explain code changes between git refs (PRs, commits, branches, etc.)",
+		description:
+			"Explain code changes between git refs (PRs, commits, branches, etc.)",
 		section: "default",
 	},
-]
+];

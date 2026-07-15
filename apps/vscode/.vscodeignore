@@ -59,7 +59,7 @@ evals/
 .codespellrc
 .mocharc.json
 buf.yaml
-.clinerules/
+.coderxrules/
 
 # Ignore all webview-ui files except the build directory (https://github.com/microsoft/vscode-webview-ui-toolkit-samples/blob/main/frameworks/hello-world-react-cra/.vscodeignore)
 webview-ui/src/**
@@ -90,7 +90,6 @@ old_docs/**
 # Include only icons referenced by package.json.
 !assets/icons/icon.png
 !assets/icons/icon.svg
-!assets/icons/cline-bot.woff
 
 # Ignore E2E build files
 e2e-build.mjs

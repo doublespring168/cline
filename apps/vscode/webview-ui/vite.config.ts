@@ -127,8 +127,8 @@ export default defineConfig(({ mode }) => {
 		define: {
 			__PLATFORM__: JSON.stringify(platform),
 			__NODE_PLATFORM__: JSON.stringify(process.platform),
-			"process.env.CLINE_ENVIRONMENT": JSON.stringify(
-				env.CLINE_ENVIRONMENT ?? "production",
+			"process.env.CODERX_ENVIRONMENT": JSON.stringify(
+				env.CODERX_ENVIRONMENT ?? "production",
 			),
 			"process.env.IS_DEV": JSON.stringify(env.IS_DEV),
 			"process.env.IS_TEST": JSON.stringify(env.IS_TEST),

@@ -1,13 +1,12 @@
-import { name, publisher, version } from "../package.json"
-import { HostProvider } from "./hosts/host-provider"
+import { displayName, name, publisher, version } from "../package.json";
+import { HostProvider } from "./hosts/host-provider";
 
-const prefix = name === "claude-dev" ? "cline" : name
+const prefix = name;
 
 /**
  * List of commands with the name of the extension they are registered under.
  * These should match the command IDs defined in package.json.
- * For Nightly build, the publish script has updated all the commands to use the extension name as prefix.
- * In production, all commands are registered under "cline" for consistency.
+ * Commands use the extension name as their namespace so coderX can coexist with Cline.
  */
 const ClineCommands = {
 	PlusButton: prefix + ".plusButtonClicked",
@@ -27,7 +26,11 @@ const ClineCommands = {
 	JupyterGenerateCell: prefix + ".jupyterGenerateCell",
 	JupyterExplainCell: prefix + ".jupyterExplainCell",
 	JupyterImproveCell: prefix + ".jupyterImproveCell",
-}
+	ReviewReply: prefix + ".reviewComment.reply",
+	ReviewAddToChat: prefix + ".reviewComment.addToChat",
+	DevExpireMcpOAuthTokens: prefix + ".dev.expireMcpOAuthTokens",
+	DevCreateTestTasks: prefix + ".dev.createTestTasks",
+};
 
 /**
  * IDs for the views registered by the extension.
@@ -35,7 +38,7 @@ const ClineCommands = {
  */
 const ClineViewIds = {
 	Sidebar: name + ".SidebarProvider",
-}
+};
 
 /**
  * The registry info for the extension, including its ID, name, version, commands, and views
@@ -44,50 +47,57 @@ const ClineViewIds = {
 export const ExtensionRegistryInfo = {
 	id: publisher + "." + name,
 	name,
+	displayName,
 	version,
 	publisher,
 	commands: ClineCommands,
 	views: ClineViewIds,
-}
+	contextKeys: {
+		IsDevMode: prefix + ".isDevMode",
+		IsGeneratingCommit: prefix + ".isGeneratingCommit",
+	},
+	commentControllerId: name + "-ai-review",
+	diffViewUriScheme: name + "-diff",
+};
 
 export interface HostInfo {
 	/**
 	 * The name of the VS Code-compatible host platform.
 	 */
-	platform: string
+	platform: string;
 	/**
 	 * The operating system platform, e.g. linux, darwin, win32
 	 */
-	os: string
+	os: string;
 	/**
-	 * The type of the Cline host environment, currently `VSCode Extension`.
+	 * The type of the coderX host environment, currently `VSCode Extension`.
 	 */
-	ide: string
+	ide: string;
 	/**
 	 * A distinct ID for this installation of the host client
 	 */
-	distinctId: string
+	distinctId: string;
 	/**
 	 * The version of the VS Code-compatible host platform.
 	 */
-	hostVersion?: string
+	hostVersion?: string;
 	/**
-	 * The version of Cline that the host client is running
+	 * The version of coderX that the host client is running
 	 */
-	extensionVersion: string
+	extensionVersion: string;
 }
 
-let hostInfo = null as HostInfo | null
+let hostInfo = null as HostInfo | null;
 
 export const HostRegistryInfo = {
 	init: async (distinctId: string) => {
-		const host = await HostProvider.env.getHostVersion({})
-		const hostVersion = host.version
-		const extensionVersion = host.clineVersion || ExtensionRegistryInfo.version
-		const platform = host.platform || "unknown"
-		const os = process.platform || "unknown"
-		const ide = host.clineType || "unknown"
-		hostInfo = { hostVersion, extensionVersion, platform, os, ide, distinctId }
+		const host = await HostProvider.env.getHostVersion({});
+		const hostVersion = host.version;
+		const extensionVersion = host.clineVersion || ExtensionRegistryInfo.version;
+		const platform = host.platform || "unknown";
+		const os = process.platform || "unknown";
+		const ide = host.clineType || "unknown";
+		hostInfo = { hostVersion, extensionVersion, platform, os, ide, distinctId };
 	},
 	get: () => hostInfo,
-}
+};

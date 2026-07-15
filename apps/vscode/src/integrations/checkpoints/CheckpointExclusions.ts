@@ -1,13 +1,13 @@
-import { fileExistsAtPath } from "@utils/fs"
-import fs from "fs/promises"
-import { join } from "path"
-import { Logger } from "@/shared/services/Logger"
-import { GIT_DISABLED_SUFFIX } from "./CheckpointGitOperations"
+import { fileExistsAtPath } from "@utils/fs";
+import fs from "fs/promises";
+import { join } from "path";
+import { Logger } from "@/shared/services/Logger";
+import { GIT_DISABLED_SUFFIX } from "./CheckpointGitOperations";
 
 /**
  * CheckpointExclusions Module
  *
- * A specialized module within Cline's Checkpoints system that manages file exclusion rules
+ * A specialized module within coderX's Checkpoints system that manages file exclusion rules
  * for the checkpoint tracking process. It provides:
  *
  * File Filtering:
@@ -67,7 +67,7 @@ export const getDefaultExclusions = (lfsPatterns: string[] = []): string[] => [
 	...getLogFilePatterns(),
 
 	...lfsPatterns,
-]
+];
 
 /**
  * Returns patterns for common build and development artifact directories
@@ -84,7 +84,7 @@ function getBuildArtifactPatterns(): string[] {
 		".sass-cache/",
 		".vs/",
 		".vscode/",
-		".clinerules/",
+		".coderxrules/",
 		"Pods/",
 		"__pycache__/",
 		"bin/",
@@ -102,7 +102,7 @@ function getBuildArtifactPatterns(): string[] {
 		"temp/",
 		"vendor/",
 		"venv/",
-	]
+	];
 }
 
 /**
@@ -150,7 +150,7 @@ function getMediaFilePatterns(): string[] {
 		"*.webm",
 		"*.wma",
 		"*.wmv",
-	]
+	];
 }
 
 /**
@@ -179,7 +179,7 @@ function getCacheFilePatterns(): string[] {
 		"*.temp",
 		"*.tmp",
 		"*.Thumbs.db",
-	]
+	];
 }
 
 /**
@@ -187,7 +187,7 @@ function getCacheFilePatterns(): string[] {
  * @returns Array of glob patterns for config files
  */
 function getConfigFilePatterns(): string[] {
-	return ["*.env*", "*.local", "*.development", "*.production"]
+	return ["*.env*", "*.local", "*.development", "*.production"];
 }
 
 /**
@@ -210,7 +210,7 @@ function getLargeDataFilePatterns(): string[] {
 		"*.dat",
 		"*.dmg",
 		"*.msi",
-	]
+	];
 }
 
 /**
@@ -239,7 +239,7 @@ function getDatabaseFilePatterns(): string[] {
 		"*.pdb",
 		"*.rdb",
 		"*.sqlite",
-	]
+	];
 }
 
 /**
@@ -275,7 +275,7 @@ function getGeospatialPatterns(): string[] {
 		"*.csv",
 		"*.dwg",
 		"*.dxf",
-	]
+	];
 }
 
 /**
@@ -283,7 +283,16 @@ function getGeospatialPatterns(): string[] {
  * @returns Array of glob patterns for log files
  */
 function getLogFilePatterns(): string[] {
-	return ["*.error", "*.log", "*.logs", "*.npm-debug.log*", "*.out", "*.stdout", "yarn-debug.log*", "yarn-error.log*"]
+	return [
+		"*.error",
+		"*.log",
+		"*.logs",
+		"*.npm-debug.log*",
+		"*.out",
+		"*.stdout",
+		"yarn-debug.log*",
+		"yarn-error.log*",
+	];
 }
 
 /**
@@ -293,13 +302,16 @@ function getLogFilePatterns(): string[] {
  * @param gitPath - Path to the .git directory
  * @param lfsPatterns - Optional array of Git LFS patterns to include
  */
-export const writeExcludesFile = async (gitPath: string, lfsPatterns: string[] = []): Promise<void> => {
-	const excludesPath = join(gitPath, "info", "exclude")
-	await fs.mkdir(join(gitPath, "info"), { recursive: true })
+export const writeExcludesFile = async (
+	gitPath: string,
+	lfsPatterns: string[] = [],
+): Promise<void> => {
+	const excludesPath = join(gitPath, "info", "exclude");
+	await fs.mkdir(join(gitPath, "info"), { recursive: true });
 
-	const patterns = getDefaultExclusions(lfsPatterns)
-	await fs.writeFile(excludesPath, patterns.join("\n"))
-}
+	const patterns = getDefaultExclusions(lfsPatterns);
+	await fs.writeFile(excludesPath, patterns.join("\n"));
+};
 
 /**
  * Retrieves Git LFS patterns from the workspace's .gitattributes file.
@@ -308,18 +320,20 @@ export const writeExcludesFile = async (gitPath: string, lfsPatterns: string[] =
  * @param workspacePath - Path to the workspace root
  * @returns Array of Git LFS patterns found in .gitattributes
  */
-export const getLfsPatterns = async (workspacePath: string): Promise<string[]> => {
+export const getLfsPatterns = async (
+	workspacePath: string,
+): Promise<string[]> => {
 	try {
-		const attributesPath = join(workspacePath, ".gitattributes")
+		const attributesPath = join(workspacePath, ".gitattributes");
 		if (await fileExistsAtPath(attributesPath)) {
-			const attributesContent = await fs.readFile(attributesPath, "utf8")
+			const attributesContent = await fs.readFile(attributesPath, "utf8");
 			return attributesContent
 				.split("\n")
 				.filter((line) => line.includes("filter=lfs"))
-				.map((line) => line.split(" ")[0].trim())
+				.map((line) => line.split(" ")[0].trim());
 		}
 	} catch (error) {
-		Logger.warn("Failed to read .gitattributes:", error)
+		Logger.warn("Failed to read .gitattributes:", error);
 	}
-	return []
-}
+	return [];
+};

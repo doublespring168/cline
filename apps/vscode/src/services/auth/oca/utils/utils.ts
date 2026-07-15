@@ -1,18 +1,18 @@
-import crypto from "crypto"
-import fs from "fs"
-import { type JwtPayload, jwtDecode } from "jwt-decode"
-import { HostProvider } from "@/hosts/host-provider"
-import { ExtensionRegistryInfo } from "@/registry"
+import crypto from "crypto";
+import fs from "fs";
+import { type JwtPayload, jwtDecode } from "jwt-decode";
+import { HostProvider } from "@/hosts/host-provider";
+import { ExtensionRegistryInfo } from "@/registry";
 import {
-    DEFAULT_EXTERNAL_IDCS_CLIENT_ID,
-    DEFAULT_EXTERNAL_IDCS_URL,
-    DEFAULT_EXTERNAL_IDSC_SCOPES,
-    DEFAULT_INTERNAL_IDCS_CLIENT_ID,
-    DEFAULT_INTERNAL_IDCS_URL,
-    DEFAULT_INTERNAL_IDSC_SCOPES,
-    OCA_CONFIG_PATH,
-} from "./constants"
-import type { OcaConfig } from "./types"
+	DEFAULT_EXTERNAL_IDCS_CLIENT_ID,
+	DEFAULT_EXTERNAL_IDCS_URL,
+	DEFAULT_EXTERNAL_IDSC_SCOPES,
+	DEFAULT_INTERNAL_IDCS_CLIENT_ID,
+	DEFAULT_INTERNAL_IDCS_URL,
+	DEFAULT_INTERNAL_IDSC_SCOPES,
+	OCA_CONFIG_PATH,
+} from "./constants";
+import type { OcaConfig } from "./types";
 
 /**
  * Loads OCA auth configuration, falling back to built-in defaults.
@@ -27,11 +27,11 @@ import type { OcaConfig } from "./types"
 export const getOcaConfig = (): OcaConfig => {
 	// Holds raw values loaded from the optional on-disk config.
 	// Using `any` here is intentional; we coerce into a typed OcaConfig below.
-	let cfg: any = {}
+	let cfg: any = {};
 	try {
 		// Read and parse the user config file, if present.
-		const raw = fs.readFileSync(OCA_CONFIG_PATH, "utf-8")
-		cfg = JSON.parse(raw)
+		const raw = fs.readFileSync(OCA_CONFIG_PATH, "utf-8");
+		cfg = JSON.parse(raw);
 	} catch {
 		// Intentionally ignore read/parse errors and use default values instead.
 		// This keeps the auth flow resilient when no user config is provided.
@@ -49,25 +49,29 @@ export const getOcaConfig = (): OcaConfig => {
 			idcs_url: cfg.external_idcs_url ?? DEFAULT_EXTERNAL_IDCS_URL,
 			scopes: cfg.external_scopes ?? DEFAULT_EXTERNAL_IDSC_SCOPES,
 		},
-	}
-	return ocaConfig
-}
+	};
+	return ocaConfig;
+};
 
 // Generates a cryptographically random string (for state/nonce)
-export function generateRandomString(length = 32, chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") {
-	const randomBytes = crypto.randomBytes(length)
+export function generateRandomString(
+	length = 32,
+	chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+) {
+	const randomBytes = crypto.randomBytes(length);
 	return Array.from(randomBytes)
 		.map((b) => chars[b % chars.length])
-		.join("")
+		.join("");
 }
 
 // PKCE code verifier (high entropy)
 export function generateCodeVerifier(length = 128): string {
-	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
-	const randomBytes = crypto.randomBytes(length)
+	const chars =
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+	const randomBytes = crypto.randomBytes(length);
 	return Array.from(randomBytes)
 		.map((b) => chars[b % chars.length])
-		.join("")
+		.join("");
 }
 
 // PKCE code challenge (SHA-256, base64-url)
@@ -78,7 +82,7 @@ export function pkceChallengeFromVerifier(verifier: string): string {
 		.digest("base64")
 		.replace(/\+/g, "-")
 		.replace(/\//g, "_")
-		.replace(/=+$/, "")
+		.replace(/=+$/, "");
 }
 
 /**
@@ -93,48 +97,54 @@ export function pkceChallengeFromVerifier(verifier: string): string {
  *
  * Use: Send this single value as the opc-request-id header.
  */
-export async function generateOpcRequestId(taskId: string, token: string): Promise<string> {
+export async function generateOpcRequestId(
+	taskId: string,
+	token: string,
+): Promise<string> {
 	async function hash8(str: string): Promise<string> {
-		const data = new TextEncoder().encode(str)
-		const hash = await crypto.subtle.digest("SHA-256", data)
+		const data = new TextEncoder().encode(str);
+		const hash = await crypto.subtle.digest("SHA-256", data);
 		return Array.from(new Uint8Array(hash).slice(0, 4))
 			.map((b) => b.toString(16).padStart(2, "0"))
-			.join("")
+			.join("");
 	}
 
-	const [tokenHex, taskHex] = await Promise.all([hash8(token), hash8(taskId)])
+	const [tokenHex, taskHex] = await Promise.all([hash8(token), hash8(taskId)]);
 	const timestampHex = Math.floor(Date.now() / 1000)
 		.toString(16)
-		.padStart(8, "0")
+		.padStart(8, "0");
 
 	function randomHex8(): string {
-		const arr = new Uint32Array(1)
-		crypto.getRandomValues(arr)
-		return arr[0].toString(16).padStart(8, "0")
+		const arr = new Uint32Array(1);
+		crypto.getRandomValues(arr);
+		return arr[0].toString(16).padStart(8, "0");
 	}
 
 	// Compose: token(8) + task(8) + time(8) + rnd(8) = 32 hex
-	return tokenHex + taskHex + timestampHex + randomHex8()
+	return tokenHex + taskHex + timestampHex + randomHex8();
 }
 
 /**
  * Create headers for OCA requests
  */
 
-export async function createOcaHeaders(accessToken: string, taskId: string): Promise<Record<string, string>> {
-	const opcRequestId = await generateOpcRequestId(taskId, accessToken)
-	const host = await HostProvider.env.getHostVersion({})
-	const clineVersion = ExtensionRegistryInfo.version
+export async function createOcaHeaders(
+	accessToken: string,
+	taskId: string,
+): Promise<Record<string, string>> {
+	const opcRequestId = await generateOpcRequestId(taskId, accessToken);
+	const host = await HostProvider.env.getHostVersion({});
+	const clineVersion = ExtensionRegistryInfo.version;
 
 	return {
 		Authorization: `Bearer ${accessToken}`,
 		"Content-Type": "application/json",
-		client: "Cline",
+		client: "coderX",
 		"client-version": `${clineVersion}`,
 		"client-ide": host.platform || "unknown",
 		"client-ide-version": host.version || "unknown",
 		"opc-request-id": opcRequestId,
-	}
+	};
 }
 
 /**
@@ -144,9 +154,9 @@ export async function createOcaHeaders(accessToken: string, taskId: string): Pro
  */
 export function parseJwtPayload<T extends JwtPayload>(token: string): T | null {
 	try {
-		const payload = jwtDecode<T>(token)
-		return payload
+		const payload = jwtDecode<T>(token);
+		return payload;
 	} catch {
-		return null
+		return null;
 	}
 }

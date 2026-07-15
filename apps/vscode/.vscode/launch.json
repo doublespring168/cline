@@ -10,21 +10,17 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--disable-workspace-trust",
 				"--disable-extension",
-				"saoudrizwan.claude-dev",
-				"--disable-extension",
-				"saoudrizwan.cline-nightly",
+				"coderx.coderx",
 				"${workspaceFolder}"
 			],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"preLaunchTask": "watch",
 			"envFile": "${workspaceFolder}/.env",
 			"env": {
 				"IS_DEV": "true",
 				"DEV_WORKSPACE_FOLDER": "${workspaceFolder}",
-				"CLINE_ENVIRONMENT": "production"
+				"CODERX_ENVIRONMENT": "production"
 			},
 			"internalConsoleOptions": "openOnSessionStart"
 		},
@@ -40,15 +36,13 @@
 				"${workspaceFolder}"
 			],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"preLaunchTask": "watch",
 			"envFile": "${workspaceFolder}/.env",
 			"env": {
 				"IS_DEV": "true",
 				"DEV_WORKSPACE_FOLDER": "${workspaceFolder}",
-				"CLINE_ENVIRONMENT": "production"
+				"CODERX_ENVIRONMENT": "production"
 			},
 			"internalConsoleOptions": "openOnSessionStart"
 		},
@@ -61,21 +55,17 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--disable-workspace-trust",
 				"--disable-extension",
-				"saoudrizwan.claude-dev",
-				"--disable-extension",
-				"saoudrizwan.cline-nightly",
+				"coderx.coderx",
 				"${workspaceFolder}"
 			],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"preLaunchTask": "watch",
 			"envFile": "${workspaceFolder}/.env",
 			"env": {
 				"IS_DEV": "true",
 				"DEV_WORKSPACE_FOLDER": "${workspaceFolder}",
-				"CLINE_ENVIRONMENT": "staging"
+				"CODERX_ENVIRONMENT": "staging"
 			},
 			"internalConsoleOptions": "openOnSessionStart"
 		},
@@ -88,21 +78,17 @@
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"--disable-workspace-trust",
 				"--disable-extension",
-				"saoudrizwan.claude-dev",
-				"--disable-extension",
-				"saoudrizwan.cline-nightly",
+				"coderx.coderx",
 				"${workspaceFolder}"
 			],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"preLaunchTask": "watch",
 			"envFile": "${workspaceFolder}/.env",
 			"env": {
 				"IS_DEV": "true",
 				"DEV_WORKSPACE_FOLDER": "${workspaceFolder}",
-				"CLINE_ENVIRONMENT": "local"
+				"CODERX_ENVIRONMENT": "local"
 			},
 			"internalConsoleOptions": "openOnSessionStart"
 		},
@@ -116,23 +102,19 @@
 				"--profile-temp",
 				"--sync=off",
 				"--disable-extension",
-				"saoudrizwan.claude-dev",
-				"--disable-extension",
-				"saoudrizwan.cline-nightly",
+				"coderx.coderx",
 				"--extensionDevelopmentPath=${workspaceFolder}",
 				"${workspaceFolder}"
 			],
 			"sourceMaps": true,
-			"outFiles": [
-				"${workspaceFolder}/dist/**/*.js"
-			],
+			"outFiles": ["${workspaceFolder}/dist/**/*.js"],
 			"preLaunchTask": "clean-tmp-user",
 			"envFile": "${workspaceFolder}/.env",
 			"env": {
 				"IS_DEV": "true",
 				"TEMP_PROFILE": "true",
 				"DEV_WORKSPACE_FOLDER": "${workspaceFolder}",
-				"CLINE_ENVIRONMENT": "production"
+				"CODERX_ENVIRONMENT": "production"
 			},
 			"internalConsoleOptions": "openOnSessionStart"
 		}

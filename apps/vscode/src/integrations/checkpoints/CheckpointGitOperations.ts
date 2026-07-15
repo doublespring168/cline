@@ -1,20 +1,20 @@
-import { fileExistsAtPath } from "@utils/fs"
-import { retryWithBackoff } from "@utils/retry"
-import fs from "fs/promises"
-import { globby } from "globby"
-import * as path from "path"
-import simpleGit, { type SimpleGit } from "simple-git"
-import { Logger } from "@/shared/services/Logger"
-import { getLfsPatterns, writeExcludesFile } from "./CheckpointExclusions"
+import { fileExistsAtPath } from "@utils/fs";
+import { retryWithBackoff } from "@utils/retry";
+import fs from "fs/promises";
+import { globby } from "globby";
+import * as path from "path";
+import simpleGit, { type SimpleGit } from "simple-git";
+import { Logger } from "@/shared/services/Logger";
+import { getLfsPatterns, writeExcludesFile } from "./CheckpointExclusions";
 
 interface CheckpointAddResult {
-	success: boolean
+	success: boolean;
 }
 
 /**
  * GitOperations Class
  *
- * Handles git-specific operations for Cline's Checkpoints system.
+ * Handles git-specific operations for coderX's Checkpoints system.
  *
  * Key responsibilities:
  * - Git repository initialization and configuration
@@ -25,7 +25,7 @@ interface CheckpointAddResult {
  * - Shadow git repository maintenance and cleanup
  */
 export class GitOperations {
-	private cwd: string
+	private cwd: string;
 
 	/**
 	 * Creates a new GitOperations instance.
@@ -33,7 +33,7 @@ export class GitOperations {
 	 * @param cwd - The current working directory for git operations
 	 */
 	constructor(cwd: string) {
-		this.cwd = cwd
+		this.cwd = cwd;
 	}
 
 	/**
@@ -55,63 +55,77 @@ export class GitOperations {
 	 * - Unable to create initial commit
 	 * - LFS pattern setup fails
 	 */
-	public async initShadowGit(gitPath: string, cwd: string, taskId: string): Promise<string> {
-		Logger.info(`Initializing shadow git`)
+	public async initShadowGit(
+		gitPath: string,
+		cwd: string,
+		taskId: string,
+	): Promise<string> {
+		Logger.info(`Initializing shadow git`);
 		// Clean up any leftover .git_disabled directories from a previous crash/interruption.
 		// If addCheckpointFiles() was interrupted mid disable/enable cycle, nested repos may still be disabled.
 		await this.renameNestedGitRepos(false).catch((error) => {
-			Logger.warn("CheckpointTracker failed best-effort nested git cleanup during shadow git init:", error)
-		})
+			Logger.warn(
+				"CheckpointTracker failed best-effort nested git cleanup during shadow git init:",
+				error,
+			);
+		});
 
 		// If repo exists, just verify worktree
 		if (await fileExistsAtPath(gitPath)) {
-			const git = simpleGit(path.dirname(gitPath))
-			const worktree = await git.getConfig("core.worktree")
+			const git = simpleGit(path.dirname(gitPath));
+			const worktree = await git.getConfig("core.worktree");
 			if (worktree.value !== cwd) {
-				throw new Error("Checkpoints can only be used in the original workspace: " + worktree.value)
+				throw new Error(
+					"Checkpoints can only be used in the original workspace: " +
+						worktree.value,
+				);
 			}
-			Logger.warn(`Using existing shadow git at ${gitPath}`)
+			Logger.warn(`Using existing shadow git at ${gitPath}`);
 
 			// shadow git repo already exists, but update the excludes just in case
-			await writeExcludesFile(gitPath, await getLfsPatterns(this.cwd))
+			await writeExcludesFile(gitPath, await getLfsPatterns(this.cwd));
 
-			return gitPath
+			return gitPath;
 		}
 
 		// Initialize new repo
-		const startTime = performance.now()
-		const checkpointsDir = path.dirname(gitPath)
-		Logger.warn(`Creating new shadow git in ${checkpointsDir}`)
+		const startTime = performance.now();
+		const checkpointsDir = path.dirname(gitPath);
+		Logger.warn(`Creating new shadow git in ${checkpointsDir}`);
 
-		const git = simpleGit(checkpointsDir)
-		await git.init()
+		const git = simpleGit(checkpointsDir);
+		await git.init();
 
 		// Configure repo with git settings
-		await git.addConfig("core.worktree", cwd)
-		await git.addConfig("commit.gpgSign", "false")
-		await git.addConfig("user.name", "Cline Checkpoint")
-		await git.addConfig("user.email", "checkpoint@cline.bot")
+		await git.addConfig("core.worktree", cwd);
+		await git.addConfig("commit.gpgSign", "false");
+		await git.addConfig("user.name", "coderX Checkpoint");
+		await git.addConfig("user.email", "checkpoint@coderx.local");
 
 		// Set up LFS patterns
-		const lfsPatterns = await getLfsPatterns(cwd)
-		await writeExcludesFile(gitPath, lfsPatterns)
+		const lfsPatterns = await getLfsPatterns(cwd);
+		await writeExcludesFile(gitPath, lfsPatterns);
 
-		const addFilesResult = await this.addCheckpointFiles(git)
+		const addFilesResult = await this.addCheckpointFiles(git);
 		if (!addFilesResult.success) {
-			Logger.error("Failed to add at least one file(s) to checkpoints shadow git")
-			throw new Error("Failed to add at least one file(s) to checkpoints shadow git")
+			Logger.error(
+				"Failed to add at least one file(s) to checkpoints shadow git",
+			);
+			throw new Error(
+				"Failed to add at least one file(s) to checkpoints shadow git",
+			);
 		}
 
 		// Initial commit only on first repo creation
 		await git.commit("initial commit", {
 			"--allow-empty": null,
 			"--no-verify": null,
-		})
+		});
 
-		const durationMs = Math.round(performance.now() - startTime)
-		Logger.warn(`Shadow git initialization completed`)
+		const durationMs = Math.round(performance.now() - startTime);
+		Logger.warn(`Shadow git initialization completed`);
 
-		return gitPath
+		return gitPath;
 	}
 
 	/**
@@ -123,14 +137,16 @@ export class GitOperations {
 	 * @returns Promise<string | undefined> The worktree path or undefined if not found
 	 * @throws Error if unable to get worktree path
 	 */
-	public async getShadowGitConfigWorkTree(gitPath: string): Promise<string | undefined> {
+	public async getShadowGitConfigWorkTree(
+		gitPath: string,
+	): Promise<string | undefined> {
 		try {
-			const git = simpleGit(path.dirname(gitPath))
-			const worktree = await git.getConfig("core.worktree")
-			return worktree.value || undefined
+			const git = simpleGit(path.dirname(gitPath));
+			const worktree = await git.getConfig("core.worktree");
+			return worktree.value || undefined;
 		} catch (error) {
-			Logger.error("Failed to get shadow git config worktree:", error)
-			return undefined
+			Logger.error("Failed to get shadow git config worktree:", error);
+			return undefined;
 		}
 	}
 
@@ -147,35 +163,45 @@ export class GitOperations {
 	 */
 	public async renameNestedGitRepos(disable: boolean) {
 		// Find all .git directories that are not at the root level
-		const gitPaths = await globby("**/.git" + (disable ? "" : GIT_DISABLED_SUFFIX), {
-			cwd: this.cwd,
-			onlyDirectories: true,
-			ignore: [".git", "**/node_modules/**"], // Ignore root level .git and node_modules (can contain recursive .git dirs that cause 10s+ scans)
-			dot: true,
-			markDirectories: false,
-			suppressErrors: true,
-		})
+		const gitPaths = await globby(
+			"**/.git" + (disable ? "" : GIT_DISABLED_SUFFIX),
+			{
+				cwd: this.cwd,
+				onlyDirectories: true,
+				ignore: [".git", "**/node_modules/**"], // Ignore root level .git and node_modules (can contain recursive .git dirs that cause 10s+ scans)
+				dot: true,
+				markDirectories: false,
+				suppressErrors: true,
+			},
+		);
 
 		// For each nested .git directory, rename it based on operation
 		for (const gitPath of gitPaths) {
-			const fullPath = path.join(this.cwd, gitPath)
-			let newPath: string
+			const fullPath = path.join(this.cwd, gitPath);
+			let newPath: string;
 			if (disable) {
-				newPath = fullPath + GIT_DISABLED_SUFFIX
+				newPath = fullPath + GIT_DISABLED_SUFFIX;
 			} else {
-				newPath = fullPath.endsWith(GIT_DISABLED_SUFFIX) ? fullPath.slice(0, -GIT_DISABLED_SUFFIX.length) : fullPath
+				newPath = fullPath.endsWith(GIT_DISABLED_SUFFIX)
+					? fullPath.slice(0, -GIT_DISABLED_SUFFIX.length)
+					: fullPath;
 			}
 
 			try {
-				await fs.rename(fullPath, newPath)
-				Logger.log(`CheckpointTracker ${disable ? "disabled" : "enabled"} nested git repo ${gitPath}`)
+				await fs.rename(fullPath, newPath);
+				Logger.log(
+					`CheckpointTracker ${disable ? "disabled" : "enabled"} nested git repo ${gitPath}`,
+				);
 			} catch (error) {
-				Logger.error(`CheckpointTracker failed to ${disable ? "disable" : "enable"} nested git repo ${gitPath}:`, error)
+				Logger.error(
+					`CheckpointTracker failed to ${disable ? "disable" : "enable"} nested git repo ${gitPath}:`,
+					error,
+				);
 				throw new Error(
 					`Failed to ${disable ? "disable" : "enable"} nested git repo ${gitPath}: ${
 						error instanceof Error ? error.message : String(error)
 					}`,
-				)
+				);
 			}
 		}
 	}
@@ -200,25 +226,27 @@ export class GitOperations {
 	 *  - LFS pattern updates fail
 	 *  - Nested git repo handling fails
 	 */
-	public async addCheckpointFiles(git: SimpleGit): Promise<CheckpointAddResult> {
-		const startTime = performance.now()
+	public async addCheckpointFiles(
+		git: SimpleGit,
+	): Promise<CheckpointAddResult> {
+		const startTime = performance.now();
 		try {
 			// Update exclude patterns before each commit
-			await this.renameNestedGitRepos(true)
-			Logger.info("Starting checkpoint add operation...")
+			await this.renameNestedGitRepos(true);
+			Logger.info("Starting checkpoint add operation...");
 
 			// Attempt to add all files. Any files with permissions errors will not be added,
 			// but the process will proceed and add the rest (--ignore-errors).
 			try {
-				await git.add([".", "--ignore-errors"])
-				const durationMs = Math.round(performance.now() - startTime)
-				Logger.debug(`Checkpoint add operation completed in ${durationMs}ms`)
-				return { success: true }
+				await git.add([".", "--ignore-errors"]);
+				const durationMs = Math.round(performance.now() - startTime);
+				Logger.debug(`Checkpoint add operation completed in ${durationMs}ms`);
+				return { success: true };
 			} catch (_error) {
-				return { success: false }
+				return { success: false };
 			}
 		} catch (_error) {
-			return { success: false }
+			return { success: false };
 		} finally {
 			await retryWithBackoff(() => this.renameNestedGitRepos(false), {
 				operationName: "CheckpointTracker re-enable nested git repos",
@@ -227,13 +255,16 @@ export class GitOperations {
 				onRetry: (_error, attempt, maxAttempts, delayMs) => {
 					Logger.warn(
 						`CheckpointTracker re-enable nested git repos failed on attempt ${attempt}/${maxAttempts}. Retrying in ${delayMs}ms`,
-					)
+					);
 				},
 			}).catch((error) => {
-				Logger.error("CheckpointTracker failed to re-enable nested git repos after retries:", error)
-			})
+				Logger.error(
+					"CheckpointTracker failed to re-enable nested git repos after retries:",
+					error,
+				);
+			});
 		}
 	}
 }
 
-export const GIT_DISABLED_SUFFIX = "_disabled"
+export const GIT_DISABLED_SUFFIX = "_disabled";

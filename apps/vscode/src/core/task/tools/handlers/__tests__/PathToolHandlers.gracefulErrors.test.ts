@@ -378,9 +378,9 @@ describe("ListFilesToolHandler.execute – error recovery", () => {
 		assert.equal(taskState.consecutiveMistakeCount, 3)
 	})
 
-	it("increments consecutiveMistakeCount on clineignore denial", async () => {
+	it("increments consecutiveMistakeCount on coderxignore denial", async () => {
 		const { config, taskState } = createConfig()
-		// Create a validator whose clineIgnoreController blocks all paths
+		// Create a validator whose ignore controller blocks all paths
 		const blockingValidator = new ToolValidator({
 			validateAccess: () => false,
 		} as any)
@@ -389,11 +389,11 @@ describe("ListFilesToolHandler.execute – error recovery", () => {
 		const result = await handler.execute(config, makeBlock("blocked-dir"))
 
 		assert.equal(typeof result, "string")
-		assert.ok((result as string).includes("clineignore"))
+		assert.ok((result as string).includes("coderxignore"))
 		assert.equal(taskState.consecutiveMistakeCount, 1)
 	})
 
-	it("accumulates clineignore denials across repeated calls", async () => {
+	it("accumulates coderxignore denials across repeated calls", async () => {
 		const { config, taskState } = createConfig()
 		const blockingValidator = new ToolValidator({
 			validateAccess: () => false,

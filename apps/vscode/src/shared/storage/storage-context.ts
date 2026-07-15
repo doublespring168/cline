@@ -1,8 +1,8 @@
-import fsSync from "node:fs"
-import os from "node:os"
-import path from "node:path"
-import { ClineFileStorage } from "./ClineFileStorage"
-import { ClineMemento } from "./ClineStorage"
+import fsSync from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { ClineFileStorage } from "./ClineFileStorage";
+import { ClineMemento } from "./ClineStorage";
 
 /**
  * The storage backend context object used by StateManager and other components.
@@ -13,7 +13,7 @@ import { ClineMemento } from "./ClineStorage"
  */
 export interface StorageContext {
 	/** Global state — settings, task history references, UI state, etc. */
-	readonly globalState: ClineMemento
+	readonly globalState: ClineMemento;
 
 	// TODO: Privatize this field after StorageContext becomes class with a reset method.
 	/**
@@ -21,55 +21,55 @@ export interface StorageContext {
 	 *
 	 * State resets need direct access to the backing store while ordinary callers use the Memento interface.
 	 */
-	readonly globalStateBackingStore: ClineFileStorage
+	readonly globalStateBackingStore: ClineFileStorage;
 
 	/** Secrets — API keys and other sensitive values. File uses restricted permissions (0o600). */
-	readonly secrets: ClineFileStorage<string>
+	readonly secrets: ClineFileStorage<string>;
 
 	/** Workspace-scoped state — per-project toggles, rules, etc. */
-	readonly workspaceState: ClineFileStorage
+	readonly workspaceState: ClineFileStorage;
 
-	/** The resolved path to the data directory (~/.cline/data) */
-	readonly dataDir: string
+	/** The resolved path to the data directory (~/.coderx/data) */
+	readonly dataDir: string;
 
 	/** The resolved path to the workspace storage directory (contains workspaceState.json) */
-	readonly workspaceStoragePath: string
+	readonly workspaceStoragePath: string;
 }
 
 export interface StorageContextOptions {
 	/**
-	 * Override the Cline home directory. Defaults to CLINE_DIR env var or ~/.cline.
+	 * Override the coderX home directory. Defaults to CODERX_DIR env var or ~/.coderx.
 	 */
-	clineDir?: string
+	coderxDir?: string;
 
 	/**
 	 * The workspace/project directory path. Used to compute a hash-based
 	 * workspace storage subdirectory. Defaults to process.cwd().
 	 */
-	workspacePath?: string
+	workspacePath?: string;
 
 	/**
 	 * Explicit workspace storage directory override.
 	 * When set, this path is used directly instead of computing a hash.
 	 * Primarily useful for migrations and isolated tests.
 	 */
-	workspaceStorageDir?: string
+	workspaceStorageDir?: string;
 }
 
-const SETTINGS_SUBFOLDER = "data"
+const SETTINGS_SUBFOLDER = "data";
 
 /**
  * Create a short deterministic hash of a string for use in directory names.
  * Produces an up-to-8-character hex string.
  */
 function hashString(str: string): string {
-	let hash = 0
+	let hash = 0;
 	for (let i = 0; i < str.length; i++) {
-		const char = str.charCodeAt(i)
-		hash = (hash << 5) - hash + char
-		hash = hash & hash // Convert to 32-bit integer
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash = hash & hash; // Convert to 32-bit integer
 	}
-	return Math.abs(hash).toString(16).substring(0, 8)
+	return Math.abs(hash).toString(16).substring(0, 8);
 }
 
 /**
@@ -79,43 +79,58 @@ function hashString(str: string): string {
  * construct paths to these storage files themselves.
  *
  * File layout:
- *   ~/.cline/data/globalState.json    — global state
- *   ~/.cline/data/secrets.json        — secrets (mode 0o600)
- *   ~/.cline/data/workspaces/<hash>/workspaceState.json — per-workspace state
+ *   ~/.coderx/data/globalState.json    — global state
+ *   ~/.coderx/data/secrets.json        — secrets (mode 0o600)
+ *   ~/.coderx/data/workspaces/<hash>/workspaceState.json — per-workspace state
  *
  * @param opts Configuration options for path resolution
  * @returns A StorageContext ready for use by StateManager
  */
-export function createStorageContext(opts: StorageContextOptions = {}): StorageContext {
-	const clineDir = opts.clineDir || process.env.CLINE_DIR || path.join(os.homedir(), ".cline")
-	const dataDir = path.join(clineDir, SETTINGS_SUBFOLDER)
+export function createStorageContext(
+	opts: StorageContextOptions = {},
+): StorageContext {
+	const coderxDir =
+		opts.coderxDir ||
+		process.env.CODERX_DIR ||
+		path.join(os.homedir(), ".coderx");
+	const dataDir = path.join(coderxDir, SETTINGS_SUBFOLDER);
 
 	// Resolve workspace storage directory
-	let workspaceDir: string
+	let workspaceDir: string;
 	if (opts.workspaceStorageDir) {
 		// Explicit override for migrations or isolated tests.
-		workspaceDir = opts.workspaceStorageDir
+		workspaceDir = opts.workspaceStorageDir;
 	} else {
 		// Hash-based workspace isolation for VS Code workspaces.
-		const workspacePath = opts.workspacePath || process.cwd()
-		const workspaceHash = hashString(workspacePath)
-		workspaceDir = path.join(dataDir, "workspaces", workspaceHash)
+		const workspacePath = opts.workspacePath || process.cwd();
+		const workspaceHash = hashString(workspacePath);
+		workspaceDir = path.join(dataDir, "workspaces", workspaceHash);
 	}
 
 	// Ensure directories exist
-	fsSync.mkdirSync(dataDir, { recursive: true })
-	fsSync.mkdirSync(workspaceDir, { recursive: true })
+	fsSync.mkdirSync(dataDir, { recursive: true });
+	fsSync.mkdirSync(workspaceDir, { recursive: true });
 
-	const globalState = new ClineFileStorage(path.join(dataDir, "globalState.json"), "GlobalState")
+	const globalState = new ClineFileStorage(
+		path.join(dataDir, "globalState.json"),
+		"GlobalState",
+	);
 
 	return {
 		globalState,
 		globalStateBackingStore: globalState,
-		secrets: new ClineFileStorage<string>(path.join(dataDir, "secrets.json"), "Secrets", {
-			fileMode: 0o600, // Owner read/write only — protects API keys
-		}),
-		workspaceState: new ClineFileStorage(path.join(workspaceDir, "workspaceState.json"), "WorkspaceState"),
+		secrets: new ClineFileStorage<string>(
+			path.join(dataDir, "secrets.json"),
+			"Secrets",
+			{
+				fileMode: 0o600, // Owner read/write only — protects API keys
+			},
+		),
+		workspaceState: new ClineFileStorage(
+			path.join(workspaceDir, "workspaceState.json"),
+			"WorkspaceState",
+		),
 		dataDir,
 		workspaceStoragePath: workspaceDir,
-	}
+	};
 }

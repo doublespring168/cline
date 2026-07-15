@@ -1,4 +1,4 @@
-import { EmptyRequest } from "@shared/proto/cline/common"
+import { EmptyRequest } from "@shared/proto/cline/common";
 import {
 	ClineRulesToggles,
 	RefreshedRules,
@@ -10,20 +10,24 @@ import {
 	ToggleSkillRequest,
 	ToggleWindsurfRuleRequest,
 	ToggleWorkflowRequest,
-} from "@shared/proto/cline/file"
-import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
-import React, { useEffect, useRef, useState } from "react"
-import { useClickAway, useWindowSize } from "react-use"
-import styled from "styled-components"
-import PopupModalContainer from "@/components/common/PopupModalContainer"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { useExtensionState } from "@/context/ExtensionStateContext"
-import { FileServiceClient } from "@/services/grpc-client"
-import { isMacOSOrLinux } from "@/utils/platformUtils"
-import HookRow from "./HookRow"
-import NewRuleRow from "./NewRuleRow"
-import RuleRow from "./RuleRow"
-import RulesToggleList from "./RulesToggleList"
+} from "@shared/proto/cline/file";
+import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react";
+import React, { useEffect, useRef, useState } from "react";
+import { useClickAway, useWindowSize } from "react-use";
+import styled from "styled-components";
+import PopupModalContainer from "@/components/common/PopupModalContainer";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useExtensionState } from "@/context/ExtensionStateContext";
+import { FileServiceClient } from "@/services/grpc-client";
+import { isMacOSOrLinux } from "@/utils/platformUtils";
+import HookRow from "./HookRow";
+import NewRuleRow from "./NewRuleRow";
+import RuleRow from "./RuleRow";
+import RulesToggleList from "./RulesToggleList";
 
 const ClineRulesToggleModal: React.FC = () => {
 	const {
@@ -46,29 +50,36 @@ const ClineRulesToggleModal: React.FC = () => {
 		setGlobalWorkflowToggles,
 		setGlobalSkillsToggles,
 		setLocalSkillsToggles,
-	} = useExtensionState()
-	const [globalHooks, setGlobalHooks] = useState<Array<{ name: string; enabled: boolean; absolutePath: string }>>([])
+	} = useExtensionState();
+	const [globalHooks, setGlobalHooks] = useState<
+		Array<{ name: string; enabled: boolean; absolutePath: string }>
+	>([]);
 	const [workspaceHooks, setWorkspaceHooks] = useState<
-		Array<{ workspaceName: string; hooks: Array<{ name: string; enabled: boolean; absolutePath: string }> }>
-	>([])
-	const [globalSkills, setGlobalSkills] = useState<SkillInfo[]>([])
-	const [localSkills, setLocalSkills] = useState<SkillInfo[]>([])
+		Array<{
+			workspaceName: string;
+			hooks: Array<{ name: string; enabled: boolean; absolutePath: string }>;
+		}>
+	>([]);
+	const [globalSkills, setGlobalSkills] = useState<SkillInfo[]>([]);
+	const [localSkills, setLocalSkills] = useState<SkillInfo[]>([]);
 
-	const isWindows = !isMacOSOrLinux()
-	const [isVisible, setIsVisible] = useState(false)
-	const buttonRef = useRef<HTMLDivElement>(null)
-	const modalRef = useRef<HTMLDivElement>(null)
-	const { width: viewportWidth, height: viewportHeight } = useWindowSize()
-	const [arrowPosition, setArrowPosition] = useState(0)
-	const [menuPosition, setMenuPosition] = useState(0)
-	const [currentView, setCurrentView] = useState<"rules" | "workflows" | "hooks" | "skills">("rules")
+	const isWindows = !isMacOSOrLinux();
+	const [isVisible, setIsVisible] = useState(false);
+	const buttonRef = useRef<HTMLDivElement>(null);
+	const modalRef = useRef<HTMLDivElement>(null);
+	const { width: viewportWidth, height: viewportHeight } = useWindowSize();
+	const [arrowPosition, setArrowPosition] = useState(0);
+	const [menuPosition, setMenuPosition] = useState(0);
+	const [currentView, setCurrentView] = useState<
+		"rules" | "workflows" | "hooks" | "skills"
+	>("rules");
 
 	// Auto-switch to rules tab if hooks become disabled while viewing hooks tab
 	useEffect(() => {
 		if (currentView === "hooks" && !hooksEnabled) {
-			setCurrentView("rules")
+			setCurrentView("rules");
 		}
-	}, [currentView, hooksEnabled])
+	}, [currentView, hooksEnabled]);
 
 	useEffect(() => {
 		if (isVisible) {
@@ -76,30 +87,38 @@ const ClineRulesToggleModal: React.FC = () => {
 				.then((response: RefreshedRules) => {
 					// Update state with the response data using all available setters
 					if (response.globalClineRulesToggles?.toggles) {
-						setGlobalClineRulesToggles(response.globalClineRulesToggles.toggles)
+						setGlobalClineRulesToggles(
+							response.globalClineRulesToggles.toggles,
+						);
 					}
 					if (response.localClineRulesToggles?.toggles) {
-						setLocalClineRulesToggles(response.localClineRulesToggles.toggles)
+						setLocalClineRulesToggles(response.localClineRulesToggles.toggles);
 					}
 					if (response.localCursorRulesToggles?.toggles) {
-						setLocalCursorRulesToggles(response.localCursorRulesToggles.toggles)
+						setLocalCursorRulesToggles(
+							response.localCursorRulesToggles.toggles,
+						);
 					}
 					if (response.localWindsurfRulesToggles?.toggles) {
-						setLocalWindsurfRulesToggles(response.localWindsurfRulesToggles.toggles)
+						setLocalWindsurfRulesToggles(
+							response.localWindsurfRulesToggles.toggles,
+						);
 					}
 					if (response.localAgentsRulesToggles?.toggles) {
-						setLocalAgentsRulesToggles(response.localAgentsRulesToggles.toggles)
+						setLocalAgentsRulesToggles(
+							response.localAgentsRulesToggles.toggles,
+						);
 					}
 					if (response.localWorkflowToggles?.toggles) {
-						setLocalWorkflowToggles(response.localWorkflowToggles.toggles)
+						setLocalWorkflowToggles(response.localWorkflowToggles.toggles);
 					}
 					if (response.globalWorkflowToggles?.toggles) {
-						setGlobalWorkflowToggles(response.globalWorkflowToggles.toggles)
+						setGlobalWorkflowToggles(response.globalWorkflowToggles.toggles);
 					}
 				})
 				.catch((error) => {
-					console.error("Failed to refresh rules:", error)
-				})
+					console.error("Failed to refresh rules:", error);
+				});
 		}
 	}, [
 		isVisible,
@@ -109,115 +128,119 @@ const ClineRulesToggleModal: React.FC = () => {
 		setLocalCursorRulesToggles,
 		setLocalWindsurfRulesToggles,
 		setLocalWorkflowToggles,
-	])
+	]);
 
 	// Refresh hooks when hooks tab becomes visible
 	useEffect(() => {
 		if (!isVisible || currentView !== "hooks") {
-			return
+			return;
 		}
 
-		const abortController = new AbortController()
+		const abortController = new AbortController();
 
 		// Initial refresh when tab opens
 		const refreshHooks = () => {
-			if (abortController.signal.aborted) return
+			if (abortController.signal.aborted) return;
 
 			FileServiceClient.refreshHooks({} as EmptyRequest)
 				.then((response) => {
 					if (!abortController.signal.aborted) {
-						setGlobalHooks(response.globalHooks || [])
-						setWorkspaceHooks(response.workspaceHooks || [])
+						setGlobalHooks(response.globalHooks || []);
+						setWorkspaceHooks(response.workspaceHooks || []);
 					}
 				})
 				.catch((error) => {
 					if (!abortController.signal.aborted) {
-						console.error("Failed to refresh hooks:", error)
+						console.error("Failed to refresh hooks:", error);
 					}
-				})
-		}
+				});
+		};
 
 		// Refresh immediately
-		refreshHooks()
+		refreshHooks();
 
 		// Poll every 1 second to detect filesystem changes
-		const pollInterval = setInterval(refreshHooks, 1000)
+		const pollInterval = setInterval(refreshHooks, 1000);
 
 		return () => {
-			abortController.abort()
-			clearInterval(pollInterval)
-		}
-	}, [isVisible, currentView])
+			abortController.abort();
+			clearInterval(pollInterval);
+		};
+	}, [isVisible, currentView]);
 
 	// Refresh skills when skills tab becomes visible
 	useEffect(() => {
 		if (!isVisible || currentView !== "skills") {
-			return
+			return;
 		}
 
-		let isCancelled = false
+		let isCancelled = false;
 
 		const refreshSkills = () => {
-			if (isCancelled) return
+			if (isCancelled) return;
 
 			FileServiceClient.refreshSkills({} as EmptyRequest)
 				.then((response) => {
 					if (!isCancelled) {
-						setGlobalSkills(response.globalSkills || [])
-						setLocalSkills(response.localSkills || [])
+						setGlobalSkills(response.globalSkills || []);
+						setLocalSkills(response.localSkills || []);
 					}
 				})
 				.catch((error) => {
 					if (!isCancelled) {
-						console.error("Failed to refresh skills:", error)
+						console.error("Failed to refresh skills:", error);
 					}
-				})
-		}
+				});
+		};
 
 		// Refresh immediately
-		refreshSkills()
+		refreshSkills();
 
 		// Poll every 1 second to detect filesystem changes
-		const pollInterval = setInterval(refreshSkills, 1000)
+		const pollInterval = setInterval(refreshSkills, 1000);
 
 		return () => {
-			isCancelled = true
-			clearInterval(pollInterval)
-		}
-	}, [isVisible, currentView])
+			isCancelled = true;
+			clearInterval(pollInterval);
+		};
+	}, [isVisible, currentView]);
 
 	// Format global rules for display with proper typing
 	const globalRules = Object.entries(globalClineRulesToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	// Format local rules for display with proper typing
 	const localRules = Object.entries(localClineRulesToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	const cursorRules = Object.entries(localCursorRulesToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	const windsurfRules = Object.entries(localWindsurfRulesToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	const agentsRules = Object.entries(localAgentsRulesToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	const localWorkflows = Object.entries(localWorkflowToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	const globalWorkflows = Object.entries(globalWorkflowToggles || {})
 		.map(([path, enabled]): [string, boolean] => [path, enabled as boolean])
-		.sort(([a], [b]) => a.localeCompare(b))
+		.sort(([a], [b]) => a.localeCompare(b));
 
 	// Handle toggle rule using gRPC
-	const toggleRule = (isGlobal: boolean, rulePath: string, enabled: boolean) => {
+	const toggleRule = (
+		isGlobal: boolean,
+		rulePath: string,
+		enabled: boolean,
+	) => {
 		FileServiceClient.toggleClineRule(
 			ToggleClineRuleRequest.create({
 				scope: isGlobal ? RuleScope.GLOBAL : RuleScope.LOCAL,
@@ -228,16 +251,16 @@ const ClineRulesToggleModal: React.FC = () => {
 			.then((response) => {
 				// Update the local state with the response
 				if (response.globalClineRulesToggles?.toggles) {
-					setGlobalClineRulesToggles(response.globalClineRulesToggles.toggles)
+					setGlobalClineRulesToggles(response.globalClineRulesToggles.toggles);
 				}
 				if (response.localClineRulesToggles?.toggles) {
-					setLocalClineRulesToggles(response.localClineRulesToggles.toggles)
+					setLocalClineRulesToggles(response.localClineRulesToggles.toggles);
 				}
 			})
 			.catch((error) => {
-				console.error("Error toggling Cline rule:", error)
-			})
-	}
+				console.error("Error toggling coderX rule:", error);
+			});
+	};
 
 	const toggleCursorRule = (rulePath: string, enabled: boolean) => {
 		FileServiceClient.toggleCursorRule(
@@ -249,13 +272,13 @@ const ClineRulesToggleModal: React.FC = () => {
 			.then((response) => {
 				// Update the local state with the response
 				if (response.toggles) {
-					setLocalCursorRulesToggles(response.toggles)
+					setLocalCursorRulesToggles(response.toggles);
 				}
 			})
 			.catch((error) => {
-				console.error("Error toggling Cursor rule:", error)
-			})
-	}
+				console.error("Error toggling Cursor rule:", error);
+			});
+	};
 
 	const toggleWindsurfRule = (rulePath: string, enabled: boolean) => {
 		FileServiceClient.toggleWindsurfRule(
@@ -266,13 +289,13 @@ const ClineRulesToggleModal: React.FC = () => {
 		)
 			.then((response: ClineRulesToggles) => {
 				if (response.toggles) {
-					setLocalWindsurfRulesToggles(response.toggles)
+					setLocalWindsurfRulesToggles(response.toggles);
 				}
 			})
 			.catch((error) => {
-				console.error("Error toggling Windsurf rule:", error)
-			})
-	}
+				console.error("Error toggling Windsurf rule:", error);
+			});
+	};
 
 	const toggleAgentsRule = (rulePath: string, enabled: boolean) => {
 		FileServiceClient.toggleAgentsRule(
@@ -283,16 +306,21 @@ const ClineRulesToggleModal: React.FC = () => {
 		)
 			.then((response: ClineRulesToggles) => {
 				if (response.toggles) {
-					setLocalAgentsRulesToggles(response.toggles)
+					setLocalAgentsRulesToggles(response.toggles);
 				}
 			})
 			.catch((error) => {
-				console.error("Error toggling Agents rule:", error)
-			})
-	}
+				console.error("Error toggling Agents rule:", error);
+			});
+	};
 
 	// Toggle hook handler
-	const toggleHook = (isGlobal: boolean, hookName: string, enabled: boolean, workspaceName?: string) => {
+	const toggleHook = (
+		isGlobal: boolean,
+		hookName: string,
+		enabled: boolean,
+		workspaceName?: string,
+	) => {
 		FileServiceClient.toggleHook({
 			metadata: {} as any,
 			hookName,
@@ -301,15 +329,19 @@ const ClineRulesToggleModal: React.FC = () => {
 			workspaceName,
 		})
 			.then((response) => {
-				setGlobalHooks(response.hooksToggles?.globalHooks || [])
-				setWorkspaceHooks(response.hooksToggles?.workspaceHooks || [])
+				setGlobalHooks(response.hooksToggles?.globalHooks || []);
+				setWorkspaceHooks(response.hooksToggles?.workspaceHooks || []);
 			})
 			.catch((error) => {
-				console.error("Error toggling hook:", error)
-			})
-	}
+				console.error("Error toggling hook:", error);
+			});
+	};
 
-	const toggleWorkflow = (isGlobal: boolean, workflowPath: string, enabled: boolean) => {
+	const toggleWorkflow = (
+		isGlobal: boolean,
+		workflowPath: string,
+		enabled: boolean,
+	) => {
 		FileServiceClient.toggleWorkflow(
 			ToggleWorkflowRequest.create({
 				workflowPath,
@@ -320,19 +352,23 @@ const ClineRulesToggleModal: React.FC = () => {
 			.then((response) => {
 				if (response.toggles) {
 					if (isGlobal) {
-						setGlobalWorkflowToggles(response.toggles)
+						setGlobalWorkflowToggles(response.toggles);
 					} else {
-						setLocalWorkflowToggles(response.toggles)
+						setLocalWorkflowToggles(response.toggles);
 					}
 				}
 			})
 			.catch((err: Error) => {
-				console.error("Failed to toggle workflow:", err)
-			})
-	}
+				console.error("Failed to toggle workflow:", err);
+			});
+	};
 
 	// Handle toggle for skills
-	const toggleSkill = (isGlobal: boolean, skillPath: string, enabled: boolean) => {
+	const toggleSkill = (
+		isGlobal: boolean,
+		skillPath: string,
+		enabled: boolean,
+	) => {
 		FileServiceClient.toggleSkill(
 			ToggleSkillRequest.create({
 				skillPath,
@@ -342,59 +378,77 @@ const ClineRulesToggleModal: React.FC = () => {
 		)
 			.then((response) => {
 				if (response.globalSkillsToggles) {
-					setGlobalSkillsToggles(response.globalSkillsToggles)
+					setGlobalSkillsToggles(response.globalSkillsToggles);
 				}
 				if (response.localSkillsToggles) {
-					setLocalSkillsToggles(response.localSkillsToggles)
+					setLocalSkillsToggles(response.localSkillsToggles);
 				}
-					// Update local skills state
-					if (isGlobal) {
-					setGlobalSkills((prev) => prev.map((s) => (s.path === skillPath ? { ...s, enabled } : s)))
+				// Update local skills state
+				if (isGlobal) {
+					setGlobalSkills((prev) =>
+						prev.map((s) => (s.path === skillPath ? { ...s, enabled } : s)),
+					);
 				} else {
-					setLocalSkills((prev) => prev.map((s) => (s.path === skillPath ? { ...s, enabled } : s)))
+					setLocalSkills((prev) =>
+						prev.map((s) => (s.path === skillPath ? { ...s, enabled } : s)),
+					);
 				}
 			})
 			.catch((error) => {
-				console.error("Error toggling skill:", error)
-			})
-	}
+				console.error("Error toggling skill:", error);
+			});
+	};
 
 	// Close modal when clicking outside
 	useClickAway(modalRef, () => {
-		setIsVisible(false)
-	})
+		setIsVisible(false);
+	});
 
 	// Calculate positions for modal and arrow
 	useEffect(() => {
 		if (isVisible && buttonRef.current) {
-			const buttonRect = buttonRef.current.getBoundingClientRect()
-			const buttonCenter = buttonRect.left + buttonRect.width / 2
-			const rightPosition = document.documentElement.clientWidth - buttonCenter - 5
+			const buttonRect = buttonRef.current.getBoundingClientRect();
+			const buttonCenter = buttonRect.left + buttonRect.width / 2;
+			const rightPosition =
+				document.documentElement.clientWidth - buttonCenter - 5;
 
-			setArrowPosition(rightPosition)
-			setMenuPosition(buttonRect.top + 1)
+			setArrowPosition(rightPosition);
+			setMenuPosition(buttonRect.top + 1);
 		}
-	}, [isVisible, viewportWidth, viewportHeight])
+	}, [isVisible, viewportWidth, viewportHeight]);
 
 	return (
 		<div className="inline-flex min-w-0 max-w-full items-center" ref={modalRef}>
 			<div className="inline-flex w-full items-center" ref={buttonRef}>
 				<Tooltip>
-					{!isVisible && <TooltipContent>Manage Cline Rules & Workflows</TooltipContent>}
+					{!isVisible && (
+						<TooltipContent>Manage coderX Rules & Workflows</TooltipContent>
+					)}
 					<TooltipTrigger>
 						<VSCodeButton
 							appearance="icon"
-							aria-label={isVisible ? "Hide Cline Rules & Workflows" : "Show Cline Rules & Workflows"}
+							aria-label={
+								isVisible
+									? "Hide coderX Rules & Workflows"
+									: "Show coderX Rules & Workflows"
+							}
 							className="p-0 m-0 flex items-center"
-							onClick={() => setIsVisible(!isVisible)}>
-							<i className="codicon codicon-law" style={{ fontSize: "12.5px" }} />
+							onClick={() => setIsVisible(!isVisible)}
+						>
+							<i
+								className="codicon codicon-law"
+								style={{ fontSize: "12.5px" }}
+							/>
 						</VSCodeButton>
 					</TooltipTrigger>
 				</Tooltip>
 			</div>
 
 			{isVisible && (
-				<PopupModalContainer $arrowPosition={arrowPosition} $menuPosition={menuPosition}>
+				<PopupModalContainer
+					$arrowPosition={arrowPosition}
+					$menuPosition={menuPosition}
+				>
 					{/* Fixed header section - tabs and description */}
 					<div className="flex-shrink-0 px-3 pt-2">
 						{/* Tabs container */}
@@ -404,26 +458,40 @@ const ClineRulesToggleModal: React.FC = () => {
 								justifyContent: "space-between",
 								marginBottom: "10px",
 								overflow: "hidden",
-							}}>
+							}}
+						>
 							<div
 								style={{
 									display: "flex",
 									gap: "1px",
 									borderBottom: "1px solid var(--vscode-panel-border)",
 									flexWrap: "wrap",
-								}}>
-								<TabButton isActive={currentView === "rules"} onClick={() => setCurrentView("rules")}>
+								}}
+							>
+								<TabButton
+									isActive={currentView === "rules"}
+									onClick={() => setCurrentView("rules")}
+								>
 									Rules
 								</TabButton>
-								<TabButton isActive={currentView === "workflows"} onClick={() => setCurrentView("workflows")}>
+								<TabButton
+									isActive={currentView === "workflows"}
+									onClick={() => setCurrentView("workflows")}
+								>
 									Workflows
 								</TabButton>
 								{hooksEnabled && (
-									<TabButton isActive={currentView === "hooks"} onClick={() => setCurrentView("hooks")}>
+									<TabButton
+										isActive={currentView === "hooks"}
+										onClick={() => setCurrentView("hooks")}
+									>
 										Hooks
 									</TabButton>
 								)}
-								<TabButton isActive={currentView === "skills"} onClick={() => setCurrentView("skills")}>
+								<TabButton
+									isActive={currentView === "skills"}
+									onClick={() => setCurrentView("skills")}
+								>
 									Skills
 								</TabButton>
 							</div>
@@ -433,43 +501,56 @@ const ClineRulesToggleModal: React.FC = () => {
 						<div className="text-xs text-description mb-4">
 							{currentView === "rules" ? (
 								<p>
-									Rules allow you to provide Cline with system-level guidance. Think of them as a persistent way
-									to include context and preferences for your projects or globally for every conversation.{" "}
+									Rules allow you to provide coderX with system-level guidance.
+									Think of them as a persistent way to include context and
+									preferences for your projects or globally for every
+									conversation.{" "}
 									<VSCodeLink
 										className="text-xs"
 										href="https://docs.cline.bot/features/cline-rules"
-										style={{ display: "inline", fontSize: "inherit" }}>
+										style={{ display: "inline", fontSize: "inherit" }}
+									>
 										Docs
 									</VSCodeLink>
 								</p>
 							) : currentView === "workflows" ? (
 								<p>
-									Workflows allow you to define a series of steps to guide Cline through a repetitive set of
-									tasks, such as deploying a service or submitting a PR. To invoke a workflow, type{" "}
-									<span className="text-foreground font-bold">/workflow-name</span> in the chat.{" "}
+									Workflows allow you to define a series of steps to guide
+									coderX through a repetitive set of tasks, such as deploying a
+									service or submitting a PR. To invoke a workflow, type{" "}
+									<span className="text-foreground font-bold">
+										/workflow-name
+									</span>{" "}
+									in the chat.{" "}
 									<VSCodeLink
 										className="text-xs inline"
-										href="https://docs.cline.bot/features/slash-commands/workflows">
+										href="https://docs.cline.bot/features/slash-commands/workflows"
+									>
 										Docs
 									</VSCodeLink>
 								</p>
 							) : currentView === "skills" ? (
 								<p>
-									Skills are reusable instruction sets that Cline can activate on-demand. When a task matches a
-									skill's description, Cline uses the <span className="font-bold">use_skill</span> tool to load
-									the full instructions.
+									Skills are reusable instruction sets that coderX can activate
+									on-demand. When a task matches a skill's description, coderX
+									uses the <span className="font-bold">use_skill</span> tool to
+									load the full instructions.
 								</p>
 							) : (
 								<p>
-									Hooks allow you to execute custom scripts at specific points in Cline's execution lifecycle,
-									enabling automation and integration with external tools.
+									Hooks allow you to execute custom scripts at specific points
+									in coderX's execution lifecycle, enabling automation and
+									integration with external tools.
 								</p>
 							)}
 						</div>
 					</div>
 
 					{/* Scrollable content area */}
-					<div className="flex-1 overflow-y-auto px-3 pb-3" style={{ minHeight: 0 }}>
+					<div
+						className="flex-1 overflow-y-auto px-3 pb-3"
+						style={{ minHeight: 0 }}
+					>
 						{currentView === "rules" ? (
 							<>
 								{/* Global Rules Section */}
@@ -484,13 +565,17 @@ const ClineRulesToggleModal: React.FC = () => {
 										ruleType={"cline"}
 										showNewRule={true}
 										showNoRules={false}
-										toggleRule={(rulePath, enabled) => toggleRule(true, rulePath, enabled)}
+										toggleRule={(rulePath, enabled) =>
+											toggleRule(true, rulePath, enabled)
+										}
 									/>
 								</div>
 
 								{/* Local Rules Section */}
 								<div className="-mb-2.5">
-									<div className="text-sm font-normal mb-2">Workspace Rules</div>
+									<div className="text-sm font-normal mb-2">
+										Workspace Rules
+									</div>
 									<RulesToggleList
 										isGlobal={false}
 										listGap="small"
@@ -498,7 +583,9 @@ const ClineRulesToggleModal: React.FC = () => {
 										ruleType={"cline"}
 										showNewRule={false}
 										showNoRules={false}
-										toggleRule={(rulePath, enabled) => toggleRule(false, rulePath, enabled)}
+										toggleRule={(rulePath, enabled) =>
+											toggleRule(false, rulePath, enabled)
+										}
 									/>
 
 									<RulesToggleList
@@ -534,7 +621,9 @@ const ClineRulesToggleModal: React.FC = () => {
 							<>
 								{/* Global Workflows Section */}
 								<div className="mb-3">
-									<div className="text-sm font-normal mb-2">Global Workflows</div>
+									<div className="text-sm font-normal mb-2">
+										Global Workflows
+									</div>
 
 									{/* File-based Global Workflows */}
 									<RulesToggleList
@@ -544,13 +633,17 @@ const ClineRulesToggleModal: React.FC = () => {
 										ruleType={"workflow"}
 										showNewRule={true}
 										showNoRules={false}
-										toggleRule={(rulePath, enabled) => toggleWorkflow(true, rulePath, enabled)}
+										toggleRule={(rulePath, enabled) =>
+											toggleWorkflow(true, rulePath, enabled)
+										}
 									/>
 								</div>
 
 								{/* Local Workflows Section */}
 								<div className="-mb-2.5">
-									<div className="text-sm font-normal mb-2">Workspace Workflows</div>
+									<div className="text-sm font-normal mb-2">
+										Workspace Workflows
+									</div>
 									<RulesToggleList
 										isGlobal={false}
 										listGap="small"
@@ -558,7 +651,9 @@ const ClineRulesToggleModal: React.FC = () => {
 										ruleType={"workflow"}
 										showNewRule={true}
 										showNoRules={false}
-										toggleRule={(rulePath, enabled) => toggleWorkflow(false, rulePath, enabled)}
+										toggleRule={(rulePath, enabled) =>
+											toggleWorkflow(false, rulePath, enabled)
+										}
 									/>
 								</div>
 							</>
@@ -572,7 +667,8 @@ const ClineRulesToggleModal: React.FC = () => {
 										<VSCodeLink
 											className="text-xs"
 											href="https://docs.cline.bot/features/hooks"
-											style={{ display: "inline", fontSize: "inherit" }}>
+											style={{ display: "inline", fontSize: "inherit" }}
+										>
 											Docs
 										</VSCodeLink>
 									</p>
@@ -583,8 +679,9 @@ const ClineRulesToggleModal: React.FC = () => {
 									<div className="flex items-center gap-2 px-3 py-3 mb-4 bg-vscode-inputValidation-warningBackground border-l-[3px] border-vscode-inputValidation-warningBorder">
 										<i className="codicon codicon-warning text-sm" />
 										<span className="text-base">
-											Hook toggling is not yet supported on Windows in this foundation PR. Hooks can be
-											created, edited, and deleted, and execute whenever the hook file exists. Coming next:
+											Hook toggling is not yet supported on Windows in this
+											foundation PR. Hooks can be created, edited, and deleted,
+											and execute whenever the hook file exists. Coming next:
 											JSON-backed hook enabled/disabled state across platforms.
 										</span>
 									</div>
@@ -606,8 +703,10 @@ const ClineRulesToggleModal: React.FC = () => {
 													key={hook.name}
 													onDelete={(hooksToggles) => {
 														// Use response data directly, no need to refresh
-														setGlobalHooks(hooksToggles.globalHooks || [])
-														setWorkspaceHooks(hooksToggles.workspaceHooks || [])
+														setGlobalHooks(hooksToggles.globalHooks || []);
+														setWorkspaceHooks(
+															hooksToggles.workspaceHooks || [],
+														);
 													}}
 													onToggle={(name: string, newEnabled: boolean) =>
 														toggleHook(true, name, newEnabled)
@@ -625,10 +724,13 @@ const ClineRulesToggleModal: React.FC = () => {
 								{/* Workspace Hooks - one section per workspace */}
 								{workspaceHooks.map((workspace, index) => (
 									<div
-										className={index === workspaceHooks.length - 1 ? "-mb-2.5" : "mb-3"}
-										key={workspace.workspaceName}>
+										className={
+											index === workspaceHooks.length - 1 ? "-mb-2.5" : "mb-3"
+										}
+										key={workspace.workspaceName}
+									>
 										<div className="text-sm font-normal mb-2">
-											{workspace.workspaceName}/.clinerules/hooks/
+											{workspace.workspaceName}/.coderxrules/hooks/
 										</div>
 										<div className="flex flex-col gap-0">
 											{workspace.hooks
@@ -643,11 +745,18 @@ const ClineRulesToggleModal: React.FC = () => {
 														key={hook.absolutePath}
 														onDelete={(hooksToggles) => {
 															// Use response data directly, no need to refresh
-															setGlobalHooks(hooksToggles.globalHooks || [])
-															setWorkspaceHooks(hooksToggles.workspaceHooks || [])
+															setGlobalHooks(hooksToggles.globalHooks || []);
+															setWorkspaceHooks(
+																hooksToggles.workspaceHooks || [],
+															);
 														}}
 														onToggle={(name: string, newEnabled: boolean) =>
-															toggleHook(false, name, newEnabled, workspace.workspaceName)
+															toggleHook(
+																false,
+																name,
+																newEnabled,
+																workspace.workspaceName,
+															)
 														}
 														workspaceName={workspace.workspaceName}
 													/>
@@ -677,7 +786,9 @@ const ClineRulesToggleModal: React.FC = () => {
 													key={skill.path}
 													rulePath={skill.path}
 													ruleType="skill"
-													toggleRule={(_path, enabled) => toggleSkill(true, skill.path, enabled)}
+													toggleRule={(_path, enabled) =>
+														toggleSkill(true, skill.path, enabled)
+													}
 												/>
 											))}
 										<NewRuleRow isGlobal={true} ruleType="skill" />
@@ -686,7 +797,9 @@ const ClineRulesToggleModal: React.FC = () => {
 
 								{/* Workspace Skills Section */}
 								<div className="-mb-2.5">
-									<div className="text-sm font-normal mb-2">Workspace Skills</div>
+									<div className="text-sm font-normal mb-2">
+										Workspace Skills
+									</div>
 									<div className="flex flex-col gap-0">
 										{localSkills
 											.sort((a, b) => a.name.localeCompare(b.name))
@@ -697,7 +810,9 @@ const ClineRulesToggleModal: React.FC = () => {
 													key={skill.path}
 													rulePath={skill.path}
 													ruleType="skill"
-													toggleRule={(path, enabled) => toggleSkill(false, path, enabled)}
+													toggleRule={(path, enabled) =>
+														toggleSkill(false, path, enabled)
+													}
 												/>
 											))}
 										<NewRuleRow isGlobal={false} ruleType="skill" />
@@ -709,8 +824,8 @@ const ClineRulesToggleModal: React.FC = () => {
 				</PopupModalContainer>
 			)}
 		</div>
-	)
-}
+	);
+};
 
 const StyledTabButton = styled.button<{ isActive: boolean }>`
 	background: none;
@@ -727,20 +842,24 @@ const StyledTabButton = styled.button<{ isActive: boolean }>`
 	&:hover {
 		color: var(--vscode-foreground);
 	}
-`
+`;
 
 export const TabButton = ({
 	children,
 	isActive,
 	onClick,
 }: {
-	children: React.ReactNode
-	isActive: boolean
-	onClick: () => void
+	children: React.ReactNode;
+	isActive: boolean;
+	onClick: () => void;
 }) => (
-	<StyledTabButton aria-pressed={isActive} isActive={isActive} onClick={onClick}>
+	<StyledTabButton
+		aria-pressed={isActive}
+		isActive={isActive}
+		onClick={onClick}
+	>
 		{children}
 	</StyledTabButton>
-)
+);
 
-export default ClineRulesToggleModal
+export default ClineRulesToggleModal;

@@ -1,22 +1,25 @@
-import type { ToolUse } from "@core/assistant-message"
-import { formatResponse } from "@core/prompts/responses"
-import { WorkspacePathAdapter } from "@core/workspace/WorkspacePathAdapter"
-import { showApprovalNotification, showSystemNotification } from "@integrations/notifications"
-import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences"
-import { ClineAsk } from "@shared/ExtensionMessage"
-import { arePathsEqual } from "@utils/path"
-import { ClineDefaultTool } from "@/shared/tools"
-import type { ToolResponse } from "../../index"
-import type { IFullyManagedTool } from "../ToolExecutorCoordinator"
-import type { ToolValidator } from "../ToolValidator"
-import type { TaskConfig } from "../types/TaskConfig"
-import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
-import { applyModelContentFixes } from "../utils/ModelContentProcessor"
-import { ToolResultUtils } from "../utils/ToolResultUtils"
+import type { ToolUse } from "@core/assistant-message";
+import { formatResponse } from "@core/prompts/responses";
+import { WorkspacePathAdapter } from "@core/workspace/WorkspacePathAdapter";
+import {
+	showApprovalNotification,
+	showSystemNotification,
+} from "@integrations/notifications";
+import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences";
+import { ClineAsk } from "@shared/ExtensionMessage";
+import { arePathsEqual } from "@utils/path";
+import { ClineDefaultTool } from "@/shared/tools";
+import type { ToolResponse } from "../../index";
+import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
+import type { ToolValidator } from "../ToolValidator";
+import type { TaskConfig } from "../types/TaskConfig";
+import type { StronglyTypedUIHelpers } from "../types/UIHelpers";
+import { applyModelContentFixes } from "../utils/ModelContentProcessor";
+import { ToolResultUtils } from "../utils/ToolResultUtils";
 
 // Default timeout for commands in yolo mode and background exec mode
-const DEFAULT_COMMAND_TIMEOUT_SECONDS = 30
-const LONG_RUNNING_COMMAND_TIMEOUT_SECONDS = 300
+const DEFAULT_COMMAND_TIMEOUT_SECONDS = 30;
+const LONG_RUNNING_COMMAND_TIMEOUT_SECONDS = 300;
 
 const LONG_RUNNING_COMMAND_PATTERNS: RegExp[] = [
 	/\b(npm|pnpm|yarn|bun)\s+(install|ci|build|test)\b/i,
@@ -30,11 +33,13 @@ const LONG_RUNNING_COMMAND_PATTERNS: RegExp[] = [
 	/\b(torchrun|deepspeed|accelerate\s+launch)\b/i,
 	/\bffmpeg\b/i,
 	/\bpython(?:\d+(?:\.\d+)?)?\s+.*\b(train|finetune)\b/i,
-]
+];
 
 export function isLikelyLongRunningCommand(command: string): boolean {
-	const normalized = command.trim().replace(/\s+/g, " ")
-	return LONG_RUNNING_COMMAND_PATTERNS.some((pattern) => pattern.test(normalized))
+	const normalized = command.trim().replace(/\s+/g, " ");
+	return LONG_RUNNING_COMMAND_PATTERNS.some((pattern) =>
+		pattern.test(normalized),
+	);
 }
 
 export function resolveCommandTimeoutSeconds(
@@ -43,164 +48,204 @@ export function resolveCommandTimeoutSeconds(
 	useManagedTimeout: boolean,
 ): number | undefined {
 	if (!useManagedTimeout) {
-		return undefined
+		return undefined;
 	}
 
-	const parsed = timeoutParam ? Number.parseInt(timeoutParam, 10) : Number.NaN
+	const parsed = timeoutParam ? Number.parseInt(timeoutParam, 10) : Number.NaN;
 	if (Number.isFinite(parsed) && parsed > 0) {
-		return parsed
+		return parsed;
 	}
 
-	return isLikelyLongRunningCommand(command) ? LONG_RUNNING_COMMAND_TIMEOUT_SECONDS : DEFAULT_COMMAND_TIMEOUT_SECONDS
+	return isLikelyLongRunningCommand(command)
+		? LONG_RUNNING_COMMAND_TIMEOUT_SECONDS
+		: DEFAULT_COMMAND_TIMEOUT_SECONDS;
 }
 
 export class ExecuteCommandToolHandler implements IFullyManagedTool {
-	readonly name = ClineDefaultTool.BASH
+	readonly name = ClineDefaultTool.BASH;
 
 	constructor(_validator: ToolValidator) {}
 
 	getDescription(block: ToolUse): string {
-		return `[${block.name} for '${block.params.command}']`
+		return `[${block.name} for '${block.params.command}']`;
 	}
 
-	async handlePartialBlock(block: ToolUse, uiHelpers: StronglyTypedUIHelpers): Promise<void> {
-		const command = block.params.command
+	async handlePartialBlock(
+		block: ToolUse,
+		uiHelpers: StronglyTypedUIHelpers,
+	): Promise<void> {
+		const command = block.params.command;
 		if (uiHelpers.getConfig().isSubagentExecution) {
-			return
+			return;
 		}
 
 		// Check if this should be auto-approved to determine UI flow
-		const shouldAutoApprove = uiHelpers.shouldAutoApproveTool(this.name)
+		const shouldAutoApprove = uiHelpers.shouldAutoApproveTool(this.name);
 
 		if (shouldAutoApprove) {
 			// For auto-approved commands, we can't partially stream a say prematurely
 			// since it may become an ask based on the requires_approval parameter
 			// So we wait for the complete block
-			return
+			return;
 		}
 		await uiHelpers
-			.ask("command" as ClineAsk, uiHelpers.removeClosingTag(block, "command", command), block.partial)
-			.catch(() => {})
+			.ask(
+				"command" as ClineAsk,
+				uiHelpers.removeClosingTag(block, "command", command),
+				block.partial,
+			)
+			.catch(() => {});
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {
-		let command: string | undefined = block.params.command
-		const requiresApprovalRaw: string | undefined = block.params.requires_approval
-		const requiresApprovalPerLLM = requiresApprovalRaw?.toLowerCase() === "true"
-		const timeoutParam: string | undefined = block.params.timeout
-		let timeoutSeconds: number | undefined
+		let command: string | undefined = block.params.command;
+		const requiresApprovalRaw: string | undefined =
+			block.params.requires_approval;
+		const requiresApprovalPerLLM =
+			requiresApprovalRaw?.toLowerCase() === "true";
+		const timeoutParam: string | undefined = block.params.timeout;
+		let timeoutSeconds: number | undefined;
 
 		// Read the active provider for local tool context.
-		const apiConfig = config.services.stateManager.getApiConfiguration()
-		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
-		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
+		const apiConfig = config.services.stateManager.getApiConfiguration();
+		const currentMode =
+			config.services.stateManager.getGlobalSettingsKey("mode");
+		const provider = (
+			currentMode === "plan"
+				? apiConfig.planModeApiProvider
+				: apiConfig.actModeApiProvider
+		) as string;
 
 		// Validate required parameters
 		if (!command) {
-			config.taskState.consecutiveMistakeCount++
+			config.taskState.consecutiveMistakeCount++;
 			await config.callbacks.say(
 				"error",
-				"Cline tried to use execute_command without value for required parameter 'command'. Retrying...",
-			)
-			return formatResponse.toolError(formatResponse.executeCommandMissingCommandError())
+				"coderX tried to use execute_command without value for required parameter 'command'. Retrying...",
+			);
+			return formatResponse.toolError(
+				formatResponse.executeCommandMissingCommandError(),
+			);
 		}
 
 		if (!requiresApprovalRaw) {
-			config.taskState.consecutiveMistakeCount++
-			return await config.callbacks.sayAndCreateMissingParamError(this.name, "requires_approval")
+			config.taskState.consecutiveMistakeCount++;
+			return await config.callbacks.sayAndCreateMissingParamError(
+				this.name,
+				"requires_approval",
+			);
 		}
 
-		config.taskState.consecutiveMistakeCount = 0
+		config.taskState.consecutiveMistakeCount = 0;
 
 		// Handling of timeout while in yolo mode
-		timeoutSeconds = resolveCommandTimeoutSeconds(command, timeoutParam, config.yoloModeToggled)
+		timeoutSeconds = resolveCommandTimeoutSeconds(
+			command,
+			timeoutParam,
+			config.yoloModeToggled,
+		);
 
 		// Pre-process command for certain models
 		if (config.api.getModel().id.includes("gemini")) {
-			command = applyModelContentFixes(command)
+			command = applyModelContentFixes(command);
 		}
 
 		// Handle multi-workspace command execution
-		let executionDir: string = config.cwd
-		let actualCommand: string = command
+		let executionDir: string = config.cwd;
+		let actualCommand: string = command;
 
-		let workspaceHintUsed = false
-		let workspaceHint: string | undefined
+		let workspaceHintUsed = false;
+		let workspaceHint: string | undefined;
 
 		if (config.isMultiRootEnabled && config.workspaceManager) {
 			// Check if command has a workspace hint prefix
 			// e.g., "@backend:npm install" or just "npm install"
-			const commandMatch = command.match(/^@(\w+):(.+)$/)
+			const commandMatch = command.match(/^@(\w+):(.+)$/);
 
 			if (commandMatch) {
-				workspaceHintUsed = true
-				workspaceHint = commandMatch[1]
-				actualCommand = commandMatch[2].trim()
+				workspaceHintUsed = true;
+				workspaceHint = commandMatch[1];
+				actualCommand = commandMatch[2].trim();
 
 				// Find the workspace root for this hint
 				const adapter = new WorkspacePathAdapter({
 					cwd: config.cwd,
 					isMultiRootEnabled: true,
 					workspaceManager: config.workspaceManager,
-				})
+				});
 
 				// Resolve to get the workspace directory
-				executionDir = adapter.resolvePath(".", workspaceHint)
+				executionDir = adapter.resolvePath(".", workspaceHint);
 
 				// Update command to remove the workspace prefix for display
-				command = actualCommand
+				command = actualCommand;
 			}
 			// If no hint, use primary workspace (cwd)
 		}
 
-		// Check command permission validation (CLINE_COMMAND_PERMISSIONS env var)
-		const permissionResult = config.services.commandPermissionController.validateCommand(actualCommand)
+		// Check command permission validation (CODERX_COMMAND_PERMISSIONS env var)
+		const permissionResult =
+			config.services.commandPermissionController.validateCommand(
+				actualCommand,
+			);
 		if (!permissionResult.allowed) {
-			let errorMessage: string
+			let errorMessage: string;
 			if (permissionResult.failedSegment) {
 				errorMessage =
-					`Command "${actualCommand}" was denied by CLINE_COMMAND_PERMISSIONS. ` +
-					`Segment "${permissionResult.failedSegment}" ${permissionResult.reason}.`
+					`Command "${actualCommand}" was denied by CODERX_COMMAND_PERMISSIONS. ` +
+					`Segment "${permissionResult.failedSegment}" ${permissionResult.reason}.`;
 			} else {
 				const matchedPattern = permissionResult.matchedPattern
 					? ` (matched pattern: ${permissionResult.matchedPattern})`
-					: ""
+					: "";
 				errorMessage =
-					`Command "${actualCommand}" was denied by CLINE_COMMAND_PERMISSIONS. ` +
-					`Reason: ${permissionResult.reason}${matchedPattern}`
+					`Command "${actualCommand}" was denied by CODERX_COMMAND_PERMISSIONS. ` +
+					`Reason: ${permissionResult.reason}${matchedPattern}`;
 			}
 			if (!config.isSubagentExecution) {
-				await config.callbacks.say("command_permission_denied", errorMessage)
+				await config.callbacks.say("command_permission_denied", errorMessage);
 			}
-			return formatResponse.toolError(formatResponse.permissionDeniedError(errorMessage))
+			return formatResponse.toolError(
+				formatResponse.permissionDeniedError(errorMessage),
+			);
 		}
 
 		// Check clineignore validation for command
-		const ignoredFileAttemptedToAccess = config.services.clineIgnoreController.validateCommand(actualCommand)
+		const ignoredFileAttemptedToAccess =
+			config.services.clineIgnoreController.validateCommand(actualCommand);
 		if (ignoredFileAttemptedToAccess) {
 			if (!config.isSubagentExecution) {
-				await config.callbacks.say("clineignore_error", ignoredFileAttemptedToAccess)
+				await config.callbacks.say(
+					"clineignore_error",
+					ignoredFileAttemptedToAccess,
+				);
 			}
-			return formatResponse.toolError(formatResponse.clineIgnoreError(ignoredFileAttemptedToAccess))
+			return formatResponse.toolError(
+				formatResponse.clineIgnoreError(ignoredFileAttemptedToAccess),
+			);
 		}
 
-		let didAutoApprove = false
+		let didAutoApprove = false;
 
 		// If the model says this command is safe and auto approval for safe commands is true, execute the command
 		// If the model says the command is risky, but *BOTH* auto approve settings are true, execute the command
-		const autoApproveResult = config.autoApprover?.shouldAutoApproveTool(block.name)
+		const autoApproveResult = config.autoApprover?.shouldAutoApproveTool(
+			block.name,
+		);
 		const [autoApproveSafe, autoApproveAll] = Array.isArray(autoApproveResult)
 			? autoApproveResult
-			: [autoApproveResult, false]
+			: [autoApproveResult, false];
 
 		// Determine workspace context for telemetry
-		const resolvedToNonPrimary = !arePathsEqual(executionDir, config.cwd)
+		const resolvedToNonPrimary = !arePathsEqual(executionDir, config.cwd);
 		const workspaceContext = {
 			isMultiRootEnabled: config.isMultiRootEnabled || false,
 			usedWorkspaceHint: workspaceHintUsed,
 			resolvedToNonPrimary,
-			resolutionMethod: (workspaceHintUsed ? "hint" : "primary_fallback") as "hint" | "primary_fallback",
-		}
+			resolutionMethod: (workspaceHintUsed ? "hint" : "primary_fallback") as
+				| "hint"
+				| "primary_fallback",
+		};
 
 		// Capture workspace path resolution telemetry
 		if (config.isMultiRootEnabled && config.workspaceManager) {
@@ -213,10 +258,19 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		) {
 			// Auto-approve flow
 			if (!config.isSubagentExecution) {
-				await config.callbacks.removeLastPartialMessageIfExistsWithType("ask", "command")
-				await config.callbacks.say("command", actualCommand, undefined, undefined, false)
+				await config.callbacks.removeLastPartialMessageIfExistsWithType(
+					"ask",
+					"command",
+				);
+				await config.callbacks.say(
+					"command",
+					actualCommand,
+					undefined,
+					undefined,
+					false,
+				);
 			}
-			didAutoApprove = true
+			didAutoApprove = true;
 		} else {
 			// Manual approval flow
 			void showApprovalNotification(
@@ -225,54 +279,65 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 					requiresExplicitApproval: autoApproveSafe && requiresApprovalPerLLM,
 				},
 				config.autoApprovalSettings.enableNotifications,
-			)
+			);
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback(
 				"command",
-				actualCommand + `${autoApproveSafe && requiresApprovalPerLLM ? COMMAND_REQ_APP_STRING : ""}`,
+				actualCommand +
+					`${autoApproveSafe && requiresApprovalPerLLM ? COMMAND_REQ_APP_STRING : ""}`,
 				config,
-			)
+			);
 			if (!didApprove) {
-				return formatResponse.toolDenied()
+				return formatResponse.toolDenied();
 			}
 		}
 
 		// Run PreToolUse hook after approval but before execution
 		try {
-			const { ToolHookUtils } = await import("../utils/ToolHookUtils")
-			await ToolHookUtils.runPreToolUseIfEnabled(config, block)
+			const { ToolHookUtils } = await import("../utils/ToolHookUtils");
+			await ToolHookUtils.runPreToolUseIfEnabled(config, block);
 		} catch (error) {
-			const { PreToolUseHookCancellationError } = await import("@core/hooks/PreToolUseHookCancellationError")
+			const { PreToolUseHookCancellationError } = await import(
+				"@core/hooks/PreToolUseHookCancellationError"
+			);
 			if (error instanceof PreToolUseHookCancellationError) {
-				return formatResponse.toolDenied()
+				return formatResponse.toolDenied();
 			}
-			throw error
+			throw error;
 		}
 
 		// Setup timeout notification for long-running auto-approved commands
-		let timeoutId: NodeJS.Timeout | undefined
-		if (didAutoApprove && config.autoApprovalSettings.enableNotifications && !config.isSubagentExecution) {
+		let timeoutId: NodeJS.Timeout | undefined;
+		if (
+			didAutoApprove &&
+			config.autoApprovalSettings.enableNotifications &&
+			!config.isSubagentExecution
+		) {
 			// if the command was auto-approved, and it's long running we need to notify the user after some time has passed without proceeding
 			timeoutId = setTimeout(() => {
 				showSystemNotification({
 					subtitle: "Command is still running",
-					message: "An auto-approved command has been running for 30s, and may need your attention.",
-				})
-			}, 30_000)
+					message:
+						"An auto-approved command has been running for 30s, and may need your attention.",
+				});
+			}, 30_000);
 		}
 
 		// Execute the command in the correct directory
 		// If executionDir is different from cwd, prepend cd command
-		let finalCommand: string = actualCommand
+		let finalCommand: string = actualCommand;
 		if (executionDir !== config.cwd) {
 			// Use && to chain commands so they run in sequence
-			finalCommand = `cd "${executionDir}" && ${actualCommand}`
+			finalCommand = `cd "${executionDir}" && ${actualCommand}`;
 		}
 
-		const [userRejected, result] = await config.callbacks.executeCommandTool(finalCommand, timeoutSeconds)
+		const [userRejected, result] = await config.callbacks.executeCommandTool(
+			finalCommand,
+			timeoutSeconds,
+		);
 
 		if (timeoutId) {
-			clearTimeout(timeoutId)
+			clearTimeout(timeoutId);
 		}
 
 		// Invalidate the entire file read cache after any command execution.
@@ -282,13 +347,13 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		// Bash commands can modify files in ways we can't predict (sed, npm install, git checkout, mv, etc.),
 		// so we must clear the cache to prevent stale reads.
 		if (!userRejected) {
-			config.taskState.fileReadCache.clear()
+			config.taskState.fileReadCache.clear();
 		}
 
 		if (userRejected) {
-			config.taskState.didRejectTool = true
+			config.taskState.didRejectTool = true;
 		}
 
-		return result
+		return result;
 	}
 }

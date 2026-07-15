@@ -37,7 +37,12 @@ process.on("SIGINT", cleanupOnSignal(130))
 process.on("SIGTERM", cleanupOnSignal(143))
 
 try {
-	const vsceArgs = ["publish", "--allow-package-secrets", "sendgrid"]
+	const vsceArgs = [
+		"publish",
+		"--allow-missing-repository",
+		"--allow-package-secrets",
+		"sendgrid",
+	]
 	if (isPrerelease) {
 		vsceArgs.push("--pre-release")
 	}

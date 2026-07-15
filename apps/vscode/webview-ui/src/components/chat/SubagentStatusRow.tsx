@@ -4,7 +4,7 @@ import {
 	ClineSaySubagentStatus,
 	SubagentExecutionStatus,
 	SubagentStatusItem,
-} from "@shared/ExtensionMessage"
+} from "@shared/ExtensionMessage";
 import {
 	BotIcon,
 	CheckIcon,
@@ -14,78 +14,86 @@ import {
 	CircleXIcon,
 	LoaderCircleIcon,
 	NetworkIcon,
-} from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
-import MarkdownBlock from "../common/MarkdownBlock"
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import MarkdownBlock from "../common/MarkdownBlock";
 
 interface SubagentStatusRowProps {
-	message: ClineMessage
-	isLast: boolean
-	lastModifiedMessage?: ClineMessage
+	message: ClineMessage;
+	isLast: boolean;
+	lastModifiedMessage?: ClineMessage;
 }
 
-type DisplayStatus = SubagentExecutionStatus | "cancelled"
-type SubagentRowStatus = "pending" | "running" | "completed" | "failed"
+type DisplayStatus = SubagentExecutionStatus | "cancelled";
+type SubagentRowStatus = "pending" | "running" | "completed" | "failed";
 
 interface SubagentRowData {
-	status: SubagentRowStatus
-	items: SubagentStatusItem[]
+	status: SubagentRowStatus;
+	items: SubagentStatusItem[];
 }
 
 interface SubagentPromptTextProps {
-	prompt: string
-	isExpanded: boolean
-	onShowMore: () => void
+	prompt: string;
+	isExpanded: boolean;
+	onShowMore: () => void;
 }
 
 const statusIcon = (status: DisplayStatus) => {
 	switch (status) {
 		case "running":
-			return <LoaderCircleIcon className="size-2 animate-spin text-link shrink-0 mt-[1px]" />
+			return (
+				<LoaderCircleIcon className="size-2 animate-spin text-link shrink-0 mt-[1px]" />
+			);
 		case "completed":
-			return <CheckIcon className="size-2 text-success shrink-0 mt-[1px]" />
+			return <CheckIcon className="size-2 text-success shrink-0 mt-[1px]" />;
 		case "failed":
-			return <CircleXIcon className="size-2 text-error shrink-0 mt-[1px]" />
+			return <CircleXIcon className="size-2 text-error shrink-0 mt-[1px]" />;
 		case "cancelled":
-			return <CircleSlashIcon className="size-2 text-foreground shrink-0 mt-[1px]" />
+			return (
+				<CircleSlashIcon className="size-2 text-foreground shrink-0 mt-[1px]" />
+			);
 		default:
-			return <BotIcon className="size-2 text-foreground/70 shrink-0 mt-[1px]" />
+			return (
+				<BotIcon className="size-2 text-foreground/70 shrink-0 mt-[1px]" />
+			);
 	}
-}
+};
 
 const formatCount = (value: number | undefined): string => {
 	if (!Number.isFinite(value)) {
-		return "0"
+		return "0";
 	}
 
-	return Intl.NumberFormat("en-US").format(value || 0)
-}
+	return Intl.NumberFormat("en-US").format(value || 0);
+};
 
 const formatCost = (value: number | undefined): string => {
-	const normalized = Number.isFinite(value) ? Math.max(0, value || 0) : 0
-	const maximumFractionDigits = normalized >= 0.01 ? 2 : 4
+	const normalized = Number.isFinite(value) ? Math.max(0, value || 0) : 0;
+	const maximumFractionDigits = normalized >= 0.01 ? 2 : 4;
 	return Intl.NumberFormat("en-US", {
 		style: "currency",
 		currency: "USD",
 		minimumFractionDigits: 2,
 		maximumFractionDigits,
-	}).format(normalized)
-}
+	}).format(normalized);
+};
 
 function parseSubagentRowData(message: ClineMessage): SubagentRowData | null {
 	if (!message.text) {
-		return null
+		return null;
 	}
 
 	try {
 		if (message.ask === "use_subagents" || message.say === "use_subagents") {
-			const parsed = JSON.parse(message.text) as ClineAskUseSubagents
+			const parsed = JSON.parse(message.text) as ClineAskUseSubagents;
 			if (!Array.isArray(parsed.prompts)) {
-				return null
+				return null;
 			}
-			const prompts = parsed.prompts.map((prompt) => prompt?.trim()).filter((prompt): prompt is string => !!prompt)
+			const prompts = parsed.prompts
+				.map((prompt) => prompt?.trim())
+				.filter((prompt): prompt is string => !!prompt);
 			if (prompts.length === 0) {
-				return null
+				return null;
 			}
 
 			return {
@@ -102,60 +110,65 @@ function parseSubagentRowData(message: ClineMessage): SubagentRowData | null {
 					contextWindow: 0,
 					contextUsagePercentage: 0,
 				})),
-			}
+			};
 		}
 
-		const parsed = JSON.parse(message.text) as ClineSaySubagentStatus
+		const parsed = JSON.parse(message.text) as ClineSaySubagentStatus;
 		if (!Array.isArray(parsed.items)) {
-			return null
+			return null;
 		}
 
 		return {
 			status: parsed.status,
 			items: parsed.items,
-		}
+		};
 	} catch {
-		return null
+		return null;
 	}
 }
 
-function SubagentPromptText({ prompt, isExpanded, onShowMore }: SubagentPromptTextProps) {
-	const promptRef = useRef<HTMLDivElement | null>(null)
-	const [showMoreVisible, setShowMoreVisible] = useState(false)
+function SubagentPromptText({
+	prompt,
+	isExpanded,
+	onShowMore,
+}: SubagentPromptTextProps) {
+	const promptRef = useRef<HTMLDivElement | null>(null);
+	const [showMoreVisible, setShowMoreVisible] = useState(false);
 
 	useEffect(() => {
 		if (isExpanded) {
-			setShowMoreVisible(false)
-			return
+			setShowMoreVisible(false);
+			return;
 		}
 
-		const element = promptRef.current
+		const element = promptRef.current;
 		if (!element) {
-			setShowMoreVisible(false)
-			return
+			setShowMoreVisible(false);
+			return;
 		}
 
 		const checkOverflow = () => {
-			setShowMoreVisible(element.scrollHeight - element.clientHeight > 1)
-		}
+			setShowMoreVisible(element.scrollHeight - element.clientHeight > 1);
+		};
 
-		checkOverflow()
+		checkOverflow();
 
 		if (typeof ResizeObserver === "undefined") {
-			return
+			return;
 		}
 
-		const observer = new ResizeObserver(() => checkOverflow())
-		observer.observe(element)
+		const observer = new ResizeObserver(() => checkOverflow());
+		observer.observe(element);
 
-		return () => observer.disconnect()
-	}, [prompt, isExpanded])
+		return () => observer.disconnect();
+	}, [prompt, isExpanded]);
 
 	return (
 		<div className="relative">
 			<div
 				className={`text-xs font-medium text-foreground whitespace-pre-wrap break-words ${!isExpanded ? "overflow-hidden [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2]" : ""}`}
-				ref={promptRef}>
+				ref={promptRef}
+			>
 				"{prompt}"
 			</div>
 			{!isExpanded && showMoreVisible && (
@@ -164,55 +177,74 @@ function SubagentPromptText({ prompt, isExpanded, onShowMore }: SubagentPromptTe
 					className="absolute right-0 bottom-0 z-10 text-[11px] text-link border-0 px-1 py-[1px] cursor-pointer leading-none rounded-[2px]"
 					onClick={onShowMore}
 					style={{ backgroundColor: "var(--vscode-editor-background)" }}
-					type="button">
+					type="button"
+				>
 					<span
 						aria-hidden="true"
 						className="pointer-events-none absolute inset-y-0 -left-[6px] w-[6px]"
 						style={{
-							background: "linear-gradient(to left, var(--vscode-editor-background), transparent)",
+							background:
+								"linear-gradient(to left, var(--vscode-editor-background), transparent)",
 						}}
 					/>
 					Show more
 				</button>
 			)}
 		</div>
-	)
+	);
 }
 
-export default function SubagentStatusRow({ message, isLast, lastModifiedMessage }: SubagentStatusRowProps) {
-	const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>({})
-	const [expandedPrompts, setExpandedPrompts] = useState<Record<number, boolean>>({})
-	const data = useMemo(() => parseSubagentRowData(message), [message])
+export default function SubagentStatusRow({
+	message,
+	isLast,
+	lastModifiedMessage,
+}: SubagentStatusRowProps) {
+	const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>(
+		{},
+	);
+	const [expandedPrompts, setExpandedPrompts] = useState<
+		Record<number, boolean>
+	>({});
+	const data = useMemo(() => parseSubagentRowData(message), [message]);
 
 	if (!data) {
-		return <div className="text-foreground opacity-80">Subagent status update unavailable.</div>
+		return (
+			<div className="text-foreground opacity-80">
+				Subagent status update unavailable.
+			</div>
+		);
 	}
 
 	const resumedBeforeNextVisibleMessage =
-		isLast && lastModifiedMessage?.say === "api_req_started" && (lastModifiedMessage.ts ?? 0) > message.ts
+		isLast &&
+		lastModifiedMessage?.say === "api_req_started" &&
+		(lastModifiedMessage.ts ?? 0) > message.ts;
 
 	const wasCancelled =
 		data.status === "running" &&
 		(!isLast ||
 			lastModifiedMessage?.ask === "resume_task" ||
 			lastModifiedMessage?.ask === "resume_completed_task" ||
-			resumedBeforeNextVisibleMessage)
+			resumedBeforeNextVisibleMessage);
 
-	const singular = data.items.length === 1
-	const title = singular ? "Cline wants to use a subagent:" : "Cline wants to use subagents:"
-	const isPromptConstructionRow = message.ask === "use_subagents" || message.say === "use_subagents"
+	const singular = data.items.length === 1;
+	const title = singular
+		? "coderX wants to use a subagent:"
+		: "coderX wants to use subagents:";
+	const isPromptConstructionRow =
+		message.ask === "use_subagents" || message.say === "use_subagents";
 	const toggleItem = (index: number) => {
 		setExpandedItems((prev) => ({
 			...prev,
 			[index]: !prev[index],
-		}))
-	}
+		}));
+	};
 	const expandPrompt = (index: number) => {
 		setExpandedPrompts((prev) => ({
 			...prev,
 			[index]: true,
-		}))
-	}
+		}));
+	};
 
 	return (
 		<div className="mb-2">
@@ -223,21 +255,28 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 			<div className="space-y-2">
 				{data.items.map((entry, index) => {
 					const displayStatus: DisplayStatus =
-						wasCancelled && (entry.status === "running" || entry.status === "pending") ? "cancelled" : entry.status
+						wasCancelled &&
+						(entry.status === "running" || entry.status === "pending")
+							? "cancelled"
+							: entry.status;
 					const hasDetails = Boolean(
-						(entry.result && entry.status === "completed") || (entry.error && entry.status === "failed"),
-					)
-					const isExpanded = expandedItems[entry.index] === true
+						(entry.result && entry.status === "completed") ||
+							(entry.error && entry.status === "failed"),
+					);
+					const isExpanded = expandedItems[entry.index] === true;
 					const isStreamingPromptUnderConstruction =
-						isPromptConstructionRow && message.partial === true && index === data.items.length - 1
-					const shouldShowStats = !isStreamingPromptUnderConstruction
-					const statsText = `${formatCount(entry.toolCalls)} tools called · ${formatCount(entry.contextTokens)} tokens · ${formatCost(entry.totalCost)}`
-					const latestToolCallText = entry.latestToolCall?.trim() || ""
+						isPromptConstructionRow &&
+						message.partial === true &&
+						index === data.items.length - 1;
+					const shouldShowStats = !isStreamingPromptUnderConstruction;
+					const statsText = `${formatCount(entry.toolCalls)} tools called · ${formatCount(entry.contextTokens)} tokens · ${formatCost(entry.totalCost)}`;
+					const latestToolCallText = entry.latestToolCall?.trim() || "";
 					return (
 						<div
 							className="rounded-xs border border-editor-group-border px-2 py-1.5"
 							key={entry.index}
-							style={{ backgroundColor: "var(--vscode-editor-background)" }}>
+							style={{ backgroundColor: "var(--vscode-editor-background)" }}
+						>
 							<div className="flex items-start gap-2">
 								{statusIcon(displayStatus)}
 								<div className="min-w-0 flex-1">
@@ -255,20 +294,27 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 							)}
 							{shouldShowStats && hasDetails && (
 								<button
-									aria-label={isExpanded ? "Hide subagent output" : "Show subagent output"}
+									aria-label={
+										isExpanded ? "Hide subagent output" : "Show subagent output"
+									}
 									className="mt-1 text-[11px] opacity-80 flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer text-left text-foreground w-full"
 									onClick={() => toggleItem(entry.index)}
-									type="button">
+									type="button"
+								>
 									{isExpanded ? (
 										<ChevronDownIcon className="size-2 shrink-0" />
 									) : (
 										<ChevronRightIcon className="size-2 shrink-0" />
 									)}
-									<span className="shrink-0">{isExpanded ? "Hide output" : "Show output"}</span>
+									<span className="shrink-0">
+										{isExpanded ? "Hide output" : "Show output"}
+									</span>
 								</button>
 							)}
 							{shouldShowStats && !hasDetails && latestToolCallText && (
-								<div className="mt-1 text-[10px] opacity-70 min-w-0 truncate font-mono">{latestToolCallText}</div>
+								<div className="mt-1 text-[10px] opacity-70 min-w-0 truncate font-mono">
+									{latestToolCallText}
+								</div>
 							)}
 							{isExpanded && entry.result && entry.status === "completed" && (
 								<div className="mt-2 text-xs opacity-80 wrap-anywhere overflow-hidden">
@@ -276,12 +322,14 @@ export default function SubagentStatusRow({ message, isLast, lastModifiedMessage
 								</div>
 							)}
 							{isExpanded && entry.error && entry.status === "failed" && (
-								<div className="mt-2 text-xs text-error whitespace-pre-wrap break-words">{entry.error}</div>
+								<div className="mt-2 text-xs text-error whitespace-pre-wrap break-words">
+									{entry.error}
+								</div>
 							)}
 						</div>
-					)
+					);
 				})}
 			</div>
 		</div>
-	)
+	);
 }

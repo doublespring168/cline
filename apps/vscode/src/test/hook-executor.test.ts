@@ -1,16 +1,16 @@
-import { afterEach, beforeEach, describe, it } from "mocha"
-import "should"
-import * as fs from "fs/promises"
-import * as os from "os"
-import * as path from "path"
-import * as sinon from "sinon"
-import { hookFileName } from "../core/hooks/__tests__/test-utils"
-import { HookDiscoveryCache } from "../core/hooks/HookDiscoveryCache"
-import { executeHook } from "../core/hooks/hook-executor"
-import { StateManager } from "../core/storage/StateManager"
-import { MessageStateHandler } from "../core/task/message-state"
-import { TaskState } from "../core/task/TaskState"
-import { ClineMessage } from "../shared/ExtensionMessage"
+import { afterEach, beforeEach, describe, it } from "mocha";
+import "should";
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
+import * as sinon from "sinon";
+import { hookFileName } from "../core/hooks/__tests__/test-utils";
+import { HookDiscoveryCache } from "../core/hooks/HookDiscoveryCache";
+import { executeHook } from "../core/hooks/hook-executor";
+import { StateManager } from "../core/storage/StateManager";
+import { MessageStateHandler } from "../core/task/message-state";
+import { TaskState } from "../core/task/TaskState";
+import { ClineMessage } from "../shared/ExtensionMessage";
 
 /**
  * Unit tests for the hook-executor module
@@ -18,24 +18,24 @@ import { ClineMessage } from "../shared/ExtensionMessage"
  * ~400 lines of duplicated code across TaskStart, TaskResume, UserPromptSubmit, and TaskCancel
  */
 describe("Hook Executor", () => {
-	const isWindows = process.platform === "win32"
-	let tempDir: string
-	let baseTempDir: string // Store base directory for cleanup
-	let testHandler: MessageStateHandler
-	let mockMessages: ClineMessage[]
-	let stateManagerStub: sinon.SinonStub
+	const isWindows = process.platform === "win32";
+	let tempDir: string;
+	let baseTempDir: string; // Store base directory for cleanup
+	let testHandler: MessageStateHandler;
+	let mockMessages: ClineMessage[];
+	let stateManagerStub: sinon.SinonStub;
 
 	/**
 	 * Helper to create a minimal MessageStateHandler for testing
 	 */
 	function createTestHandler(): MessageStateHandler {
-		const taskState = new TaskState()
+		const taskState = new TaskState();
 		return new MessageStateHandler({
 			taskId: "test-task-id",
 			ulid: "test-ulid",
 			taskState,
 			updateTaskHistory: async () => [],
-		})
+		});
 	}
 
 	/**
@@ -43,11 +43,15 @@ describe("Hook Executor", () => {
 	 */
 	async function createHookScript(
 		hookName: string,
-		output: { cancel?: boolean; contextModification?: string; errorMessage?: string },
+		output: {
+			cancel?: boolean;
+			contextModification?: string;
+			errorMessage?: string;
+		},
 		exitCode = 0,
 		delayMs = 0,
 	): Promise<string> {
-		const scriptPath = path.join(tempDir, hookFileName(hookName))
+		const scriptPath = path.join(tempDir, hookFileName(hookName));
 		const scriptContent = isWindows
 			? `Start-Sleep -Milliseconds ${delayMs}
 Write-Output '${JSON.stringify(output).replace(/'/g, "''")}'
@@ -59,47 +63,47 @@ setTimeout(() => {
   console.log(${JSON.stringify(JSON.stringify(output))});
   process.exit(${exitCode});
 }, delay);
-`
-		await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 })
-		return scriptPath
+`;
+		await fs.writeFile(scriptPath, scriptContent, { mode: 0o755 });
+		return scriptPath;
 	}
 
 	beforeEach(async () => {
 		// Reset the hook discovery cache before each test
 		// This ensures tests get a fresh cache and can discover newly created hooks
-		HookDiscoveryCache.resetForTesting()
+		HookDiscoveryCache.resetForTesting();
 
 		// Create temporary directory for test hooks
-		baseTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "hook-test-"))
-		// Create .clinerules/hooks subdirectory structure
-		tempDir = path.join(baseTempDir, ".clinerules", "hooks")
-		await fs.mkdir(tempDir, { recursive: true })
-		testHandler = createTestHandler()
-		mockMessages = []
+		baseTempDir = await fs.mkdtemp(path.join(os.tmpdir(), "hook-test-"));
+		// Create .coderxrules/hooks subdirectory structure
+		tempDir = path.join(baseTempDir, ".coderxrules", "hooks");
+		await fs.mkdir(tempDir, { recursive: true });
+		testHandler = createTestHandler();
+		mockMessages = [];
 
 		// Mock StateManager to return baseTempDir as workspace root
-		// This allows HookFactory to find hooks in baseTempDir/.clinerules/hooks/
+		// This allows HookFactory to find hooks in baseTempDir/.coderxrules/hooks/
 		stateManagerStub = sinon.stub(StateManager, "get").returns({
 			getGlobalStateKey: (key: string) => {
 				if (key === "workspaceRoots") {
-					return [{ path: baseTempDir }]
+					return [{ path: baseTempDir }];
 				}
-				return undefined
+				return undefined;
 			},
-		} as any)
-	})
+		} as any);
+	});
 
 	afterEach(async () => {
 		// Clean up temporary directory (including entire base directory)
 		try {
-			await fs.rm(baseTempDir, { recursive: true, force: true })
+			await fs.rm(baseTempDir, { recursive: true, force: true });
 		} catch (error) {
 			// Ignore cleanup errors
 		}
 
 		// Restore StateManager stub
-		stateManagerStub.restore()
-	})
+		stateManagerStub.restore();
+	});
 
 	describe("Basic Hook Execution", () => {
 		it("should return wasCancelled: false when hooks are disabled", async () => {
@@ -119,12 +123,12 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: false, // Disabled
-			})
+			});
 
 			result.should.deepEqual({
 				wasCancelled: false,
-			})
-		})
+			});
+		});
 
 		it("should return wasCancelled: false when hook doesn't exist", async () => {
 			// Point to non-existent directory
@@ -144,23 +148,23 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			result.should.deepEqual({
 				wasCancelled: false,
-			})
-		})
+			});
+		});
 
 		it("should execute hook successfully and return result", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			// Create a simple hook that returns success
 			await createHookScript("TaskStart", {
 				cancel: false,
 				contextModification: "Test context modification",
-			})
+			});
 
-			const sayMessages: Array<{ type: string; text: string }> = []
+			const sayMessages: Array<{ type: string; text: string }> = [];
 			const result = await executeHook({
 				hookName: "TaskStart",
 				hookInput: {
@@ -174,31 +178,31 @@ setTimeout(() => {
 				},
 				isCancellable: true,
 				say: async (type: any, text?: string) => {
-					sayMessages.push({ type, text: text || "" })
-					return Date.now()
+					sayMessages.push({ type, text: text || "" });
+					return Date.now();
 				},
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// Verify result
-			result.cancel!.should.equal(false)
-			result.contextModification!.should.equal("Test context modification")
-			result.wasCancelled.should.equal(false)
+			result.cancel!.should.equal(false);
+			result.contextModification!.should.equal("Test context modification");
+			result.wasCancelled.should.equal(false);
 
 			// Verify messages were sent
-			sayMessages.should.matchAny((msg: any) => msg.type === "hook_status")
-		})
+			sayMessages.should.matchAny((msg: any) => msg.type === "hook_status");
+		});
 
 		it("should handle hook that requests cancellation", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskStart", {
 				cancel: true,
 				contextModification: "Cancelling task",
 				errorMessage: "Task cancelled by hook",
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "TaskStart",
@@ -216,20 +220,20 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.cancel!.should.equal(true)
-			result.contextModification!.should.equal("Cancelling task")
-			result.errorMessage!.should.equal("Task cancelled by hook")
-			result.wasCancelled.should.equal(false) // Not user-cancelled, hook requested cancel
-		})
-	})
+			result.cancel!.should.equal(true);
+			result.contextModification!.should.equal("Cancelling task");
+			result.errorMessage!.should.equal("Task cancelled by hook");
+			result.wasCancelled.should.equal(false); // Not user-cancelled, hook requested cancel
+		});
+	});
 
 	describe("Cancellable Hooks", () => {
 		it("should support user cancellation for cancellable hooks", async function () {
-			this.timeout(isWindows ? 10000 : 5000)
-			const hookDelayMs = isWindows ? 1500 : 500
-			const abortDelayMs = isWindows ? 300 : 50
+			this.timeout(isWindows ? 10000 : 5000);
+			const hookDelayMs = isWindows ? 1500 : 500;
+			const abortDelayMs = isWindows ? 300 : 50;
 
 			// Create a hook that takes some time to execute
 			await createHookScript(
@@ -239,11 +243,11 @@ setTimeout(() => {
 				},
 				0,
 				hookDelayMs,
-			)
+			);
 
-			let capturedAbortController: AbortController | null = null
-			let setHookCalled = false
-			let clearHookCalled = false
+			let capturedAbortController: AbortController | null = null;
+			let setHookCalled = false;
+			let clearHookCalled = false;
 
 			const result = await executeHook({
 				hookName: "TaskStart",
@@ -259,38 +263,38 @@ setTimeout(() => {
 				isCancellable: true,
 				say: async () => Date.now(),
 				setActiveHookExecution: async (execution) => {
-					setHookCalled = true
-					capturedAbortController = execution.abortController
+					setHookCalled = true;
+					capturedAbortController = execution.abortController;
 					// Give the spawned hook process enough time to become fully active,
 					// especially on slower Windows/PowerShell CI runners, before aborting.
 					setTimeout(() => {
-						capturedAbortController?.abort()
-					}, abortDelayMs)
+						capturedAbortController?.abort();
+					}, abortDelayMs);
 				},
 				clearActiveHookExecution: async () => {
-					clearHookCalled = true
+					clearHookCalled = true;
 				},
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.cancel!.should.equal(true)
-			result.wasCancelled.should.equal(true)
-			setHookCalled.should.equal(true)
+			result.cancel!.should.equal(true);
+			result.wasCancelled.should.equal(true);
+			setHookCalled.should.equal(true);
 			// clearHookCalled should be true after abort
-			clearHookCalled.should.equal(true)
-		})
+			clearHookCalled.should.equal(true);
+		});
 
 		it("should not allow cancellation for non-cancellable hooks", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskCancel", {
 				cancel: false,
-			})
+			});
 
 			// For non-cancellable hooks, setActiveHookExecution should not be called
-			let setHookCalled = false
+			let setHookCalled = false;
 
 			const result = await executeHook({
 				hookName: "TaskCancel",
@@ -306,30 +310,30 @@ setTimeout(() => {
 				isCancellable: false, // Not cancellable
 				say: async () => Date.now(),
 				setActiveHookExecution: async () => {
-					setHookCalled = true
+					setHookCalled = true;
 				},
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// With no hook scripts present, the executor returns the minimal shape.
 			// This test is primarily verifying the call succeeds for non-cancellable hooks.
 			if (result.cancel !== undefined) {
-				result.cancel.should.equal(false)
+				result.cancel.should.equal(false);
 			}
-			result.wasCancelled.should.equal(false)
+			result.wasCancelled.should.equal(false);
 			// setActiveHookExecution should not be called for non-cancellable hooks
 			// (In real execution, this would be verified, but test doesn't reach that point)
-		})
-	})
+		});
+	});
 
 	describe("Error Handling", () => {
 		it("should handle hook execution failure gracefully", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			// Create a hook that exits with non-zero status
-			await createHookScript("TaskStart", {}, 1)
+			await createHookScript("TaskStart", {}, 1);
 
 			const result = await executeHook({
 				hookName: "TaskStart",
@@ -347,30 +351,33 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// Hook failure should not crash, just return safe defaults
-			result.wasCancelled.should.equal(false)
-		})
+			result.wasCancelled.should.equal(false);
+		});
 
 		it("should update message state on hook failure", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
-			await createHookScript("TaskStart", {}, 1) // Exit with error
+			await createHookScript("TaskStart", {}, 1); // Exit with error
 
-			const messages: ClineMessage[] = []
+			const messages: ClineMessage[] = [];
 			const mockHandler = {
 				...testHandler,
 				getClineMessages: () => messages,
 				addToClineMessages: async (msg: ClineMessage) => {
-					messages.push(msg)
+					messages.push(msg);
 				},
-				updateClineMessage: async (index: number, updates: Partial<ClineMessage>) => {
+				updateClineMessage: async (
+					index: number,
+					updates: Partial<ClineMessage>,
+				) => {
 					if (messages[index]) {
-						Object.assign(messages[index], updates)
+						Object.assign(messages[index], updates);
 					}
 				},
-			} as any
+			} as any;
 
 			await executeHook({
 				hookName: "TaskStart",
@@ -390,29 +397,29 @@ setTimeout(() => {
 						type: "say",
 						say: type,
 						text,
-					}
-					messages.push(msg)
-					return msg.ts
+					};
+					messages.push(msg);
+					return msg.ts;
 				},
 				messageStateHandler: mockHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// Should have recorded hook message
-			messages.length.should.be.greaterThan(0)
-		})
-	})
+			messages.length.should.be.greaterThan(0);
+		});
+	});
 
 	describe("Message State Updates", () => {
 		it("should create hook message with running status", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskStart", {
 				cancel: false,
-			})
+			});
 
-			const messages: ClineMessage[] = []
+			const messages: ClineMessage[] = [];
 
 			await executeHook({
 				hookName: "TaskStart",
@@ -432,38 +439,41 @@ setTimeout(() => {
 						type: "say",
 						say: type,
 						text,
-					}
-					messages.push(msg)
-					return msg.ts
+					};
+					messages.push(msg);
+					return msg.ts;
 				},
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// Should have at least one hook message
-			messages.length.should.be.greaterThan(0)
-			const hookMessage = messages.find((m) => m.say === "hook_status")
-			should.exist(hookMessage)
-		})
+			messages.length.should.be.greaterThan(0);
+			const hookMessage = messages.find((m) => m.say === "hook_status");
+			should.exist(hookMessage);
+		});
 
 		it("should update hook message to completed status on success", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskStart", {
 				cancel: false,
-			})
+			});
 
-			const messages: ClineMessage[] = []
+			const messages: ClineMessage[] = [];
 			const mockHandler = {
 				...testHandler,
 				getClineMessages: () => messages,
-				updateClineMessage: async (index: number, updates: Partial<ClineMessage>) => {
+				updateClineMessage: async (
+					index: number,
+					updates: Partial<ClineMessage>,
+				) => {
 					if (messages[index]) {
-						Object.assign(messages[index], updates)
+						Object.assign(messages[index], updates);
 					}
 				},
-			} as any
+			} as any;
 
 			await executeHook({
 				hookName: "TaskStart",
@@ -483,28 +493,28 @@ setTimeout(() => {
 						type: "say",
 						say: type,
 						text,
-					}
-					messages.push(msg)
-					return msg.ts
+					};
+					messages.push(msg);
+					return msg.ts;
 				},
 				messageStateHandler: mockHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// Verify hook message exists
-			messages.length.should.be.greaterThan(0)
-		})
-	})
+			messages.length.should.be.greaterThan(0);
+		});
+	});
 
 	describe("Different Hook Types", () => {
 		it("should execute TaskResume hook with correct input structure", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskResume", {
 				cancel: false,
 				contextModification: "Resume context",
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "TaskResume",
@@ -526,17 +536,17 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.wasCancelled.should.equal(false)
-		})
+			result.wasCancelled.should.equal(false);
+		});
 
 		it("should execute UserPromptSubmit hook with correct input structure", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("UserPromptSubmit", {
 				cancel: false,
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "UserPromptSubmit",
@@ -551,17 +561,17 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.wasCancelled.should.equal(false)
-		})
+			result.wasCancelled.should.equal(false);
+		});
 
 		it("should execute TaskCancel hook as non-cancellable", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskCancel", {
 				cancel: false,
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "TaskCancel",
@@ -579,18 +589,18 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.wasCancelled.should.equal(false)
-		})
+			result.wasCancelled.should.equal(false);
+		});
 
 		it("should execute Notification hook with attention payload", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("Notification", {
 				cancel: false,
 				contextModification: "Notification received",
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "Notification",
@@ -614,21 +624,21 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.contextModification!.should.equal("Notification received")
-			result.wasCancelled.should.equal(false)
-		})
-	})
+			result.contextModification!.should.equal("Notification received");
+			result.wasCancelled.should.equal(false);
+		});
+	});
 
 	describe("Edge Cases", () => {
 		it("should handle empty context modification", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskStart", {
 				cancel: false,
 				contextModification: "",
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "TaskStart",
@@ -646,22 +656,22 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
 			// If the hook script returned an empty string, this may be treated as
 			// "no modification" and omitted depending on executor normalization.
 			if (result.contextModification !== undefined) {
-				result.contextModification.should.equal("")
+				result.contextModification.should.equal("");
 			}
-			result.wasCancelled.should.equal(false)
-		})
+			result.wasCancelled.should.equal(false);
+		});
 
 		it("should handle undefined optional fields in result", async function () {
-			this.timeout(5000)
+			this.timeout(5000);
 
 			await createHookScript("TaskStart", {
 				cancel: false,
-			})
+			});
 
 			const result = await executeHook({
 				hookName: "TaskStart",
@@ -679,10 +689,10 @@ setTimeout(() => {
 				messageStateHandler: testHandler,
 				taskId: "test-task",
 				hooksEnabled: true,
-			})
+			});
 
-			result.wasCancelled.should.equal(false)
+			result.wasCancelled.should.equal(false);
 			// contextModification and errorMessage may be undefined
-		})
-	})
-})
+		});
+	});
+});

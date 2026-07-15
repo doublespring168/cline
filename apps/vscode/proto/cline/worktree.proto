@@ -28,10 +28,10 @@ service WorktreeService {
   // Gets suggested defaults for creating a new worktree (auto-generated branch name and path)
   rpc getWorktreeDefaults(EmptyRequest) returns (WorktreeDefaults);
 
-  // Gets the status of .worktreeinclude file and .gitignore contents for creating one
+  // Gets the status of .coderxworktreeinclude file and .gitignore contents for creating one
   rpc getWorktreeIncludeStatus(EmptyRequest) returns (WorktreeIncludeStatus);
 
-  // Creates a .worktreeinclude file with the provided content
+  // Creates a .coderxworktreeinclude file with the provided content
   rpc createWorktreeInclude(CreateWorktreeIncludeRequest) returns (WorktreeResult);
 
   // Switches to a different branch in the current worktree (git checkout)
@@ -108,16 +108,16 @@ message WorktreeDefaults {
   string suggested_path = 2; // Path in Documents/Cline/Worktrees/<project>-<suffix>
 }
 
-// Status of .worktreeinclude file
+// Status of .coderxworktreeinclude file
 message WorktreeIncludeStatus {
-  bool exists = 1; // Whether .worktreeinclude exists
+  bool exists = 1; // Whether .coderxworktreeinclude exists
   string gitignore_content = 2; // Content of .gitignore (for prefilling)
   bool has_gitignore = 3; // Whether .gitignore exists
 }
 
-// Request to create .worktreeinclude file
+// Request to create .coderxworktreeinclude file
 message CreateWorktreeIncludeRequest {
-  string content = 1; // Content for the .worktreeinclude file
+  string content = 1; // Content for the .coderxworktreeinclude file
 }
 
 // Request to checkout a branch in the current worktree

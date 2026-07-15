@@ -17,33 +17,37 @@
  */
 export function parseApiHandlerSecrets(content) {
 	// Find the ApiHandlerSecrets interface definition
-	const interfaceMatch = content.match(/export interface ApiHandlerSecrets \{([\s\S]*?)\}/m)
+	const interfaceMatch = content.match(
+		/export interface ApiHandlerSecrets \{([\s\S]*?)\}/m,
+	);
 
 	if (!interfaceMatch) {
-		throw new Error("Could not find ApiHandlerSecrets interface definition")
+		throw new Error("Could not find ApiHandlerSecrets interface definition");
 	}
 
-	const interfaceContent = interfaceMatch[1]
-	const fields = {}
-	const fieldNames = []
+	const interfaceContent = interfaceMatch[1];
+	const fields = {};
+	const fieldNames = [];
 
 	// Match field definitions like: fieldName?: string // comment
-	const fieldMatches = interfaceContent.matchAll(/^\s*([a-zA-Z][a-zA-Z0-9_]*)\?\s*:\s*([^/\n]+)(?:\/\/\s*(.*))?$/gm)
+	const fieldMatches = interfaceContent.matchAll(
+		/^\s*([a-zA-Z][a-zA-Z0-9_]*)\?\s*:\s*([^/\n]+)(?:\/\/\s*(.*))?$/gm,
+	);
 
 	for (const match of fieldMatches) {
-		const [, name, type, comment] = match
+		const [, name, type, comment] = match;
 
 		fields[name] = {
 			name,
 			type: type.trim(),
 			comment: comment?.trim() || "",
 			isSecret: true, // All fields in ApiHandlerSecrets are secrets
-		}
+		};
 
-		fieldNames.push(name)
+		fieldNames.push(name);
 	}
 
-	return { fields, fieldNames }
+	return { fields, fieldNames };
 }
 
 /**
@@ -62,37 +66,37 @@ export function parseApiHandlerSecrets(content) {
  * }
  */
 export function mapProviderToApiKeys(providerIds, apiSecretsFields) {
-	const providerApiKeyMap = {}
+	const providerApiKeyMap = {};
 
 	// Track which fields have been assigned to prevent duplicates
-	const assignedFields = new Set()
+	const assignedFields = new Set();
 
 	// First pass: Map provider-specific API key fields
 	for (const providerId of providerIds) {
-		const apiKeyFields = []
+		const apiKeyFields = [];
 
 		for (const fieldName of apiSecretsFields.fieldNames) {
 			if (assignedFields.has(fieldName)) {
-				continue
+				continue;
 			}
 
-			const providerFromField = extractProviderFromFieldName(fieldName)
+			const providerFromField = extractProviderFromFieldName(fieldName);
 
 			if (providerFromField === providerId) {
-				apiKeyFields.push(fieldName)
-				assignedFields.add(fieldName)
+				apiKeyFields.push(fieldName);
+				assignedFields.add(fieldName);
 			}
 		}
 
 		if (apiKeyFields.length > 0) {
-			providerApiKeyMap[providerId] = apiKeyFields
+			providerApiKeyMap[providerId] = apiKeyFields;
 		}
 	}
 
 	// Second pass: Handle special cases and multi-key providers
-	applySpecialCaseMappings(providerApiKeyMap, apiSecretsFields, assignedFields)
+	applySpecialCaseMappings(providerApiKeyMap, apiSecretsFields, assignedFields);
 
-	return providerApiKeyMap
+	return providerApiKeyMap;
 }
 
 /**
@@ -104,28 +108,31 @@ export function mapProviderToApiKeys(providerIds, apiSecretsFields) {
  */
 export function extractProviderFromFieldName(fieldName) {
 	// Normalize field name to lowercase for matching
-	const lowerFieldName = fieldName.toLowerCase()
+	const lowerFieldName = fieldName.toLowerCase();
 
 	// SPECIAL CASES FIRST (before pattern matching)
 
 	// Special case: "apiKey" alone maps to "anthropic" (primary provider)
 	if (fieldName === "apiKey") {
-		return "anthropic"
+		return "anthropic";
 	}
 
 	// Special case: clineAccountId maps to "cline"
 	if (lowerFieldName === "clineaccountid") {
-		return "cline"
+		return "cline";
 	}
 
 	// Special case: authNonce is not provider-specific
 	if (lowerFieldName === "authnonce") {
-		return null
+		return null;
 	}
 
 	// Special case: Vertex fields (not in ApiHandlerSecrets but in ApiHandlerOptions)
-	if (lowerFieldName === "vertexprojectid" || lowerFieldName === "vertexregion") {
-		return "vertex"
+	if (
+		lowerFieldName === "vertexprojectid" ||
+		lowerFieldName === "vertexregion"
+	) {
+		return "vertex";
 	}
 
 	// Pattern 1: AWS-specific fields (check before generic pattern to avoid false positives)
@@ -137,22 +144,25 @@ export function extractProviderFromFieldName(fieldName) {
 			lowerFieldName.includes("sessiontoken") ||
 			lowerFieldName.includes("region")
 		) {
-			return "bedrock"
+			return "bedrock";
 		}
 		// awsBedrockApiKey is explicitly bedrock
 		if (lowerFieldName.includes("bedrock")) {
-			return "bedrock"
+			return "bedrock";
 		}
 	}
 
 	// Pattern 2: Vertex-specific fields
 	if (lowerFieldName.startsWith("vertex")) {
-		return "vertex"
+		return "vertex";
 	}
 
 	// Pattern 3: SAP AI Core fields
-	if (lowerFieldName.startsWith("sapaicore") || lowerFieldName.startsWith("sapai")) {
-		return "sapaicore"
+	if (
+		lowerFieldName.startsWith("sapaicore") ||
+		lowerFieldName.startsWith("sapai")
+	) {
+		return "sapaicore";
 	}
 
 	// Pattern 4: Provider name in the middle (e.g., openAiNativeApiKey) - check before generic pattern
@@ -183,22 +193,22 @@ export function extractProviderFromFieldName(fieldName) {
 		{ pattern: "requesty", providerId: "requesty" },
 		{ pattern: "together", providerId: "together" },
 		{ pattern: "dify", providerId: "dify" },
-	]
+	];
 
 	for (const { pattern, providerId } of providerPatterns) {
 		if (lowerFieldName.includes(pattern)) {
-			return providerId
+			return providerId;
 		}
 	}
 
 	// Pattern 5: <provider>ApiKey format (most common) - checked LAST to avoid false positives
 	if (lowerFieldName.endsWith("apikey")) {
 		// Extract from ORIGINAL fieldName to preserve camelCase for normalization
-		const providerPart = fieldName.slice(0, -6) // Remove "ApiKey"
-		return normalizeProviderName(providerPart)
+		const providerPart = fieldName.slice(0, -6); // Remove "ApiKey"
+		return normalizeProviderName(providerPart);
 	}
 
-	return null
+	return null;
 }
 
 /**
@@ -212,7 +222,7 @@ function normalizeProviderName(providerPart) {
 	const normalized = providerPart
 		.replace(/([A-Z])/g, "-$1")
 		.toLowerCase()
-		.replace(/^-/, "")
+		.replace(/^-/, "");
 
 	// Handle special cases
 	const specialCases = {
@@ -226,9 +236,9 @@ function normalizeProviderName(providerPart) {
 		"huawei-cloud-maas": "huawei-cloud-maas",
 		"sap-ai-core": "sapaicore",
 		"vercel-ai-gateway": "vercel-ai-gateway",
-	}
+	};
 
-	return specialCases[normalized] || normalized
+	return specialCases[normalized] || normalized;
 }
 
 /**
@@ -238,26 +248,36 @@ function normalizeProviderName(providerPart) {
  * @param {Object} apiSecretsFields - Parsed API secrets fields
  * @param {Set<string>} assignedFields - Set of already assigned field names
  */
-function applySpecialCaseMappings(providerApiKeyMap, apiSecretsFields, assignedFields) {
+function applySpecialCaseMappings(
+	providerApiKeyMap,
+	apiSecretsFields,
+	assignedFields,
+) {
 	// Special case 1: Bedrock needs AWS fields (if not already assigned)
-	const awsFields = ["awsAccessKey", "awsSecretKey", "awsRegion"]
-	const bedrockFields = providerApiKeyMap["bedrock"] || []
+	const awsFields = ["awsAccessKey", "awsSecretKey", "awsRegion"];
+	const bedrockFields = providerApiKeyMap["bedrock"] || [];
 
 	for (const field of awsFields) {
-		if (apiSecretsFields.fieldNames.includes(field) && !bedrockFields.includes(field)) {
-			bedrockFields.push(field)
-			assignedFields.add(field)
+		if (
+			apiSecretsFields.fieldNames.includes(field) &&
+			!bedrockFields.includes(field)
+		) {
+			bedrockFields.push(field);
+			assignedFields.add(field);
 		}
 	}
 
 	// Optional: awsSessionToken for temporary credentials
-	if (apiSecretsFields.fieldNames.includes("awsSessionToken") && !bedrockFields.includes("awsSessionToken")) {
-		bedrockFields.push("awsSessionToken")
-		assignedFields.add("awsSessionToken")
+	if (
+		apiSecretsFields.fieldNames.includes("awsSessionToken") &&
+		!bedrockFields.includes("awsSessionToken")
+	) {
+		bedrockFields.push("awsSessionToken");
+		assignedFields.add("awsSessionToken");
 	}
 
 	if (bedrockFields.length > 0) {
-		providerApiKeyMap["bedrock"] = bedrockFields
+		providerApiKeyMap["bedrock"] = bedrockFields;
 	}
 
 	// Special case 2: Vertex needs project ID and region
@@ -269,13 +289,16 @@ function applySpecialCaseMappings(providerApiKeyMap, apiSecretsFields, assignedF
 
 	// Special case 3: SAP AI Core multi-key authentication
 	if (providerApiKeyMap["sapaicore"]) {
-		const sapFields = providerApiKeyMap["sapaicore"]
-		const requiredSapFields = ["sapAiCoreClientId", "sapAiCoreClientSecret"]
+		const sapFields = providerApiKeyMap["sapaicore"];
+		const requiredSapFields = ["sapAiCoreClientId", "sapAiCoreClientSecret"];
 
 		for (const field of requiredSapFields) {
-			if (apiSecretsFields.fieldNames.includes(field) && !sapFields.includes(field)) {
-				sapFields.push(field)
-				assignedFields.add(field)
+			if (
+				apiSecretsFields.fieldNames.includes(field) &&
+				!sapFields.includes(field)
+			) {
+				sapFields.push(field);
+				assignedFields.add(field);
 			}
 		}
 	}
@@ -322,24 +345,24 @@ export function generateApiKeyDisplayName(fieldName) {
 		requestyApiKey: "Requesty API Key",
 		togetherApiKey: "Together AI API Key",
 		difyApiKey: "Dify API Key",
-		clineAccountId: "Cline Account ID",
+		clineAccountId: "coderX Account ID",
 		vertexProjectId: "Vertex Project ID",
 		vertexRegion: "Vertex Region",
 		sapAiCoreClientId: "SAP AI Core Client ID",
 		sapAiCoreClientSecret: "SAP AI Core Client Secret",
 		huaweiCloudMaasApiKey: "Huawei Cloud MaaS API Key",
 		hicapApiKey: "Hicap API Key",
-	}
+	};
 
 	if (specialCases[fieldName]) {
-		return specialCases[fieldName]
+		return specialCases[fieldName];
 	}
 
 	// Generic conversion: camelCase -> Title Case
 	return fieldName
 		.replace(/([A-Z])/g, " $1")
 		.replace(/^./, (str) => str.toUpperCase())
-		.trim()
+		.trim();
 }
 
 /**
@@ -350,17 +373,30 @@ export function generateApiKeyDisplayName(fieldName) {
  * @returns {Object} Validation result with warnings for unmapped providers
  */
 export function validateApiKeyMappings(providerIds, providerApiKeyMap) {
-	const unmappedProviders = []
-	const warnings = []
+	const unmappedProviders = [];
+	const warnings = [];
 
 	for (const providerId of providerIds) {
-		if (!providerApiKeyMap[providerId] || providerApiKeyMap[providerId].length === 0) {
+		if (
+			!providerApiKeyMap[providerId] ||
+			providerApiKeyMap[providerId].length === 0
+		) {
 			// Some providers don't require API keys - they use alternative authentication:
-			const noKeyProviders = ["vscode-lm", "ollama", "lmstudio", "claude-code", "oca", "vertex", "qwen-code"]
+			const noKeyProviders = [
+				"vscode-lm",
+				"ollama",
+				"lmstudio",
+				"claude-code",
+				"oca",
+				"vertex",
+				"qwen-code",
+			];
 
 			if (!noKeyProviders.includes(providerId)) {
-				unmappedProviders.push(providerId)
-				warnings.push(`WARNING: Provider "${providerId}" has no API key fields mapped`)
+				unmappedProviders.push(providerId);
+				warnings.push(
+					`WARNING: Provider "${providerId}" has no API key fields mapped`,
+				);
 			}
 		}
 	}
@@ -371,5 +407,5 @@ export function validateApiKeyMappings(providerIds, providerApiKeyMap) {
 		warnings,
 		totalProviders: providerIds.length,
 		mappedProviders: Object.keys(providerApiKeyMap).length,
-	}
+	};
 }

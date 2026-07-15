@@ -1,39 +1,46 @@
-import { UpdateSettingsRequest } from "@shared/proto/cline/state"
-import { memo, type ReactNode, useCallback } from "react"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { useExtensionState } from "@/context/ExtensionStateContext"
-import Section from "../Section"
-import SettingsSlider from "../SettingsSlider"
-import { updateSetting } from "../utils/settingsHandlers"
+import { UpdateSettingsRequest } from "@shared/proto/cline/state";
+import { memo, type ReactNode, useCallback } from "react";
+import { Label } from "@/components/ui/label";
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useExtensionState } from "@/context/ExtensionStateContext";
+import Section from "../Section";
+import SettingsSlider from "../SettingsSlider";
+import { updateSetting } from "../utils/settingsHandlers";
 
 // Reusable checkbox component for feature settings
 interface FeatureCheckboxProps {
-	checked: boolean | undefined
-	onChange: (checked: boolean) => void
-	label: string
-	description: ReactNode
-	disabled?: boolean
-	isVisible?: boolean
+	checked: boolean | undefined;
+	onChange: (checked: boolean) => void;
+	label: string;
+	description: ReactNode;
+	disabled?: boolean;
+	isVisible?: boolean;
 }
 
 // Interface for feature toggle configuration
 interface FeatureToggle {
-	id: string
-	label: string
-	description: ReactNode
-	settingKey: keyof UpdateSettingsRequest
-	stateKey: string
+	id: string;
+	label: string;
+	description: ReactNode;
+	settingKey: keyof UpdateSettingsRequest;
+	stateKey: string;
 	/** If set, the setting value is nested with this key (e.g., "enabled" -> { enabled: checked }) */
-	nestedKey?: string
+	nestedKey?: string;
 }
 
 const agentFeatures: FeatureToggle[] = [
 	{
 		id: "subagents",
 		label: "Subagents",
-		description: "Let Cline run focused subagents in parallel to explore the codebase for you.",
+		description:
+			"Let coderX run focused subagents in parallel to explore the codebase for you.",
 		stateKey: "subagentsEnabled",
 		settingKey: "subagentsEnabled",
 	},
@@ -73,7 +80,7 @@ const agentFeatures: FeatureToggle[] = [
 		settingKey: "focusChainSettings",
 		nestedKey: "enabled",
 	},
-]
+];
 
 const editorFeatures: FeatureToggle[] = [
 	{
@@ -93,11 +100,12 @@ const editorFeatures: FeatureToggle[] = [
 	{
 		id: "worktrees",
 		label: "Worktrees",
-		description: "Enables git worktree management for running parallel Cline tasks.",
+		description:
+			"Enables git worktree management for running parallel coderX tasks.",
 		stateKey: "worktreesEnabled",
 		settingKey: "worktreesEnabled",
 	},
-]
+];
 
 const experimentalFeatures: FeatureToggle[] = [
 	{
@@ -116,7 +124,7 @@ const experimentalFeatures: FeatureToggle[] = [
 		stateKey: "doubleCheckCompletionEnabled",
 		settingKey: "doubleCheckCompletionEnabled",
 	},
-]
+];
 
 const advancedFeatures: FeatureToggle[] = [
 	{
@@ -126,7 +134,7 @@ const advancedFeatures: FeatureToggle[] = [
 		stateKey: "hooksEnabled",
 		settingKey: "hooksEnabled",
 	},
-]
+];
 
 const FeatureRow = memo(
 	({
@@ -138,7 +146,7 @@ const FeatureRow = memo(
 		isVisible = true,
 	}: FeatureCheckboxProps) => {
 		if (!isVisible) {
-			return null
+			return null;
 		}
 
 		const checkbox = (
@@ -155,24 +163,24 @@ const FeatureRow = memo(
 					/>
 				</div>
 			</div>
-		)
+		);
 
 		return (
 			<div className="flex flex-col items-start justify-between gap-4 py-3 w-full">
-				<div className="space-y-0.5 flex-1 w-full">
-					{checkbox}
-				</div>
+				<div className="space-y-0.5 flex-1 w-full">{checkbox}</div>
 				<div className="text-xs text-description">{description}</div>
 			</div>
-		)
+		);
 	},
-)
+);
 
 interface FeatureSettingsSectionProps {
-	renderSectionHeader: (tabId: string) => JSX.Element | null
+	renderSectionHeader: (tabId: string) => JSX.Element | null;
 }
 
-const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionProps) => {
+const FeatureSettingsSection = ({
+	renderSectionHeader,
+}: FeatureSettingsSectionProps) => {
 	const {
 		enableCheckpointsSetting,
 		hooksEnabled,
@@ -187,17 +195,17 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		enableParallelToolCalling,
 		backgroundEditEnabled,
 		doubleCheckCompletionEnabled,
-	} = useExtensionState()
+	} = useExtensionState();
 
 	const handleFocusChainIntervalChange = useCallback(
 		(value: number) => {
 			updateSetting("focusChainSettings", {
 				...focusChainSettings,
 				remindClineInterval: value,
-			})
+			});
 		},
 		[focusChainSettings],
-	)
+	);
 
 	// State lookup for mapped features
 	const featureState: Record<string, boolean | undefined> = {
@@ -213,30 +221,30 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		backgroundEditEnabled,
 		doubleCheckCompletionEnabled,
 		yoloModeToggled,
-	}
+	};
 
 	// Reserved for local visibility overrides.
-	const featureVisibility: Record<string, boolean | undefined> = {}
+	const featureVisibility: Record<string, boolean | undefined> = {};
 
 	// Handler for feature toggle changes, supports nested settings like focusChainSettings
 	const handleFeatureChange = useCallback(
 		(feature: FeatureToggle, checked: boolean) => {
 			if (feature.nestedKey) {
 				// For nested settings, spread the existing value and set the nested key
-				let currentValue = {}
+				let currentValue = {};
 				if (feature.settingKey === "focusChainSettings") {
-					currentValue = focusChainSettings ?? {}
+					currentValue = focusChainSettings ?? {};
 				}
 				updateSetting(feature.settingKey, {
 					...currentValue,
 					[feature.nestedKey]: checked,
-				})
+				});
 			} else {
-				updateSetting(feature.settingKey, checked)
+				updateSetting(feature.settingKey, checked);
 			}
 		},
 		[focusChainSettings],
-	)
+	);
 
 	return (
 		<div className="mb-2">
@@ -245,10 +253,13 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 				<div className="mb-5 flex flex-col gap-3">
 					{/* Core features */}
 					<div>
-						<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">Agent</div>
+						<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">
+							Agent
+						</div>
 						<div
 							className="relative p-3 pt-0 my-3 rounded-md border border-editor-widget-border/50"
-							id="agent-features">
+							id="agent-features"
+						>
 							{agentFeatures.map((feature) => (
 								<div key={feature.id}>
 									<FeatureRow
@@ -263,17 +274,18 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 												: updateSetting(feature.settingKey, checked)
 										}
 									/>
-									{feature.id === "focus-chain" && featureState[feature.stateKey] && (
-										<SettingsSlider
-											label="Reminder Interval (1-10)"
-											max={10}
-											min={1}
-											onChange={handleFocusChainIntervalChange}
-											step={1}
-											value={focusChainSettings?.remindClineInterval || 6}
-											valueWidth="w-6"
-										/>
-									)}
+									{feature.id === "focus-chain" &&
+										featureState[feature.stateKey] && (
+											<SettingsSlider
+												label="Reminder Interval (1-10)"
+												max={10}
+												min={1}
+												onChange={handleFocusChainIntervalChange}
+												step={1}
+												value={focusChainSettings?.remindClineInterval || 6}
+												valueWidth="w-6"
+											/>
+										)}
 								</div>
 							))}
 						</div>
@@ -281,10 +293,13 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 
 					{/* Editor features */}
 					<div>
-						<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">Editor</div>
+						<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">
+							Editor
+						</div>
 						<div
 							className="relative p-3 pt-0 my-3 rounded-md border border-editor-widget-border/50"
-							id="optional-features">
+							id="optional-features"
+						>
 							{editorFeatures.map((feature) => (
 								<FeatureRow
 									checked={featureState[feature.stateKey]}
@@ -300,10 +315,13 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 
 					{/* Experimental features */}
 					<div>
-						<div className="text-xs font-medium uppercase tracking-wider mb-3 text-warning/80">Experimental</div>
+						<div className="text-xs font-medium uppercase tracking-wider mb-3 text-warning/80">
+							Experimental
+						</div>
 						<div
 							className="relative p-3 pt-0 my-3 rounded-md border border-editor-widget-border/50 w-full"
-							id="experimental-features">
+							id="experimental-features"
+						>
 							{experimentalFeatures.map((feature) => (
 								<FeatureRow
 									checked={featureState[feature.stateKey]}
@@ -320,8 +338,13 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 
 				{/* Advanced */}
 				<div>
-					<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">Advanced</div>
-					<div className="relative p-3 my-3 rounded-md border border-editor-widget-border/50" id="advanced-features">
+					<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">
+						Advanced
+					</div>
+					<div
+						className="relative p-3 my-3 rounded-md border border-editor-widget-border/50"
+						id="advanced-features"
+					>
 						<div className="space-y-3">
 							{advancedFeatures.map((feature) => (
 								<FeatureRow
@@ -336,9 +359,16 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 
 							{/* MCP Display Mode */}
 							<div className="space-y-2">
-								<Label className="text-sm font-medium text-foreground">MCP Display Mode</Label>
-								<p className="text-xs text-muted-foreground">Controls how MCP responses are displayed</p>
-								<Select onValueChange={(v) => updateSetting("mcpDisplayMode", v)} value={mcpDisplayMode}>
+								<Label className="text-sm font-medium text-foreground">
+									MCP Display Mode
+								</Label>
+								<p className="text-xs text-muted-foreground">
+									Controls how MCP responses are displayed
+								</p>
+								<Select
+									onValueChange={(v) => updateSetting("mcpDisplayMode", v)}
+									value={mcpDisplayMode}
+								>
 									<SelectTrigger className="w-full">
 										<SelectValue />
 									</SelectTrigger>
@@ -354,6 +384,6 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 				</div>
 			</Section>
 		</div>
-	)
-}
-export default memo(FeatureSettingsSection)
+	);
+};
+export default memo(FeatureSettingsSection);

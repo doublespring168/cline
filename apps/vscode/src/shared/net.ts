@@ -1,5 +1,5 @@
 /**
- * # Network Support for Cline
+ * # Network Support for coderX
  *
  * ## Development Guidelines
  *
@@ -45,7 +45,7 @@
  * ## Troubleshooting
  *
  * 1. Check VS Code's proxy and certificate settings.
- * 2. Check the Cline Output channel for network failures.
+ * 2. Check the coderX Output channel for network failures.
  * 3. Compare with a request from the same Extension Host environment.
  *
  * @example
@@ -60,10 +60,10 @@
  * ```
  */
 
-import OpenAI, { ClientOptions as OpenAIClientOptions } from "openai"
-import { buildExternalBasicHeaders } from "@/services/EnvUtils"
+import OpenAI, { ClientOptions as OpenAIClientOptions } from "openai";
+import { buildExternalBasicHeaders } from "@/services/EnvUtils";
 
-let mockFetch: typeof globalThis.fetch | undefined
+let mockFetch: typeof globalThis.fetch | undefined;
 
 /**
  * Shared VS Code Extension Host fetch wrapper with test substitution support.
@@ -75,9 +75,11 @@ let mockFetch: typeof globalThis.fetch | undefined
  * ```
  */
 export const fetch: typeof globalThis.fetch = (() => {
-	return (input: string | URL | Request, init?: RequestInit): Promise<Response> =>
-		(mockFetch || globalThis.fetch)(input, init)
-})()
+	return (
+		input: string | URL | Request,
+		init?: RequestInit,
+	): Promise<Response> => (mockFetch || globalThis.fetch)(input, init);
+})();
 
 /**
  * Mocks `fetch` for testing and calls `callback`. Then restores `fetch`. If the
@@ -87,22 +89,25 @@ export const fetch: typeof globalThis.fetch = (() => {
  * @param callback `fetch` will be mocked for the duration of `callback()`.
  * @returns the result of `callback()`.
  */
-export function mockFetchForTesting<T>(theFetch: typeof globalThis.fetch, callback: () => T): T {
-	const originalMockFetch = mockFetch
-	mockFetch = theFetch
-	let willResetSync = true
+export function mockFetchForTesting<T>(
+	theFetch: typeof globalThis.fetch,
+	callback: () => T,
+): T {
+	const originalMockFetch = mockFetch;
+	mockFetch = theFetch;
+	let willResetSync = true;
 	try {
-		const result = callback()
+		const result = callback();
 		if (result instanceof Promise) {
-			willResetSync = false
+			willResetSync = false;
 			return result.finally(() => {
-				mockFetch = originalMockFetch
-			}) as typeof result
+				mockFetch = originalMockFetch;
+			}) as typeof result;
 		}
-		return result
+		return result;
 	} finally {
 		if (willResetSync) {
-			mockFetch = originalMockFetch
+			mockFetch = originalMockFetch;
 		}
 	}
 }
@@ -123,17 +128,17 @@ export function mockFetchForTesting<T>(theFetch: typeof globalThis.fetch, callba
  * ```
  */
 export function getAxiosSettings(): {
-	adapter?: any
-	fetch?: typeof globalThis.fetch
-	maxBodyLength?: number
-	maxContentLength?: number
+	adapter?: any;
+	fetch?: typeof globalThis.fetch;
+	maxBodyLength?: number;
+	maxContentLength?: number;
 } {
 	return {
 		adapter: "fetch" as any,
 		fetch, // Use our configured fetch
 		maxBodyLength: Number.POSITIVE_INFINITY,
 		maxContentLength: Number.POSITIVE_INFINITY,
-	}
+	};
 }
 
 /**
@@ -142,7 +147,7 @@ export function getAxiosSettings(): {
  * configuration across all providers.
  */
 export function createOpenAIClient(options: OpenAIClientOptions): OpenAI {
-	const externalHeaders = buildExternalBasicHeaders()
+	const externalHeaders = buildExternalBasicHeaders();
 	return new OpenAI({
 		...options,
 		defaultHeaders: {
@@ -150,5 +155,5 @@ export function createOpenAIClient(options: OpenAIClientOptions): OpenAI {
 			...options.defaultHeaders,
 		},
 		fetch, // Use configured fetch with proxy support
-	})
+	});
 }

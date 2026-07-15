@@ -1,25 +1,27 @@
-import "should"
-import { openRouterDefaultModelInfo } from "@shared/api"
-import sinon from "sinon"
-import { ClineHandler } from "../cline"
+import "should";
+import { openRouterDefaultModelInfo } from "@shared/api";
+import sinon from "sinon";
+import { ClineHandler } from "../cline";
 
 describe("ClineHandler", () => {
 	afterEach(() => {
-		sinon.restore()
-	})
+		sinon.restore();
+	});
 
 	const createAsyncIterable = (data: any[] = []) => ({
 		[Symbol.asyncIterator]: async function* () {
-			yield* data
+			yield* data;
 		},
-	})
+	});
 
-	const createHandler = (options: ConstructorParameters<typeof ClineHandler>[0]) => {
-		return new ClineHandler(options)
-	}
+	const createHandler = (
+		options: ConstructorParameters<typeof ClineHandler>[0],
+	) => {
+		return new ClineHandler(options);
+	};
 
 	it("should handle usage-only chunks when delta is missing", async () => {
-		const handler = createHandler({})
+		const handler = createHandler({});
 		const fakeClient = {
 			chat: {
 				completions: {
@@ -36,16 +38,18 @@ describe("ClineHandler", () => {
 					),
 				},
 			},
-		}
-		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any)
+		};
+		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any);
 		sinon.stub(handler, "getModel").returns({
 			id: "openai/gpt-4o-mini",
 			info: openRouterDefaultModelInfo,
-		})
+		});
 
-		const chunks: any[] = []
-		for await (const chunk of handler.createMessage("system", [{ role: "user", content: "hi" }])) {
-			chunks.push(chunk)
+		const chunks: any[] = [];
+		for await (const chunk of handler.createMessage("system", [
+			{ role: "user", content: "hi" },
+		])) {
+			chunks.push(chunk);
 		}
 
 		chunks.should.deepEqual([
@@ -57,11 +61,11 @@ describe("ClineHandler", () => {
 				outputTokens: 9,
 				totalCost: 0,
 			},
-		])
-	})
+		]);
+	});
 
 	it("should read Anthropic-style cache creation and read tokens from usage chunks", async () => {
-		const handler = createHandler({})
+		const handler = createHandler({});
 		const fakeClient = {
 			chat: {
 				completions: {
@@ -82,16 +86,18 @@ describe("ClineHandler", () => {
 					),
 				},
 			},
-		}
-		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any)
+		};
+		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any);
 		sinon.stub(handler, "getModel").returns({
 			id: "anthropic/claude-sonnet-4.6",
 			info: openRouterDefaultModelInfo,
-		})
+		});
 
-		const chunks: any[] = []
-		for await (const chunk of handler.createMessage("system", [{ role: "user", content: "hi" }])) {
-			chunks.push(chunk)
+		const chunks: any[] = [];
+		for await (const chunk of handler.createMessage("system", [
+			{ role: "user", content: "hi" },
+		])) {
+			chunks.push(chunk);
 		}
 
 		chunks.should.deepEqual([
@@ -103,24 +109,24 @@ describe("ClineHandler", () => {
 				outputTokens: 200,
 				totalCost: 0,
 			},
-		])
-	})
+		]);
+	});
 
 	it("should forward enableParallelToolCalling to OpenRouter payload", async () => {
-		const handler = createHandler({ enableParallelToolCalling: true })
-		const createStub = sinon.stub().resolves(createAsyncIterable([]))
+		const handler = createHandler({ enableParallelToolCalling: true });
+		const createStub = sinon.stub().resolves(createAsyncIterable([]));
 		const fakeClient = {
 			chat: {
 				completions: {
 					create: createStub,
 				},
 			},
-		}
-		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any)
+		};
+		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any);
 		sinon.stub(handler, "getModel").returns({
 			id: "openai/gpt-4o-mini",
 			info: openRouterDefaultModelInfo,
-		})
+		});
 
 		const tools = [
 			{
@@ -131,43 +137,49 @@ describe("ClineHandler", () => {
 					parameters: { type: "object" },
 				},
 			},
-		] as any
-		for await (const _chunk of handler.createMessage("system", [{ role: "user", content: "hi" }], tools)) {
+		] as any;
+		for await (const _chunk of handler.createMessage(
+			"system",
+			[{ role: "user", content: "hi" }],
+			tools,
+		)) {
 			// drain stream
 		}
 
-		const payload = createStub.firstCall.args[0]
-		payload.parallel_tool_calls.should.equal(true)
-	})
+		const payload = createStub.firstCall.args[0];
+		payload.parallel_tool_calls.should.equal(true);
+	});
 
-	it("should send cache_control for qwen3.7-max without changing the selected Cline model id", async () => {
+	it("should send cache_control for qwen3.7-max without changing the selected coderX model id", async () => {
 		const handler = createHandler({
 			openRouterModelId: "qwen/qwen3.7-max",
 			openRouterModelInfo: openRouterDefaultModelInfo,
-		})
-		const createStub = sinon.stub().resolves(createAsyncIterable([]))
+		});
+		const createStub = sinon.stub().resolves(createAsyncIterable([]));
 		const fakeClient = {
 			chat: {
 				completions: {
 					create: createStub,
 				},
 			},
-		}
-		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any)
-		sinon.stub(handler as any, "getFreeModelIdSet").resolves(new Set())
+		};
+		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any);
+		sinon.stub(handler as any, "getFreeModelIdSet").resolves(new Set());
 
-		for await (const _chunk of handler.createMessage("system", [{ role: "user", content: "hi" }])) {
+		for await (const _chunk of handler.createMessage("system", [
+			{ role: "user", content: "hi" },
+		])) {
 			// drain stream
 		}
 
-		handler.getModel().id.should.equal("qwen/qwen3.7-max")
-		const payload = createStub.firstCall.args[0]
-		payload.model.should.equal("qwen/qwen3.7-max")
+		handler.getModel().id.should.equal("qwen/qwen3.7-max");
+		const payload = createStub.firstCall.args[0];
+		payload.model.should.equal("qwen/qwen3.7-max");
 		payload.messages[0].content[0].cache_control.should.deepEqual({
 			type: "ephemeral",
-		})
+		});
 		payload.messages[1].content[0].cache_control.should.deepEqual({
 			type: "ephemeral",
-		})
-	})
-})
+		});
+	});
+});

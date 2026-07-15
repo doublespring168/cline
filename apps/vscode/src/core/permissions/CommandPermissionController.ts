@@ -1,11 +1,25 @@
-import { ParseEntry, parse } from "shell-quote"
-import { Logger } from "@/shared/services/Logger"
-import { COMMAND_PERMISSIONS_ENV_VAR, CommandPermissionConfig, PermissionValidationResult, ShellOperatorMatch } from "./types"
+import { ParseEntry, parse } from "shell-quote";
+import { Logger } from "@/shared/services/Logger";
+import {
+	COMMAND_PERMISSIONS_ENV_VAR,
+	CommandPermissionConfig,
+	PermissionValidationResult,
+	ShellOperatorMatch,
+} from "./types";
 
-const REDIRECT_OPERATORS = new Set([">", ">>", "<", ">&", "<&", "|&", "<(", ">("])
-const COMMAND_SEPARATOR_OPERATORS = new Set(["&&", "||", "|", ";"])
+const REDIRECT_OPERATORS = new Set([
+	">",
+	">>",
+	"<",
+	">&",
+	"<&",
+	"|&",
+	"<(",
+	">(",
+]);
+const COMMAND_SEPARATOR_OPERATORS = new Set(["&&", "||", "|", ";"]);
 
-const LINE_SEPARATOR_REGEX = /[\n\r\u2028\u2029\u0085]/
+const LINE_SEPARATOR_REGEX = /[\n\r\u2028\u2029\u0085]/;
 const LINE_SEPARATOR_DESCRIPTIONS: Record<string, ShellOperatorMatch> = {
 	"\n": { operator: "\\n", description: "newline (command separator)" },
 	"\r": {
@@ -15,22 +29,22 @@ const LINE_SEPARATOR_DESCRIPTIONS: Record<string, ShellOperatorMatch> = {
 	"\u2028": { operator: "U+2028", description: "unicode line separator" },
 	"\u2029": { operator: "U+2029", description: "unicode paragraph separator" },
 	"\u0085": { operator: "U+0085", description: "unicode next line" },
-}
+};
 
 /**
  * Result of parsing a command into segments (recursive structure)
  */
 interface ParsedCommand {
-	segments: string[] // Individual commands between operators
-	subshells: ParsedCommand[] // Recursively parsed contents of (...) and $(...)
-	hasRedirects: boolean // Whether redirect operators (>, >>, <, etc.) were found
+	segments: string[]; // Individual commands between operators
+	subshells: ParsedCommand[]; // Recursively parsed contents of (...) and $(...)
+	hasRedirects: boolean; // Whether redirect operators (>, >>, <, etc.) were found
 }
 
 /**
  * Controls command execution permissions based on environment variable configuration.
  * Uses glob pattern matching to allow/deny specific commands.
  *
- * Configuration is read from the CLINE_COMMAND_PERMISSIONS environment variable.
+ * Configuration is read from the CODERX_COMMAND_PERMISSIONS environment variable.
  * Format: {"allow": ["pattern1", "pattern2"], "deny": ["pattern3"], "allowRedirects": true}
  *
  * Rule evaluation for chained commands (e.g., "cd /tmp && npm test"):
@@ -42,32 +56,35 @@ interface ParsedCommand {
  * 6. If no rules are defined (env var not set) → ALLOWED (backward compatibility)
  */
 export class CommandPermissionController {
-	private config: CommandPermissionConfig | null = null
+	private config: CommandPermissionConfig | null = null;
 
 	constructor() {
-		this.config = this.parseConfig()
+		this.config = this.parseConfig();
 	}
 
 	/**
-	 * Parse the CLINE_COMMAND_PERMISSIONS environment variable
+	 * Parse the CODERX_COMMAND_PERMISSIONS environment variable
 	 * @returns Parsed configuration or null if not set or invalid
 	 */
 	private parseConfig(): CommandPermissionConfig | null {
-		const envValue = process.env[COMMAND_PERMISSIONS_ENV_VAR]
+		const envValue = process.env[COMMAND_PERMISSIONS_ENV_VAR];
 		if (!envValue) {
-			return null
+			return null;
 		}
 
 		try {
-			const parsed = JSON.parse(envValue)
+			const parsed = JSON.parse(envValue);
 			return {
 				allow: Array.isArray(parsed.allow) ? parsed.allow : undefined,
 				deny: Array.isArray(parsed.deny) ? parsed.deny : undefined,
-				allowRedirects: typeof parsed.allowRedirects === "boolean" ? parsed.allowRedirects : undefined,
-			}
+				allowRedirects:
+					typeof parsed.allowRedirects === "boolean"
+						? parsed.allowRedirects
+						: undefined,
+			};
 		} catch (error) {
-			Logger.error(`Failed to parse ${COMMAND_PERMISSIONS_ENV_VAR}:`, error)
-			return null
+			Logger.error(`Failed to parse ${COMMAND_PERMISSIONS_ENV_VAR}:`, error);
+			return null;
 		}
 	}
 
@@ -81,33 +98,33 @@ export class CommandPermissionController {
 	validateCommand(command: string): PermissionValidationResult {
 		// No config = allow everything (backward compatibility)
 		if (!this.config) {
-			return { allowed: true, reason: "no_config" }
+			return { allowed: true, reason: "no_config" };
 		}
 
 		// Check for dangerous characters first (backticks in double quotes, newlines outside quotes)
-		const dangerousChar = this.detectDangerousCharsOutsideQuotes(command)
+		const dangerousChar = this.detectDangerousCharsOutsideQuotes(command);
 		if (dangerousChar) {
 			return {
 				allowed: false,
 				reason: "shell_operator_detected",
 				detectedOperator: dangerousChar.operator,
-			}
+			};
 		}
 
 		// Parse the command into segments recursively
-		const parseResult = this.parseCommandSegments(command)
+		const parseResult = this.parseCommandSegments(command);
 		if (!parseResult) {
 			// Parsing failed - be conservative and block
 			return {
 				allowed: false,
 				reason: "shell_operator_detected",
 				detectedOperator: "parse_error",
-			}
+			};
 		}
 
 		// Validate the parsed command structure
-		const result = this.validateParsedCommand(parseResult, command)
-		return result
+		const result = this.validateParsedCommand(parseResult, command);
+		return result;
 	}
 
 	/**
@@ -116,19 +133,23 @@ export class CommandPermissionController {
 	 * @param fullCommand - The full original command (for error messages)
 	 * @returns PermissionValidationResult
 	 */
-	private validateParsedCommand(parsed: ParsedCommand, fullCommand: string): PermissionValidationResult {
+	private validateParsedCommand(
+		parsed: ParsedCommand,
+		fullCommand: string,
+	): PermissionValidationResult {
 		// Check if redirects are allowed
 		if (parsed.hasRedirects && !this.config?.allowRedirects) {
 			return {
 				allowed: false,
 				reason: "redirect_detected",
-			}
+			};
 		}
 
 		// Validate each command segment
-		const isMultiSegment = parsed.segments.length > 1 || parsed.subshells.length > 0
+		const isMultiSegment =
+			parsed.segments.length > 1 || parsed.subshells.length > 0;
 		for (const segment of parsed.segments) {
-			const result = this.validateSingleCommand(segment)
+			const result = this.validateSingleCommand(segment);
 			if (!result.allowed) {
 				// Only use segment-specific reasons for multi-segment commands
 				if (isMultiSegment) {
@@ -141,21 +162,21 @@ export class CommandPermissionController {
 								: result.reason === "no_match_deny_default"
 									? "segment_no_match"
 									: result.reason,
-					}
+					};
 				}
-				return result
+				return result;
 			}
 		}
 
 		// Recursively validate subshell contents
 		for (const subshell of parsed.subshells) {
-			const result = this.validateParsedCommand(subshell, fullCommand)
+			const result = this.validateParsedCommand(subshell, fullCommand);
 			if (!result.allowed) {
-				return result
+				return result;
 			}
 		}
 
-		return { allowed: true, reason: "allowed" }
+		return { allowed: true, reason: "allowed" };
 	}
 
 	/**
@@ -169,7 +190,7 @@ export class CommandPermissionController {
 		if (this.config?.deny) {
 			for (const pattern of this.config.deny) {
 				if (this.matchesPattern(command, pattern)) {
-					return { allowed: false, matchedPattern: pattern, reason: "denied" }
+					return { allowed: false, matchedPattern: pattern, reason: "denied" };
 				}
 			}
 		}
@@ -178,24 +199,24 @@ export class CommandPermissionController {
 		if (this.config?.allow && this.config.allow.length > 0) {
 			for (const pattern of this.config.allow) {
 				if (this.matchesPattern(command, pattern)) {
-					return { allowed: true, matchedPattern: pattern, reason: "allowed" }
+					return { allowed: true, matchedPattern: pattern, reason: "allowed" };
 				}
 			}
 			// Allow rules defined but no match = deny by default
-			return { allowed: false, reason: "no_match_deny_default" }
+			return { allowed: false, reason: "no_match_deny_default" };
 		}
 
 		// No allow rules defined, and no deny matched = allow
-		return { allowed: true, reason: "no_config" }
+		return { allowed: true, reason: "no_config" };
 	}
 
 	private parseCommandSegments(input: string): ParsedCommand {
-		let tokens: ParseEntry[] = []
+		let tokens: ParseEntry[] = [];
 		try {
-			tokens = parse(input)
+			tokens = parse(input);
 		} catch (err) {
-			Logger.error("Error parsing command: " + err.message)
-			return { segments: [], subshells: [], hasRedirects: false }
+			Logger.error("Error parsing command: " + err.message);
+			return { segments: [], subshells: [], hasRedirects: false };
 		}
 
 		function process(tokenList: ParseEntry[]): ParsedCommand {
@@ -203,84 +224,97 @@ export class CommandPermissionController {
 				segments: [],
 				subshells: [],
 				hasRedirects: false,
-			}
+			};
 
-			let currentSegmentParts: string[] = []
+			let currentSegmentParts: string[] = [];
 
 			const flushSegment = () => {
 				if (currentSegmentParts.length > 0) {
-					result.segments.push(currentSegmentParts.join(" "))
-					currentSegmentParts = []
+					result.segments.push(currentSegmentParts.join(" "));
+					currentSegmentParts = [];
 				}
-			}
+			};
 
 			for (let i = 0; i < tokenList.length; i++) {
-				const token = tokenList[i]
+				const token = tokenList[i];
 
 				// 1. Handle Subshells: ( ... )
 				if (typeof token === "object" && "op" in token && token.op === "(") {
-					flushSegment()
+					flushSegment();
 
-					let balance = 1
-					let j = i + 1
-					const subTokens: ParseEntry[] = []
+					let balance = 1;
+					let j = i + 1;
+					const subTokens: ParseEntry[] = [];
 
 					while (j < tokenList.length && balance > 0) {
-						const subToken = tokenList[j]
+						const subToken = tokenList[j];
 						if (typeof subToken === "object" && "op" in subToken) {
 							if (subToken.op === "(") {
-								balance++
+								balance++;
 							}
 							if (subToken.op === ")") {
-								balance--
+								balance--;
 							}
 						}
 
 						if (balance > 0) {
-							subTokens.push(subToken)
+							subTokens.push(subToken);
 						}
-						j++
+						j++;
 					}
 
-					result.subshells.push(process(subTokens))
-					i = j - 1 // Skip processed tokens
-					continue
+					result.subshells.push(process(subTokens));
+					i = j - 1; // Skip processed tokens
+					continue;
 				}
 
 				// 2. Handle Logic Separators: &&, ||, ;, |
-				if (typeof token === "object" && "op" in token && COMMAND_SEPARATOR_OPERATORS.has(token.op as string)) {
-					flushSegment()
-					continue
+				if (
+					typeof token === "object" &&
+					"op" in token &&
+					COMMAND_SEPARATOR_OPERATORS.has(token.op as string)
+				) {
+					flushSegment();
+					continue;
 				}
 
 				// 3. Handle Redirect Operators: >, >>, <, etc.
-				if (typeof token === "object" && "op" in token && REDIRECT_OPERATORS.has(token.op as string)) {
-					result.hasRedirects = true
-					continue
+				if (
+					typeof token === "object" &&
+					"op" in token &&
+					REDIRECT_OPERATORS.has(token.op as string)
+				) {
+					result.hasRedirects = true;
+					continue;
 				}
 
 				// 4. Handle Strings (Commands and Arguments)
 				if (typeof token === "string") {
 					// Preserve the '$' for subshell interpolation $(...) in the segment
 					// so that "echo $(whoami)" becomes segment "echo $" which matches "echo *"
-					const nextToken = tokenList[i + 1]
-					if (token === "$" && typeof nextToken === "object" && "op" in nextToken && nextToken.op === "(") {
-						currentSegmentParts.push(token)
-						continue
+					const nextToken = tokenList[i + 1];
+					if (
+						token === "$" &&
+						typeof nextToken === "object" &&
+						"op" in nextToken &&
+						nextToken.op === "("
+					) {
+						currentSegmentParts.push(token);
+						continue;
 					}
-					currentSegmentParts.push(token)
+					currentSegmentParts.push(token);
 				}
 				// 5. Handle Glob/Pattern objects
 				else if (typeof token === "object" && "pattern" in token) {
-					currentSegmentParts.push(token.pattern)
+					currentSegmentParts.push(token.pattern);
 				}
 			}
 
-			flushSegment()
-			return result
+			flushSegment();
+			return result;
 		}
 
-		return process(tokens)
+		return process(tokens);
 	}
 
 	/**
@@ -309,8 +343,8 @@ export class CommandPermissionController {
 					.replace(/\?/g, ".") + // ? becomes .
 				"$",
 			"s", // s flag enables dotAll (. matches newlines)
-		)
-		return regex.test(command)
+		);
+		return regex.test(command);
 	}
 
 	/**
@@ -333,46 +367,48 @@ export class CommandPermissionController {
 	 * @param command - The command string to check
 	 * @returns ShellOperatorMatch if dangerous chars found outside appropriate quotes, null otherwise
 	 */
-	private detectDangerousCharsOutsideQuotes(command: string): ShellOperatorMatch | null {
-		let inSingleQuote = false
-		let inDoubleQuote = false
-		let isEscaped = false
+	private detectDangerousCharsOutsideQuotes(
+		command: string,
+	): ShellOperatorMatch | null {
+		let inSingleQuote = false;
+		let inDoubleQuote = false;
+		let isEscaped = false;
 
 		for (let i = 0; i < command.length; i++) {
-			const char = command[i]
+			const char = command[i];
 
 			// If previous char was an unescaped backslash, this char is escaped
 			if (isEscaped) {
-				isEscaped = false
-				continue
+				isEscaped = false;
+				continue;
 			}
 
 			// Check for escape sequence (only outside single quotes)
 			// In single quotes, backslashes are literal
 			if (char === "\\" && !inSingleQuote) {
-				isEscaped = true
-				continue
+				isEscaped = true;
+				continue;
 			}
 
 			// Handle double quotes - we track them to know when single quotes are literal
 			if (char === '"' && !inSingleQuote) {
-				inDoubleQuote = !inDoubleQuote
-				continue
+				inDoubleQuote = !inDoubleQuote;
+				continue;
 			}
 
 			// Handle single quotes - only toggle when NOT inside double quotes
 			// Inside double quotes, single quotes are literal characters
 			if (char === "'" && !inDoubleQuote) {
-				inSingleQuote = !inSingleQuote
-				continue
+				inSingleQuote = !inSingleQuote;
+				continue;
 			}
 
-			const inAnyQuote = inSingleQuote || inDoubleQuote
+			const inAnyQuote = inSingleQuote || inDoubleQuote;
 
 			// Check for newlines and carriage returns outside ANY quotes
 			// These are command separators when outside quotes
 			if (!inAnyQuote && LINE_SEPARATOR_REGEX.test(char)) {
-				return LINE_SEPARATOR_DESCRIPTIONS[char]
+				return LINE_SEPARATOR_DESCRIPTIONS[char];
 			}
 
 			// Check for backticks outside SINGLE quotes only
@@ -381,10 +417,10 @@ export class CommandPermissionController {
 				return {
 					operator: "`",
 					description: "command substitution (backtick)",
-				}
+				};
 			}
 		}
 
-		return null
+		return null;
 	}
 }

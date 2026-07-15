@@ -1,16 +1,20 @@
-import { CreateHookRequest, CreateSkillRequest, RuleFileRequest } from "@shared/proto/index.cline"
-import { PlusIcon } from "lucide-react"
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useClickAway } from "react-use"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
-import { FileServiceClient } from "@/services/grpc-client"
+import {
+	CreateHookRequest,
+	CreateSkillRequest,
+	RuleFileRequest,
+} from "@shared/proto/index.cline";
+import { PlusIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useClickAway } from "react-use";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { FileServiceClient } from "@/services/grpc-client";
 
 interface NewRuleRowProps {
-	isGlobal: boolean
-	ruleType?: string
-	existingHooks?: string[]
-	workspaceName?: string
+	isGlobal: boolean;
+	ruleType?: string;
+	existingHooks?: string[];
+	workspaceName?: string;
 }
 
 const HOOK_TYPES = [
@@ -28,48 +32,56 @@ const HOOK_TYPES = [
 		name: "PreCompact",
 		description: "Executes before conversation compaction",
 	},
-]
+];
 
-const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHooks = [], workspaceName }) => {
-	const [isExpanded, setIsExpanded] = useState(false)
-	const [filename, setFilename] = useState("")
-	const inputRef = useRef<HTMLInputElement>(null)
-	const [error, setError] = useState<string | null>(null)
+const NewRuleRow: React.FC<NewRuleRowProps> = ({
+	isGlobal,
+	ruleType,
+	existingHooks = [],
+	workspaceName,
+}) => {
+	const [isExpanded, setIsExpanded] = useState(false);
+	const [filename, setFilename] = useState("");
+	const inputRef = useRef<HTMLInputElement>(null);
+	const [error, setError] = useState<string | null>(null);
 
-	const componentRef = useRef<HTMLDivElement>(null)
+	const componentRef = useRef<HTMLDivElement>(null);
 
 	// Calculate available hook types by filtering out existing hooks
-	const availableHookTypes = useMemo(() => HOOK_TYPES.filter((type) => !existingHooks.includes(type.name)), [existingHooks])
+	const availableHookTypes = useMemo(
+		() => HOOK_TYPES.filter((type) => !existingHooks.includes(type.name)),
+		[existingHooks],
+	);
 
 	// Focus the input when expanded
 	useEffect(() => {
 		if (isExpanded && inputRef.current) {
-			inputRef.current.focus()
+			inputRef.current.focus();
 		}
-	}, [isExpanded])
+	}, [isExpanded]);
 
 	useClickAway(componentRef, () => {
 		if (isExpanded) {
-			setIsExpanded(false)
-			setFilename("")
-			setError(null)
+			setIsExpanded(false);
+			setFilename("");
+			setError(null);
 		}
-	})
+	});
 
 	const getExtension = (filename: string): string => {
 		if (filename.startsWith(".") && !filename.includes(".", 1)) {
-			return ""
+			return "";
 		}
-		const match = filename.match(/\.[^.]+$/)
-		return match ? match[0].toLowerCase() : ""
-	}
+		const match = filename.match(/\.[^.]+$/);
+		return match ? match[0].toLowerCase() : "";
+	};
 
 	const isValidExtension = (ext: string): boolean => {
-		return ext === "" || ext === ".md" || ext === ".txt"
-	}
+		return ext === "" || ext === ".md" || ext === ".txt";
+	};
 
 	const handleCreateHook = async (hookName: string) => {
-		if (!hookName) return
+		if (!hookName) return;
 
 		try {
 			await FileServiceClient.createHook(
@@ -78,24 +90,26 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 					isGlobal,
 					workspaceName,
 				}),
-			)
+			);
 		} catch (err) {
-			console.error("Error creating hook:", err)
+			console.error("Error creating hook:", err);
 		}
-	}
+	};
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault()
+		e.preventDefault();
 
 		if (filename.trim()) {
-			const trimmedFilename = filename.trim()
+			const trimmedFilename = filename.trim();
 
 			// Skills use directory names, not file extensions
 			if (ruleType === "skill") {
 				// Validate skill name - only allow alphanumeric, dashes, underscores
 				if (!/^[a-zA-Z0-9_-]+$/.test(trimmedFilename)) {
-					setError("Skill name can only contain letters, numbers, dashes, and underscores")
-					return
+					setError(
+						"Skill name can only contain letters, numbers, dashes, and underscores",
+					);
+					return;
 				}
 
 				try {
@@ -104,26 +118,28 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 							skillName: trimmedFilename,
 							isGlobal,
 						}),
-					)
-					setFilename("")
-					setError(null)
-					setIsExpanded(false)
+					);
+					setFilename("");
+					setError(null);
+					setIsExpanded(false);
 				} catch (err) {
-					setError(err instanceof Error ? err.message : "Failed to create skill")
+					setError(
+						err instanceof Error ? err.message : "Failed to create skill",
+					);
 				}
-				return
+				return;
 			}
 
-			const extension = getExtension(trimmedFilename)
+			const extension = getExtension(trimmedFilename);
 
 			if (!isValidExtension(extension)) {
-				setError("Only .md, .txt, or no file extension allowed")
-				return
+				setError("Only .md, .txt, or no file extension allowed");
+				return;
 			}
 
-			let finalFilename = trimmedFilename
+			let finalFilename = trimmedFilename;
 			if (extension === "") {
-				finalFilename = `${trimmedFilename}.md`
+				finalFilename = `${trimmedFilename}.md`;
 			}
 
 			try {
@@ -133,23 +149,23 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 						filename: finalFilename,
 						type: ruleType || "cline",
 					}),
-				)
+				);
 			} catch (err) {
-				console.error("Error creating rule file:", err)
+				console.error("Error creating rule file:", err);
 			}
 
-			setFilename("")
-			setError(null)
-			setIsExpanded(false)
+			setFilename("");
+			setError(null);
+			setIsExpanded(false);
 		}
-	}
+	};
 
 	const handleKeyDown = (e: React.KeyboardEvent) => {
 		if (e.key === "Escape") {
-			setIsExpanded(false)
-			setFilename("")
+			setIsExpanded(false);
+			setFilename("");
 		}
-	}
+	};
 
 	return (
 		<>
@@ -158,22 +174,27 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 					"opacity-100": isExpanded,
 					"opacity-70 hover:opacity-100": !isExpanded,
 				})}
-				onClick={() => !isExpanded && ruleType !== "hook" && setIsExpanded(true)}
-				ref={componentRef}>
+				onClick={() =>
+					!isExpanded && ruleType !== "hook" && setIsExpanded(true)
+				}
+				ref={componentRef}
+			>
 				<div
 					className={cn(
 						"flex items-center px-2 py-4 rounded bg-input-background transition-all duration-300 ease-in-out h-5",
 						{
 							"shadow-sm": isExpanded,
 						},
-					)}>
+					)}
+				>
 					{ruleType === "hook" ? (
 						<>
 							<label className="sr-only" htmlFor="hook-type-select">
 								Select hook type to create
 							</label>
 							<span className="sr-only" id="hook-select-description">
-								Choose a hook type to create. Hooks execute at specific points in Cline's lifecycle. Available:{" "}
+								Choose a hook type to create. Hooks execute at specific points
+								in coderX's lifecycle. Available:{" "}
 								{availableHookTypes.map((h) => h.name).join(", ")}
 							</span>
 							<select
@@ -184,9 +205,9 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 								id="hook-type-select"
 								onChange={(e) => {
 									if (e.target.value) {
-										handleCreateHook(e.target.value)
+										handleCreateHook(e.target.value);
 										// Reset selection after creating
-										e.target.value = ""
+										e.target.value = "";
 									}
 								}}
 								style={{
@@ -197,12 +218,19 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 									backgroundPosition: "right 8px center",
 									paddingRight: "24px",
 								}}
-								value="">
+								value=""
+							>
 								<option disabled value="">
-									{availableHookTypes.length === 0 ? "All hooks created" : "New hook..."}
+									{availableHookTypes.length === 0
+										? "All hooks created"
+										: "New hook..."}
 								</option>
 								{availableHookTypes.map((hook) => (
-									<option key={hook.name} title={hook.description} value={hook.name}>
+									<option
+										key={hook.name}
+										title={hook.description}
+										value={hook.name}
+									>
 										{hook.name}
 									</option>
 								))}
@@ -250,24 +278,33 @@ const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHoo
 								}
 								className="mx-0.5"
 								onClick={(e) => {
-									e.stopPropagation()
+									e.stopPropagation();
 									if (!isExpanded) {
-										setIsExpanded(true)
+										setIsExpanded(true);
 									}
 								}}
 								size="icon"
-								title={isExpanded ? (ruleType === "skill" ? "Create skill" : "Create file") : "New file"}
+								title={
+									isExpanded
+										? ruleType === "skill"
+											? "Create skill"
+											: "Create file"
+										: "New file"
+								}
 								type={isExpanded ? "submit" : "button"}
-								variant="icon">
+								variant="icon"
+							>
 								<PlusIcon />
 							</Button>
 						</form>
 					)}
 				</div>
-				{isExpanded && error && <div className="text-error text-xs mt-1 ml-2">{error}</div>}
+				{isExpanded && error && (
+					<div className="text-error text-xs mt-1 ml-2">{error}</div>
+				)}
 			</div>
 		</>
-	)
-}
+	);
+};
 
-export default NewRuleRow
+export default NewRuleRow;

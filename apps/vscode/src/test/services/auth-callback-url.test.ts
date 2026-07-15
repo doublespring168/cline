@@ -1,5 +1,5 @@
-import { describe, it } from "mocha"
-import "should"
+import { describe, it } from "mocha";
+import "should";
 
 /**
  * Regression tests for OAuth callback URL generation.
@@ -22,30 +22,31 @@ describe("Auth Callback URL", () => {
 			// If callers string-interpolate instead of using searchParams.set(),
 			// everything after the first & gets parsed as a top-level param and
 			// callback_url is truncated.
-			const webCallback = "https://codespace-abc.github.dev/callback?tkn=secret123&extra=val"
+			const webCallback =
+				"https://codespace-abc.github.dev/callback?tkn=secret123&extra=val";
 
-			const authUrl = new URL("https://openrouter.ai/auth")
-			authUrl.searchParams.set("callback_url", webCallback)
+			const authUrl = new URL("https://openrouter.ai/auth");
+			authUrl.searchParams.set("callback_url", webCallback);
 
 			// The callback_url value must round-trip intact
-			const parsed = new URL(authUrl.toString())
-			parsed.searchParams.get("callback_url")!.should.equal(webCallback)
+			const parsed = new URL(authUrl.toString());
+			parsed.searchParams.get("callback_url")!.should.equal(webCallback);
 
 			// The raw URL must NOT contain an unencoded & from the callback
-			const raw = authUrl.toString()
-			raw.should.not.containEql("&extra=")
-			raw.should.not.containEql("&tkn=")
-			raw.should.containEql(encodeURIComponent("&extra=val"))
-		})
+			const raw = authUrl.toString();
+			raw.should.not.containEql("&extra=");
+			raw.should.not.containEql("&tkn=");
+			raw.should.containEql(encodeURIComponent("&extra=val"));
+		});
 
 		it("should encode vscode:// callback URLs correctly", () => {
-			const desktopCallback = "vscode://saoudrizwan.claude-dev/openrouter"
+			const desktopCallback = "vscode://coderx.coderx/openrouter";
 
-			const authUrl = new URL("https://openrouter.ai/auth")
-			authUrl.searchParams.set("callback_url", desktopCallback)
+			const authUrl = new URL("https://openrouter.ai/auth");
+			authUrl.searchParams.set("callback_url", desktopCallback);
 
-			const parsed = new URL(authUrl.toString())
-			parsed.searchParams.get("callback_url")!.should.equal(desktopCallback)
-		})
-	})
-})
+			const parsed = new URL(authUrl.toString());
+			parsed.searchParams.get("callback_url")!.should.equal(desktopCallback);
+		});
+	});
+});

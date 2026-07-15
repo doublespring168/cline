@@ -1,78 +1,85 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 
-import assert from "node:assert"
-import { DIFF_VIEW_URI_SCHEME } from "@hosts/vscode/VscodeDiffViewProvider"
-import * as vscode from "vscode"
-import { Logger } from "@/shared/services/Logger"
-import { sendChatButtonClickedEvent } from "./core/controller/ui/subscribeToChatButtonClicked"
-import { sendHistoryButtonClickedEvent } from "./core/controller/ui/subscribeToHistoryButtonClicked"
-import { sendMcpButtonClickedEvent } from "./core/controller/ui/subscribeToMcpButtonClicked"
-import { sendSettingsButtonClickedEvent } from "./core/controller/ui/subscribeToSettingsButtonClicked"
-import { WebviewProvider } from "./core/webview"
-import "./utils/path" // necessary to have access to String.prototype.toPosix
-import path from "node:path"
-import type { ExtensionContext } from "vscode"
-import { HostProvider } from "@/hosts/host-provider"
-import { vscodeHostBridgeClient } from "@/hosts/vscode/hostbridge/client/host-grpc-client"
-import { createStorageContext } from "@/shared/storage/storage-context"
-import { readTextFromClipboard, writeTextToClipboard } from "@/utils/env"
-import { initialize, tearDown } from "./common"
-import { addToCline } from "./core/controller/commands/addToCline"
-import { explainWithCline } from "./core/controller/commands/explainWithCline"
-import { fixWithCline } from "./core/controller/commands/fixWithCline"
-import { improveWithCline } from "./core/controller/commands/improveWithCline"
-import { sendAddToInputEvent } from "./core/controller/ui/subscribeToAddToInput"
-import { sendShowWebviewEvent } from "./core/controller/ui/subscribeToShowWebview"
-import { HookDiscoveryCache } from "./core/hooks/HookDiscoveryCache"
+import assert from "node:assert";
+import { DIFF_VIEW_URI_SCHEME } from "@hosts/vscode/VscodeDiffViewProvider";
+import * as vscode from "vscode";
+import { Logger } from "@/shared/services/Logger";
+import { sendChatButtonClickedEvent } from "./core/controller/ui/subscribeToChatButtonClicked";
+import { sendHistoryButtonClickedEvent } from "./core/controller/ui/subscribeToHistoryButtonClicked";
+import { sendMcpButtonClickedEvent } from "./core/controller/ui/subscribeToMcpButtonClicked";
+import { sendSettingsButtonClickedEvent } from "./core/controller/ui/subscribeToSettingsButtonClicked";
+import { WebviewProvider } from "./core/webview";
+import "./utils/path"; // necessary to have access to String.prototype.toPosix
+import path from "node:path";
+import type { ExtensionContext } from "vscode";
+import { HostProvider } from "@/hosts/host-provider";
+import { vscodeHostBridgeClient } from "@/hosts/vscode/hostbridge/client/host-grpc-client";
+import { createStorageContext } from "@/shared/storage/storage-context";
+import { readTextFromClipboard, writeTextToClipboard } from "@/utils/env";
+import { initialize, tearDown } from "./common";
+import { addToCline } from "./core/controller/commands/addToCline";
+import { explainWithCline } from "./core/controller/commands/explainWithCline";
+import { fixWithCline } from "./core/controller/commands/fixWithCline";
+import { improveWithCline } from "./core/controller/commands/improveWithCline";
+import { sendAddToInputEvent } from "./core/controller/ui/subscribeToAddToInput";
+import { sendShowWebviewEvent } from "./core/controller/ui/subscribeToShowWebview";
+import { HookDiscoveryCache } from "./core/hooks/HookDiscoveryCache";
 import {
 	cleanupOldApiKey,
 	migrateCustomInstructionsToGlobalRules,
 	migrateTaskHistoryToFile,
 	migrateWelcomeViewCompleted,
 	migrateWorkspaceToGlobalStorage,
-} from "./core/storage/state-migrations"
-import { workspaceResolver } from "./core/workspace"
-import { findMatchingNotebookCell, getContextForCommand, showWebview } from "./hosts/vscode/commandUtils"
-import { abortCommitGeneration, generateCommitMsg } from "./hosts/vscode/commit-message-generator"
-import { registerClineOutputChannel } from "./hosts/vscode/hostbridge/env/debugLog"
+} from "./core/storage/state-migrations";
+import { workspaceResolver } from "./core/workspace";
+import {
+	findMatchingNotebookCell,
+	getContextForCommand,
+	showWebview,
+} from "./hosts/vscode/commandUtils";
+import {
+	abortCommitGeneration,
+	generateCommitMsg,
+} from "./hosts/vscode/commit-message-generator";
+import { registerClineOutputChannel } from "./hosts/vscode/hostbridge/env/debugLog";
 import {
 	disposeVscodeCommentReviewController,
 	getVscodeCommentReviewController,
-} from "./hosts/vscode/review/VscodeCommentReviewController"
-import { VscodeTerminalManager } from "./hosts/vscode/terminal/VscodeTerminalManager"
-import { VscodeDiffViewProvider } from "./hosts/vscode/VscodeDiffViewProvider"
-import { VscodeWebviewProvider } from "./hosts/vscode/VscodeWebviewProvider"
-import { exportVSCodeStorageToSharedFiles } from "./hosts/vscode/vscode-to-file-migration"
-import { ExtensionRegistryInfo } from "./registry"
-import { SharedUriHandler } from "./services/uri/SharedUriHandler"
-import { ShowMessageType } from "./shared/proto/host/window"
-import { fileExistsAtPath } from "./utils/fs"
+} from "./hosts/vscode/review/VscodeCommentReviewController";
+import { VscodeTerminalManager } from "./hosts/vscode/terminal/VscodeTerminalManager";
+import { VscodeDiffViewProvider } from "./hosts/vscode/VscodeDiffViewProvider";
+import { VscodeWebviewProvider } from "./hosts/vscode/VscodeWebviewProvider";
+import { exportVSCodeStorageToSharedFiles } from "./hosts/vscode/vscode-to-file-migration";
+import { ExtensionRegistryInfo } from "./registry";
+import { SharedUriHandler } from "./services/uri/SharedUriHandler";
+import { ShowMessageType } from "./shared/proto/host/window";
+import { fileExistsAtPath } from "./utils/fs";
 
 // This method is called when the VS Code extension is activated.
 // NOTE: This is VS Code specific - services that should be registered
 // for the extension's shared lifecycle should be registered in common.ts.
 export async function activate(context: vscode.ExtensionContext) {
-	const activationStartTime = performance.now()
+	const activationStartTime = performance.now();
 
 	// 1. Set up HostProvider for VSCode
 	// IMPORTANT: This must be done before any service can be registered
-	setupHostProvider(context)
+	setupHostProvider(context);
 
 	// 2. Clean up legacy data patterns within VSCode's native storage.
 	// Moves workspace→global keys, task history→file, custom instructions→rules, etc.
 	// Must run BEFORE the file export so we copy clean state.
-	await cleanupLegacyVSCodeStorage(context)
+	await cleanupLegacyVSCodeStorage(context);
 
 	// 3. One-time export of VSCode's native storage to shared file-backed stores.
-	// After this, the extension reads migrated state from ~/.cline/data/.
-	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
-	const storageContext = createStorageContext({ workspacePath })
-	await exportVSCodeStorageToSharedFiles(context, storageContext)
+	// After this, the extension reads migrated state from ~/.coderx/data/.
+	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+	const storageContext = createStorageContext({ workspacePath });
+	await exportVSCodeStorageToSharedFiles(context, storageContext);
 
 	// 4. Register services and perform common initialization
 	// IMPORTANT: Must be done after host provider is setup and migrations are complete
-	const webview = (await initialize(storageContext)) as VscodeWebviewProvider
+	const webview = (await initialize(storageContext)) as VscodeWebviewProvider;
 
 	// 5. Register services and commands specific to VS Code
 
@@ -81,49 +88,65 @@ export async function activate(context: vscode.ExtensionContext) {
 		context as any, // Adapt VSCode ExtensionContext to generic interface
 		(dir: string) => {
 			try {
-				const pattern = new vscode.RelativePattern(dir, "*")
-				const watcher = vscode.workspace.createFileSystemWatcher(pattern)
+				const pattern = new vscode.RelativePattern(dir, "*");
+				const watcher = vscode.workspace.createFileSystemWatcher(pattern);
 				// Ensure watcher is disposed when extension is deactivated
-				context.subscriptions.push(watcher)
+				context.subscriptions.push(watcher);
 				// Adapt VSCode FileSystemWatcher to generic interface
 				return {
 					onDidCreate: (listener: () => void) => watcher.onDidCreate(listener),
 					onDidChange: (listener: () => void) => watcher.onDidChange(listener),
 					onDidDelete: (listener: () => void) => watcher.onDidDelete(listener),
 					dispose: () => watcher.dispose(),
-				}
+				};
 			} catch {
-				return null
+				return null;
 			}
 		},
 		(callback: () => void) => {
 			// Adapt VSCode Disposable to generic interface
-			const disposable = vscode.workspace.onDidChangeWorkspaceFolders(callback)
-			context.subscriptions.push(disposable)
-			return disposable
+			const disposable = vscode.workspace.onDidChangeWorkspaceFolders(callback);
+			context.subscriptions.push(disposable);
+			return disposable;
 		},
-	)
+	);
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider(VscodeWebviewProvider.SIDEBAR_ID, webview, {
-			webviewOptions: { retainContextWhenHidden: true },
-		}),
-	)
+		vscode.window.registerWebviewViewProvider(
+			VscodeWebviewProvider.SIDEBAR_ID,
+			webview,
+			{
+				webviewOptions: { retainContextWhenHidden: true },
+			},
+		),
+	);
 
 	// NOTE: Commands must be added to the internal registry before registering them with VSCode
-	const { commands } = ExtensionRegistryInfo
+	const { commands } = ExtensionRegistryInfo;
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.PlusButton, async () => {
-			const sidebarInstance = WebviewProvider.getInstance()
-			await sidebarInstance.controller.clearTask()
-			await sidebarInstance.controller.postStateToWebview()
-			await sendChatButtonClickedEvent()
+			const sidebarInstance = WebviewProvider.getInstance();
+			await sidebarInstance.controller.clearTask();
+			await sidebarInstance.controller.postStateToWebview();
+			await sendChatButtonClickedEvent();
 		}),
-	)
-	context.subscriptions.push(vscode.commands.registerCommand(commands.McpButton, () => sendMcpButtonClickedEvent()))
-	context.subscriptions.push(vscode.commands.registerCommand(commands.SettingsButton, () => sendSettingsButtonClickedEvent()))
-	context.subscriptions.push(vscode.commands.registerCommand(commands.HistoryButton, () => sendHistoryButtonClickedEvent()))
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.McpButton, () =>
+			sendMcpButtonClickedEvent(),
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.SettingsButton, () =>
+			sendSettingsButtonClickedEvent(),
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(commands.HistoryButton, () =>
+			sendHistoryButtonClickedEvent(),
+		),
+	);
 
 	/*
 	We use the text document content provider API to show the left side for diff view by creating a
@@ -138,102 +161,127 @@ export async function activate(context: vscode.ExtensionContext) {
 	 providers are always considered.
 	https://code.visualstudio.com/api/extension-guides/virtual-documents
 	*/
-	const diffContentProvider = new (class implements vscode.TextDocumentContentProvider {
+	const diffContentProvider = new (class
+		implements vscode.TextDocumentContentProvider
+	{
 		provideTextDocumentContent(uri: vscode.Uri): string {
-			return Buffer.from(uri.query, "base64").toString("utf-8")
+			return Buffer.from(uri.query, "base64").toString("utf-8");
 		}
-	})()
-	context.subscriptions.push(vscode.workspace.registerTextDocumentContentProvider(DIFF_VIEW_URI_SCHEME, diffContentProvider))
+	})();
+	context.subscriptions.push(
+		vscode.workspace.registerTextDocumentContentProvider(
+			DIFF_VIEW_URI_SCHEME,
+			diffContentProvider,
+		),
+	);
 
 	const handleUri = async (uri: vscode.Uri) => {
-		const url = decodeURIComponent(uri.toString())
-		const success = await SharedUriHandler.handleUri(url)
+		const url = decodeURIComponent(uri.toString());
+		const success = await SharedUriHandler.handleUri(url);
 
 		if (!success) {
-			Logger.warn("Extension URI handler: Failed to process URI:", uri.toString())
+			Logger.warn(
+				"Extension URI handler: Failed to process URI:",
+				uri.toString(),
+			);
 		}
-	}
-	context.subscriptions.push(vscode.window.registerUriHandler({ handleUri }))
+	};
+	context.subscriptions.push(vscode.window.registerUriHandler({ handleUri }));
 
 	// Register size testing commands in development mode
 	if (IS_DEV) {
-		vscode.commands.executeCommand("setContext", "cline.isDevMode", IS_DEV)
+		vscode.commands.executeCommand(
+			"setContext",
+			ExtensionRegistryInfo.contextKeys.IsDevMode,
+			IS_DEV,
+		);
 		// Use dynamic import to avoid loading the module in production
 		import("./dev/commands/tasks")
 			.then((module) => {
-				const devTaskCommands = module.registerTaskCommands(webview.controller)
-				context.subscriptions.push(...devTaskCommands)
-				Logger.log("[Cline Dev] Dev mode activated & dev commands registered")
+				const devTaskCommands = module.registerTaskCommands(webview.controller);
+				context.subscriptions.push(...devTaskCommands);
+				Logger.log("[coderX Dev] Dev mode activated & dev commands registered");
 			})
 			.catch((error) => {
-				Logger.log("[Cline Dev] Failed to register dev commands: " + error)
-			})
+				Logger.log("[coderX Dev] Failed to register dev commands: " + error);
+			});
 	}
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.TerminalOutput, async () => {
-			const terminal = vscode.window.activeTerminal
+			const terminal = vscode.window.activeTerminal;
 			if (!terminal) {
-				return
+				return;
 			}
 
 			// Save current clipboard content
-			const tempCopyBuffer = await readTextFromClipboard()
+			const tempCopyBuffer = await readTextFromClipboard();
 
 			try {
 				// Copy the *existing* terminal selection (without selecting all)
-				await vscode.commands.executeCommand("workbench.action.terminal.copySelection")
+				await vscode.commands.executeCommand(
+					"workbench.action.terminal.copySelection",
+				);
 
 				// Get copied content
-				const terminalContents = (await readTextFromClipboard()).trim()
+				const terminalContents = (await readTextFromClipboard()).trim();
 
 				// Restore original clipboard content
-				await writeTextToClipboard(tempCopyBuffer)
+				await writeTextToClipboard(tempCopyBuffer);
 
 				if (!terminalContents) {
 					// No terminal content was copied (either nothing selected or some error)
-					return
+					return;
 				}
 				// Ensure the sidebar view is visible but preserve editor focus
-				await showWebview(true)
+				await showWebview(true);
 
-				await sendAddToInputEvent(`Terminal output:\n\`\`\`\n${terminalContents}\n\`\`\``)
+				await sendAddToInputEvent(
+					`Terminal output:\n\`\`\`\n${terminalContents}\n\`\`\``,
+				);
 
-				Logger.log("addSelectedTerminalOutputToChat", terminalContents, terminal.name)
+				Logger.log(
+					"addSelectedTerminalOutputToChat",
+					terminalContents,
+					terminal.name,
+				);
 			} catch (error) {
 				// Ensure clipboard is restored even if an error occurs
-				await writeTextToClipboard(tempCopyBuffer)
-				Logger.error("Error getting terminal contents:", error)
+				await writeTextToClipboard(tempCopyBuffer);
+				Logger.error("Error getting terminal contents:", error);
 				HostProvider.window.showMessage({
 					type: ShowMessageType.ERROR,
 					message: "Failed to get terminal contents",
-				})
+				});
 			}
 		}),
-	)
+	);
 
 	// Register code action provider
 	context.subscriptions.push(
 		vscode.languages.registerCodeActionsProvider(
 			"*",
 			new (class implements vscode.CodeActionProvider {
-				public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix, vscode.CodeActionKind.Refactor]
+				public static readonly providedCodeActionKinds = [
+					vscode.CodeActionKind.QuickFix,
+					vscode.CodeActionKind.Refactor,
+				];
 
 				provideCodeActions(
 					document: vscode.TextDocument,
 					range: vscode.Range,
 					context: vscode.CodeActionContext,
 				): vscode.CodeAction[] {
-					const CONTEXT_LINES_TO_EXPAND = 3
-					const START_OF_LINE_CHAR_INDEX = 0
-					const LINE_COUNT_ADJUSTMENT_FOR_ZERO_INDEXING = 1
+					const CONTEXT_LINES_TO_EXPAND = 3;
+					const START_OF_LINE_CHAR_INDEX = 0;
+					const LINE_COUNT_ADJUSTMENT_FOR_ZERO_INDEXING = 1;
 
-					const actions: vscode.CodeAction[] = []
-					const editor = vscode.window.activeTextEditor // Get active editor for selection check
+					const actions: vscode.CodeAction[] = [];
+					const editor = vscode.window.activeTextEditor; // Get active editor for selection check
 
 					// Expand range to include surrounding 3 lines or use selection if broader
-					const selection = editor?.selection
-					let expandedRange = range
+					const selection = editor?.selection;
+					let expandedRange = range;
 					if (
 						editor &&
 						selection &&
@@ -241,7 +289,7 @@ export async function activate(context: vscode.ExtensionContext) {
 						selection.contains(range.start) &&
 						selection.contains(range.end)
 					) {
-						expandedRange = selection
+						expandedRange = selection;
 					} else {
 						expandedRange = new vscode.Range(
 							Math.max(0, range.start.line - CONTEXT_LINES_TO_EXPAND),
@@ -256,48 +304,60 @@ export async function activate(context: vscode.ExtensionContext) {
 									range.end.line + CONTEXT_LINES_TO_EXPAND,
 								),
 							).text.length,
-						)
+						);
 					}
 
-					// Add to Cline (Always available)
-					const addAction = new vscode.CodeAction("Add to Cline", vscode.CodeActionKind.QuickFix)
+					// Add to coderX (Always available)
+					const addAction = new vscode.CodeAction(
+						"Add to coderX",
+						vscode.CodeActionKind.QuickFix,
+					);
 					addAction.command = {
 						command: commands.AddToChat,
-						title: "Add to Cline",
+						title: "Add to coderX",
 						arguments: [expandedRange, context.diagnostics],
-					}
-					actions.push(addAction)
+					};
+					actions.push(addAction);
 
-					// Explain with Cline (Always available)
-					const explainAction = new vscode.CodeAction("Explain with Cline", vscode.CodeActionKind.RefactorExtract) // Using a refactor kind
+					// Explain with coderX (Always available)
+					const explainAction = new vscode.CodeAction(
+						"Explain with coderX",
+						vscode.CodeActionKind.RefactorExtract,
+					); // Using a refactor kind
 					explainAction.command = {
 						command: commands.ExplainCode,
-						title: "Explain with Cline",
+						title: "Explain with coderX",
 						arguments: [expandedRange],
-					}
-					actions.push(explainAction)
+					};
+					actions.push(explainAction);
 
-					// Improve with Cline (Always available)
-					const improveAction = new vscode.CodeAction("Improve with Cline", vscode.CodeActionKind.RefactorRewrite) // Using a refactor kind
+					// Improve with coderX (Always available)
+					const improveAction = new vscode.CodeAction(
+						"Improve with coderX",
+						vscode.CodeActionKind.RefactorRewrite,
+					); // Using a refactor kind
 					improveAction.command = {
 						command: commands.ImproveCode,
-						title: "Improve with Cline",
+						title: "Improve with coderX",
 						arguments: [expandedRange],
-					}
-					actions.push(improveAction)
+					};
+					actions.push(improveAction);
 
-					// Fix with Cline (Only if diagnostics exist)
+					// Fix with coderX (Only if diagnostics exist)
 					if (context.diagnostics.length > 0) {
-						const fixAction = new vscode.CodeAction("Fix with Cline", vscode.CodeActionKind.QuickFix)
-						fixAction.isPreferred = true
+						const fixAction = new vscode.CodeAction(
+							"Fix with coderX",
+							vscode.CodeActionKind.QuickFix,
+						);
+						fixAction.isPreferred = true;
 						fixAction.command = {
 							command: commands.FixWithCline,
-							title: "Fix with Cline",
+							title: "Fix with coderX",
 							arguments: [expandedRange, context.diagnostics],
-						}
-						actions.push(fixAction)
+						};
+						actions.push(fixAction);
 					}
-					return actions
+					return actions;
 				}
 			})(),
 			{
@@ -308,97 +368,118 @@ export async function activate(context: vscode.ExtensionContext) {
 				],
 			},
 		),
-	)
+	);
 
 	// Register the command handlers
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.AddToChat, async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
-			const context = await getContextForCommand(range, diagnostics)
-			if (!context) {
-				return
-			}
-			await addToCline(context.controller, context.commandContext)
-		}),
-	)
-	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.FixWithCline, async (range: vscode.Range, diagnostics: vscode.Diagnostic[]) => {
-			const context = await getContextForCommand(range, diagnostics)
-			if (!context) {
-				return
-			}
-			await fixWithCline(context.controller, context.commandContext)
-		}),
-	)
-	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.ExplainCode, async (range: vscode.Range) => {
-			const context = await getContextForCommand(range)
-			if (!context) {
-				return
-			}
-			await explainWithCline(context.controller, context.commandContext)
-		}),
-	)
-	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.ImproveCode, async (range: vscode.Range) => {
-			const context = await getContextForCommand(range)
-			if (!context) {
-				return
-			}
-			await improveWithCline(context.controller, context.commandContext)
-		}),
-	)
-
-	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.FocusChatInput, async (preserveEditorFocus = false) => {
-			const webview = WebviewProvider.getInstance() as VscodeWebviewProvider
-
-			// Show the webview
-			const webviewView = webview.getWebview()
-			if (webviewView) {
-				if (preserveEditorFocus) {
-					// Only make webview visible without forcing focus
-					webviewView.show(false)
-				} else {
-					// Show and force focus (default behavior for explicit focus actions)
-					webviewView.show(true)
+		vscode.commands.registerCommand(
+			commands.AddToChat,
+			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
+				const context = await getContextForCommand(range, diagnostics);
+				if (!context) {
+					return;
 				}
-			}
+				await addToCline(context.controller, context.commandContext);
+			},
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			commands.FixWithCline,
+			async (range: vscode.Range, diagnostics: vscode.Diagnostic[]) => {
+				const context = await getContextForCommand(range, diagnostics);
+				if (!context) {
+					return;
+				}
+				await fixWithCline(context.controller, context.commandContext);
+			},
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			commands.ExplainCode,
+			async (range: vscode.Range) => {
+				const context = await getContextForCommand(range);
+				if (!context) {
+					return;
+				}
+				await explainWithCline(context.controller, context.commandContext);
+			},
+		),
+	);
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			commands.ImproveCode,
+			async (range: vscode.Range) => {
+				const context = await getContextForCommand(range);
+				if (!context) {
+					return;
+				}
+				await improveWithCline(context.controller, context.commandContext);
+			},
+		),
+	);
 
-			// Send show webview event with preserveEditorFocus flag
-			sendShowWebviewEvent(preserveEditorFocus)
-		}),
-	)
+	context.subscriptions.push(
+		vscode.commands.registerCommand(
+			commands.FocusChatInput,
+			async (preserveEditorFocus = false) => {
+				const webview = WebviewProvider.getInstance() as VscodeWebviewProvider;
+
+				// Show the webview
+				const webviewView = webview.getWebview();
+				if (webviewView) {
+					if (preserveEditorFocus) {
+						// Only make webview visible without forcing focus
+						webviewView.show(false);
+					} else {
+						// Show and force focus (default behavior for explicit focus actions)
+						webviewView.show(true);
+					}
+				}
+
+				// Send show webview event with preserveEditorFocus flag
+				sendShowWebviewEvent(preserveEditorFocus);
+			},
+		),
+	);
 
 	// Register Jupyter Notebook command handlers
 	const NOTEBOOK_EDIT_INSTRUCTIONS = `Special considerations for using replace_in_file on *.ipynb files:
 * Jupyter notebook files are JSON format with specific structure for source code cells
 * Source code in cells is stored as JSON string arrays ending with explicit \\n characters and commas
-* Always match the exact JSON format including quotes, commas, and escaped newlines.`
+* Always match the exact JSON format including quotes, commas, and escaped newlines.`;
 
 	// Helper to get notebook context for Jupyter commands
-	async function getNotebookCommandContext(range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) {
-		const activeNotebook = vscode.window.activeNotebookEditor
+	async function getNotebookCommandContext(
+		range?: vscode.Range,
+		diagnostics?: vscode.Diagnostic[],
+	) {
+		const activeNotebook = vscode.window.activeNotebookEditor;
 		if (!activeNotebook) {
 			HostProvider.window.showMessage({
 				type: ShowMessageType.ERROR,
-				message: "No active Jupyter notebook found. Please open a .ipynb file first.",
-			})
-			return null
+				message:
+					"No active Jupyter notebook found. Please open a .ipynb file first.",
+			});
+			return null;
 		}
 
-		const ctx = await getContextForCommand(range, diagnostics)
+		const ctx = await getContextForCommand(range, diagnostics);
 		if (!ctx) {
-			return null
+			return null;
 		}
 
-		const filePath = ctx.commandContext.filePath || ""
-		let cellJson: string | null = null
+		const filePath = ctx.commandContext.filePath || "";
+		let cellJson: string | null = null;
 		if (activeNotebook.notebook.cellCount > 0) {
-			const cellIndex = activeNotebook.notebook.cellAt(activeNotebook.selection.start).index
-			cellJson = await findMatchingNotebookCell(filePath, cellIndex)
+			const cellIndex = activeNotebook.notebook.cellAt(
+				activeNotebook.selection.start,
+			).index;
+			cellJson = await findMatchingNotebookCell(filePath, cellIndex);
 		}
 
-		return { ...ctx, cellJson }
+		return { ...ctx, cellJson };
 	}
 
 	context.subscriptions.push(
@@ -408,11 +489,11 @@ export async function activate(context: vscode.ExtensionContext) {
 				const userPrompt = await showJupyterPromptInput(
 					"Generate Notebook Cell",
 					"Enter your prompt for generating notebook cell (press Enter to confirm & Esc to cancel)",
-				)
-				if (!userPrompt) return
+				);
+				if (!userPrompt) return;
 
-				const ctx = await getNotebookCommandContext(range, diagnostics)
-				if (!ctx) return
+				const ctx = await getNotebookCommandContext(range, diagnostics);
+				if (!ctx) return;
 
 				const notebookContext = `User prompt: ${userPrompt}
 Insert a new Jupyter notebook cell above or below the current cell based on user prompt.
@@ -421,28 +502,32 @@ ${NOTEBOOK_EDIT_INSTRUCTIONS}
 Current Notebook Cell Context (JSON, sanitized of image data):
 \`\`\`json
 ${ctx.cellJson || "{}"}
-\`\`\``
+\`\`\``;
 
-				await addToCline(ctx.controller, ctx.commandContext, notebookContext)
+				await addToCline(ctx.controller, ctx.commandContext, notebookContext);
 			},
 		),
-	)
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
 			commands.JupyterExplainCell,
 			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
-				const ctx = await getNotebookCommandContext(range, diagnostics)
-				if (!ctx) return
+				const ctx = await getNotebookCommandContext(range, diagnostics);
+				if (!ctx) return;
 
 				const notebookContext = ctx.cellJson
 					? `\n\nCurrent Notebook Cell Context (JSON, sanitized of image data):\n\`\`\`json\n${ctx.cellJson}\n\`\`\``
-					: undefined
+					: undefined;
 
-				await explainWithCline(ctx.controller, ctx.commandContext, notebookContext)
+				await explainWithCline(
+					ctx.controller,
+					ctx.commandContext,
+					notebookContext,
+				);
 			},
 		),
-	)
+	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand(
@@ -451,11 +536,11 @@ ${ctx.cellJson || "{}"}
 				const userPrompt = await showJupyterPromptInput(
 					"Improve Notebook Cell",
 					"Enter your prompt for improving the current notebook cell (press Enter to confirm & Esc to cancel)",
-				)
-				if (!userPrompt) return
+				);
+				if (!userPrompt) return;
 
-				const ctx = await getNotebookCommandContext(range, diagnostics)
-				if (!ctx) return
+				const ctx = await getNotebookCommandContext(range, diagnostics);
+				if (!ctx) return;
 
 				const notebookContext = `User prompt: ${userPrompt}
 ${NOTEBOOK_EDIT_INSTRUCTIONS}
@@ -463,50 +548,64 @@ ${NOTEBOOK_EDIT_INSTRUCTIONS}
 Current Notebook Cell Context (JSON, sanitized of image data):
 \`\`\`json
 ${ctx.cellJson || "{}"}
-\`\`\``
+\`\`\``;
 
-				await improveWithCline(ctx.controller, ctx.commandContext, notebookContext)
+				await improveWithCline(
+					ctx.controller,
+					ctx.commandContext,
+					notebookContext,
+				);
 			},
 		),
-	)
+	);
 
 	// Register the reconstructTaskHistory command handler
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.ReconstructTaskHistory, async () => {
-			const { reconstructTaskHistory } = await import("./core/commands/reconstructTaskHistory")
-			await reconstructTaskHistory()
-		}),
-	)
+		vscode.commands.registerCommand(
+			commands.ReconstructTaskHistory,
+			async () => {
+				const { reconstructTaskHistory } = await import(
+					"./core/commands/reconstructTaskHistory"
+				);
+				await reconstructTaskHistory();
+			},
+		),
+	);
 
 	// Register the generateGitCommitMessage command handler
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.GenerateCommit, async (scm) => {
-			generateCommitMsg(webview.controller, scm)
+			generateCommitMsg(webview.controller, scm);
 		}),
 		vscode.commands.registerCommand(commands.AbortCommit, () => {
-			abortCommitGeneration()
+			abortCommitGeneration();
 		}),
-	)
+	);
 
-	Logger.log(`[Cline] extension activated in ${performance.now() - activationStartTime} ms`)
+	Logger.log(
+		`[coderX] extension activated in ${performance.now() - activationStartTime} ms`,
+	);
 
-	return undefined
+	return undefined;
 }
 
-async function showJupyterPromptInput(title: string, placeholder: string): Promise<string | undefined> {
+async function showJupyterPromptInput(
+	title: string,
+	placeholder: string,
+): Promise<string | undefined> {
 	return new Promise((resolve) => {
-		const quickPick = vscode.window.createQuickPick()
-		quickPick.title = title
-		quickPick.placeholder = placeholder
-		quickPick.ignoreFocusOut = true
+		const quickPick = vscode.window.createQuickPick();
+		quickPick.title = title;
+		quickPick.placeholder = placeholder;
+		quickPick.ignoreFocusOut = true;
 
 		// Allow free text input
-		quickPick.canSelectMany = false
+		quickPick.canSelectMany = false;
 
-		let userInput = ""
+		let userInput = "";
 
 		quickPick.onDidChangeValue((value) => {
-			userInput = value
+			userInput = value;
 			// Update items to show the current input
 			if (value) {
 				quickPick.items = [
@@ -515,54 +614,56 @@ async function showJupyterPromptInput(title: string, placeholder: string): Promi
 						detail: value,
 						alwaysShow: true,
 					},
-				]
+				];
 			} else {
-				quickPick.items = []
+				quickPick.items = [];
 			}
-		})
+		});
 
 		quickPick.onDidAccept(() => {
 			if (userInput) {
-				resolve(userInput)
-				quickPick.hide()
+				resolve(userInput);
+				quickPick.hide();
 			}
-		})
+		});
 
 		quickPick.onDidHide(() => {
 			if (!userInput) {
-				resolve(undefined)
+				resolve(undefined);
 			}
-			quickPick.dispose()
-		})
+			quickPick.dispose();
+		});
 
-		quickPick.show()
-	})
+		quickPick.show();
+	});
 }
 
 function setupHostProvider(context: ExtensionContext) {
-	const outputChannel = registerClineOutputChannel(context)
-	outputChannel.appendLine("[Cline] Setting up VS Code host...")
+	const outputChannel = registerClineOutputChannel(context);
+	outputChannel.appendLine("[coderX] Setting up VS Code host...");
 
-	const createWebview = () => new VscodeWebviewProvider(context)
-	const createDiffView = () => new VscodeDiffViewProvider()
-	const createCommentReview = () => getVscodeCommentReviewController()
-	const createTerminalManager = () => new VscodeTerminalManager()
+	const createWebview = () => new VscodeWebviewProvider(context);
+	const createDiffView = () => new VscodeDiffViewProvider();
+	const createCommentReview = () => getVscodeCommentReviewController();
+	const createTerminalManager = () => new VscodeTerminalManager();
 
 	const getCallbackUrl = async (path: string) => {
-		const scheme = vscode.env.uriScheme || "vscode"
-		const callbackUri = vscode.Uri.parse(`${scheme}://${context.extension.id}${path}`)
+		const scheme = vscode.env.uriScheme || "vscode";
+		const callbackUri = vscode.Uri.parse(
+			`${scheme}://${context.extension.id}${path}`,
+		);
 
 		if (vscode.env.uiKind === vscode.UIKind.Web) {
 			// In VS Code Web (Codespaces, code serve-web), vscode:// URIs redirect to the
 			// desktop app instead of staying in the browser. Use asExternalUri to convert
 			// to a web-reachable HTTPS URL that routes back to the extension's URI handler.
-			const externalUri = await vscode.env.asExternalUri(callbackUri)
-			return externalUri.toString(true)
+			const externalUri = await vscode.env.asExternalUri(callbackUri);
+			return externalUri.toString(true);
 		}
 
 		// In regular desktop VS Code, use the vscode:// URI protocol handler directly.
-		return callbackUri.toString(true)
-	}
+		return callbackUri.toString(true);
+	};
 	HostProvider.initialize(
 		createWebview,
 		createDiffView,
@@ -574,14 +675,13 @@ function setupHostProvider(context: ExtensionContext) {
 		getBinaryLocation,
 		context.extensionUri.fsPath,
 		context.globalStorageUri.fsPath,
-	)
+	);
 }
-
 
 async function getBinaryLocation(name: string): Promise<string> {
 	// The only binary currently supported is the rg binary from the VSCode installation.
 	if (!name.startsWith("rg")) {
-		throw new Error(`Binary '${name}' is not supported`)
+		throw new Error(`Binary '${name}' is not supported`);
 	}
 
 	const checkPath = async (pkgFolder: string) => {
@@ -589,35 +689,42 @@ async function getBinaryLocation(name: string): Promise<string> {
 			vscode.env.appRoot,
 			path.join(pkgFolder, name),
 			"Services.ripgrep.getBinPath",
-		)
-		const fullPath = typeof fullPathResult === "string" ? fullPathResult : fullPathResult.absolutePath
-		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined
-	}
+		);
+		const fullPath =
+			typeof fullPathResult === "string"
+				? fullPathResult
+				: fullPathResult.absolutePath;
+		return (await fileExistsAtPath(fullPath)) ? fullPath : undefined;
+	};
 
 	// VS Code 1.122.0 (microsoft/vscode#317978 et al.) migrated from @vscode/ripgrep
 	// to @vscode/ripgrep-universal, which ships per-platform/arch subdirectories.
 	// Probe the new layout first; fall back to the legacy paths for ≤1.121.x.
-	const platformArch = `${process.platform}-${process.arch}`
+	const platformArch = `${process.platform}-${process.arch}`;
 	const binPath =
-		(await checkPath(`node_modules/@vscode/ripgrep-universal/bin/${platformArch}/`)) ||
-		(await checkPath(`node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/${platformArch}/`)) ||
+		(await checkPath(
+			`node_modules/@vscode/ripgrep-universal/bin/${platformArch}/`,
+		)) ||
+		(await checkPath(
+			`node_modules.asar.unpacked/@vscode/ripgrep-universal/bin/${platformArch}/`,
+		)) ||
 		(await checkPath("node_modules/@vscode/ripgrep/bin/")) ||
 		(await checkPath("node_modules/vscode-ripgrep/bin")) ||
 		(await checkPath("node_modules.asar.unpacked/vscode-ripgrep/bin/")) ||
-		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/"))
+		(await checkPath("node_modules.asar.unpacked/@vscode/ripgrep/bin/"));
 	if (!binPath) {
-		throw new Error("Could not find ripgrep binary")
+		throw new Error("Could not find ripgrep binary");
 	}
-	return binPath
+	return binPath;
 }
 
 // This method is called when your extension is deactivated
 export async function deactivate() {
 	// Dispose Non-VSCode-specific services
-	tearDown()
+	tearDown();
 
 	// VSCode-specific services
-	disposeVscodeCommentReviewController()
+	disposeVscodeCommentReviewController();
 }
 
 // TODO: Find a solution for automatically removing DEV related content from production builds.
@@ -626,49 +733,59 @@ export async function deactivate() {
 //
 // This is a workaround to reload the extension when the source code changes
 // since vscode doesn't support hot reload for extensions
-const IS_DEV = process.env.IS_DEV === "true"
-const DEV_WORKSPACE_FOLDER = process.env.DEV_WORKSPACE_FOLDER
+const IS_DEV = process.env.IS_DEV === "true";
+const DEV_WORKSPACE_FOLDER = process.env.DEV_WORKSPACE_FOLDER;
 
 // Set up development mode file watcher
 if (IS_DEV) {
-	assert(DEV_WORKSPACE_FOLDER, "DEV_WORKSPACE_FOLDER must be set in development")
-	const watcher = vscode.workspace.createFileSystemWatcher(new vscode.RelativePattern(DEV_WORKSPACE_FOLDER, "src/**/*"))
+	assert(
+		DEV_WORKSPACE_FOLDER,
+		"DEV_WORKSPACE_FOLDER must be set in development",
+	);
+	const watcher = vscode.workspace.createFileSystemWatcher(
+		new vscode.RelativePattern(DEV_WORKSPACE_FOLDER, "src/**/*"),
+	);
 
 	watcher.onDidChange(({ scheme, path }) => {
-		Logger.info(`${scheme} ${path} changed. Reloading VSCode...`)
+		Logger.info(`${scheme} ${path} changed. Reloading VSCode...`);
 
-		vscode.commands.executeCommand("workbench.action.reloadWindow")
-	})
+		vscode.commands.executeCommand("workbench.action.reloadWindow");
+	});
 }
 
 // VSCode-specific storage migrations
-async function cleanupLegacyVSCodeStorage(context: ExtensionContext): Promise<void> {
+async function cleanupLegacyVSCodeStorage(
+	context: ExtensionContext,
+): Promise<void> {
 	try {
-		await cleanupOldApiKey(context)
-		const migrationKey = "cline.localStorageMigrationComplete"
-		const hasMigrated = context.globalState.get(migrationKey)
+		await cleanupOldApiKey(context);
+		const migrationKey = "coderx.localStorageMigrationComplete";
+		const hasMigrated = context.globalState.get(migrationKey);
 		if (hasMigrated !== undefined) {
-			return
+			return;
 		}
 
-		Logger.info("[VS Code Storage Migrations] Starting")
+		Logger.info("[VS Code Storage Migrations] Starting");
 
-		// Migrate custom instructions to global Cline rules (one-time cleanup)
-		await migrateCustomInstructionsToGlobalRules(context)
+		// Migrate custom instructions to global coderX rules (one-time cleanup)
+		await migrateCustomInstructionsToGlobalRules(context);
 
 		// Migrate welcomeViewCompleted setting based on existing API keys (one-time cleanup)
-		await migrateWelcomeViewCompleted(context)
+		await migrateWelcomeViewCompleted(context);
 
 		// Migrate workspace storage values back to global storage (reverting previous migration)
-		await migrateWorkspaceToGlobalStorage(context)
+		await migrateWorkspaceToGlobalStorage(context);
 
 		// Ensure taskHistory.json exists and migrate legacy state (runs once)
-		await migrateTaskHistoryToFile(context)
+		await migrateTaskHistoryToFile(context);
 
-		await context.globalState.update(migrationKey, true)
+		await context.globalState.update(migrationKey, true);
 
-		Logger.info("[VS Code Storage Migrations] Completed")
+		Logger.info("[VS Code Storage Migrations] Completed");
 	} catch (error) {
-		Logger.warn("[VS Code Storage Migrations] Failed" + (error instanceof Error ? `: ${error.message}` : ""))
+		Logger.warn(
+			"[VS Code Storage Migrations] Failed" +
+				(error instanceof Error ? `: ${error.message}` : ""),
+		);
 	}
 }

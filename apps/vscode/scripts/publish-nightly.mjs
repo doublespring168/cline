@@ -8,8 +8,8 @@
  * 1. Backs up the original package.json
  * 2. Updates package.json with:
  *    - New version (major.minor.timestamp format)
- *    - Changes name to "cline-nightly"
- *    - Changes displayName to "Cline (Nightly)"
+ *    - Changes name to "coderx-nightly"
+ *    - Changes displayName to "coderX (Nightly)"
  * 3. Packages the extension as a .vsix file
  * 4. Publishes to VS Code Marketplace (if VSCE_PAT is set)
  * 5. Publishes to OpenVSX Registry (if OVSX_PAT is set)
@@ -17,9 +17,9 @@
  *
  * Channels:
  *   By default, the extension is published to the RELEASE channel of
- *   `cline-nightly` (this is what the scheduled daily nightly workflow
+ *   `coderx-nightly` (this is what the scheduled daily nightly workflow
  *   uses). Pass --pre-release to instead publish to the pre-release
- *   channel of `cline-nightly` (used for manual publishes from feature
+ *   channel of `coderx-nightly` (used for manual publishes from feature
  *   branches that need tester opt-in via "Switch to Pre-Release Version").
  *
  *   Note on version ordering: because VS Code serves pre-release users
@@ -48,15 +48,18 @@
  *   - ovsx (OpenVSX CLI)
  */
 
-import { execFileSync, execSync } from "node:child_process"
-import fs from "node:fs"
-import path from "node:path"
-import { fileURLToPath } from "node:url"
-import { restore as restoreMarketplaceReadme, swapIn as swapInMarketplaceReadme } from "./marketplace-readme.mjs"
+import { execFileSync, execSync } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+	restore as restoreMarketplaceReadme,
+	swapIn as swapInMarketplaceReadme,
+} from "./marketplace-readme.mjs";
 
 // Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // ANSI color codes for console output
 const colors = {
@@ -64,61 +67,61 @@ const colors = {
 	red: "\x1b[31m",
 	green: "\x1b[32m",
 	yellow: "\x1b[33m",
-}
+};
 
 // Logging utilities
 const log = {
 	info: (msg) => console.log(`${colors.green}[INFO]${colors.reset} ${msg}`),
 	warn: (msg) => console.log(`${colors.yellow}[WARN]${colors.reset} ${msg}`),
 	error: (msg) => console.error(`${colors.red}[ERROR]${colors.reset} ${msg}`),
-}
+};
 
 // Configuration
 const config = {
 	// The name and display name for the nightly version
-	nightlyName: "cline-nightly",
-	originalName: "claude-dev",
-	nightlyDisplayName: "Cline (Nightly)",
+	nightlyName: "coderx-nightly",
+	originalName: "coderx",
+	nightlyDisplayName: "coderX (Nightly)",
 	projectRoot: path.join(__dirname, ".."),
 	get packageJsonPath() {
-		return path.join(this.projectRoot, "package.json")
+		return path.join(this.projectRoot, "package.json");
 	},
 	get packageBackupPath() {
-		return path.join(this.projectRoot, "package.json.backup")
+		return path.join(this.projectRoot, "package.json.backup");
 	},
 	get distDir() {
-		return path.join(this.projectRoot, "dist")
+		return path.join(this.projectRoot, "dist");
 	},
 	get vsixPath() {
-		return path.join(this.distDir, "cline-nightly.vsix")
+		return path.join(this.distDir, "coderx-nightly.vsix");
 	},
 	get nodeModulesPath() {
-		return path.join(this.projectRoot, "node_modules")
+		return path.join(this.projectRoot, "node_modules");
 	},
 	get originalWorkspaceLinkPath() {
-		return path.join(this.nodeModulesPath, this.originalName)
+		return path.join(this.nodeModulesPath, this.originalName);
 	},
 	get nightlyWorkspaceLinkPath() {
-		return path.join(this.nodeModulesPath, this.nightlyName)
+		return path.join(this.nodeModulesPath, this.nightlyName);
 	},
-}
+};
 
 // Utility class for managing the publish process
 class NightlyPublisher {
 	constructor() {
-		this.originalPackageJson = null
-		this.hasBackup = false
-		this.didRenameWorkspaceLink = false
-		this.didCreateNightlyWorkspaceLink = false
-		this.didSwapMarketplaceReadme = false
+		this.originalPackageJson = null;
+		this.hasBackup = false;
+		this.didRenameWorkspaceLink = false;
+		this.didCreateNightlyWorkspaceLink = false;
+		this.didSwapMarketplaceReadme = false;
 	}
 
 	/**
 	 * Resolve symlink target to an absolute path.
 	 */
 	resolveSymlinkTarget(linkPath) {
-		const target = fs.readlinkSync(linkPath)
-		return path.resolve(path.dirname(linkPath), target)
+		const target = fs.readlinkSync(linkPath);
+		return path.resolve(path.dirname(linkPath), target);
 	}
 
 	/**
@@ -127,12 +130,14 @@ class NightlyPublisher {
 	isExpectedWorkspaceSelfLink(linkPath) {
 		try {
 			if (!fs.lstatSync(linkPath).isSymbolicLink()) {
-				return false
+				return false;
 			}
 
-			return this.resolveSymlinkTarget(linkPath) === path.resolve(config.projectRoot)
+			return (
+				this.resolveSymlinkTarget(linkPath) === path.resolve(config.projectRoot)
+			);
 		} catch {
-			return false
+			return false;
 		}
 	}
 
@@ -143,25 +148,25 @@ class NightlyPublisher {
 		const dependencies = [
 			{ name: "vsce", check: "vsce --version" },
 			{ name: "npx", check: "npx --version" },
-		]
+		];
 
-		const missing = []
+		const missing = [];
 
 		for (const dep of dependencies) {
 			try {
-				execSync(dep.check, { stdio: "ignore" })
+				execSync(dep.check, { stdio: "ignore" });
 			} catch {
-				missing.push(dep.name)
+				missing.push(dep.name);
 			}
 		}
 
 		if (missing.length > 0) {
 			throw new Error(
 				`Missing required dependencies: ${missing.join(", ")}. Please install them before running this script.`,
-			)
+			);
 		}
 
-		log.info("All dependencies are installed")
+		log.info("All dependencies are installed");
 	}
 
 	/**
@@ -169,10 +174,10 @@ class NightlyPublisher {
 	 */
 	commandExists(command) {
 		try {
-			execSync(`which ${command}`, { stdio: "ignore" })
-			return true
+			execSync(`which ${command}`, { stdio: "ignore" });
+			return true;
 		} catch {
-			return false
+			return false;
 		}
 	}
 
@@ -181,13 +186,13 @@ class NightlyPublisher {
 	 */
 	backupPackageJson() {
 		if (!fs.existsSync(config.packageJsonPath)) {
-			throw new Error(`package.json not found at ${config.packageJsonPath}`)
+			throw new Error(`package.json not found at ${config.packageJsonPath}`);
 		}
 
-		log.info("Backing up original package.json")
-		this.originalPackageJson = fs.readFileSync(config.packageJsonPath, "utf-8")
-		fs.writeFileSync(config.packageBackupPath, this.originalPackageJson)
-		this.hasBackup = true
+		log.info("Backing up original package.json");
+		this.originalPackageJson = fs.readFileSync(config.packageJsonPath, "utf-8");
+		fs.writeFileSync(config.packageBackupPath, this.originalPackageJson);
+		this.hasBackup = true;
 	}
 
 	/**
@@ -195,10 +200,10 @@ class NightlyPublisher {
 	 */
 	restorePackageJson() {
 		if (this.hasBackup && fs.existsSync(config.packageBackupPath)) {
-			log.info("Restoring original package.json")
-			fs.writeFileSync(config.packageJsonPath, this.originalPackageJson)
-			fs.unlinkSync(config.packageBackupPath)
-			this.hasBackup = false
+			log.info("Restoring original package.json");
+			fs.writeFileSync(config.packageJsonPath, this.originalPackageJson);
+			fs.unlinkSync(config.packageBackupPath);
+			this.hasBackup = false;
 		}
 	}
 
@@ -207,54 +212,62 @@ class NightlyPublisher {
 	 *
 	 * The repo root is a workspace package ("."). When npm installs dependencies,
 	 * it creates a self-link at node_modules/<package-name>. Nightly packaging
-	 * changes package.json name from "claude-dev" to "cline-nightly". If we don't
+	 * changes package.json name from "coderx" to "coderx-nightly". If we don't
 	 * align this link, vsce's dependency detection (`npm list --production`) fails
-	 * with ELSPROBLEMS (missing cline-nightly + extraneous claude-dev).
+	 * with ELSPROBLEMS (missing coderx-nightly + extraneous coderx).
 	 */
 	reconcileWorkspaceSelfLinkForNightly() {
-		const originalPath = config.originalWorkspaceLinkPath
-		const nightlyPath = config.nightlyWorkspaceLinkPath
+		const originalPath = config.originalWorkspaceLinkPath;
+		const nightlyPath = config.nightlyWorkspaceLinkPath;
 
 		if (!fs.existsSync(config.nodeModulesPath)) {
-			log.warn("node_modules not found, skipping workspace self-link reconciliation")
-			return
+			log.warn(
+				"node_modules not found, skipping workspace self-link reconciliation",
+			);
+			return;
 		}
 
 		if (fs.existsSync(nightlyPath)) {
 			if (!this.isExpectedWorkspaceSelfLink(nightlyPath)) {
 				throw new Error(
 					`Refusing to continue: unexpected path at ${nightlyPath}. Expected a workspace symlink to ${config.projectRoot}`,
-				)
+				);
 			}
 
-			log.info("Nightly workspace self-link already exists")
-			return
+			log.info("Nightly workspace self-link already exists");
+			return;
 		}
 
 		if (fs.existsSync(originalPath)) {
 			if (!this.isExpectedWorkspaceSelfLink(originalPath)) {
 				throw new Error(
 					`Refusing to continue: unexpected path at ${originalPath}. Expected a workspace symlink to ${config.projectRoot}`,
-				)
+				);
 			}
 
-			log.info(`Renaming workspace self-link: ${config.originalName} -> ${config.nightlyName}`)
-			fs.renameSync(originalPath, nightlyPath)
-			this.didRenameWorkspaceLink = true
-			return
+			log.info(
+				`Renaming workspace self-link: ${config.originalName} -> ${config.nightlyName}`,
+			);
+			fs.renameSync(originalPath, nightlyPath);
+			this.didRenameWorkspaceLink = true;
+			return;
 		}
 
 		// In some environments npm may not have created the workspace self-link yet.
 		// Create it explicitly so `npm list --production` can resolve the renamed
 		// package name during vsce dependency detection.
-		log.warn("Original workspace self-link not found, creating nightly workspace self-link")
-		fs.symlinkSync(config.projectRoot, nightlyPath, "dir")
+		log.warn(
+			"Original workspace self-link not found, creating nightly workspace self-link",
+		);
+		fs.symlinkSync(config.projectRoot, nightlyPath, "dir");
 
 		if (!this.isExpectedWorkspaceSelfLink(nightlyPath)) {
-			throw new Error(`Failed to create expected workspace symlink at ${nightlyPath}`)
+			throw new Error(
+				`Failed to create expected workspace symlink at ${nightlyPath}`,
+			);
 		}
 
-		this.didCreateNightlyWorkspaceLink = true
+		this.didCreateNightlyWorkspaceLink = true;
 	}
 
 	/**
@@ -262,36 +275,40 @@ class NightlyPublisher {
 	 */
 	restoreWorkspaceSelfLink() {
 		if (!this.didRenameWorkspaceLink && !this.didCreateNightlyWorkspaceLink) {
-			return
+			return;
 		}
 
-		const originalPath = config.originalWorkspaceLinkPath
-		const nightlyPath = config.nightlyWorkspaceLinkPath
+		const originalPath = config.originalWorkspaceLinkPath;
+		const nightlyPath = config.nightlyWorkspaceLinkPath;
 
 		if (fs.existsSync(nightlyPath) && !fs.existsSync(originalPath)) {
 			if (this.didRenameWorkspaceLink) {
 				if (!this.isExpectedWorkspaceSelfLink(nightlyPath)) {
 					throw new Error(
 						`Refusing to restore: unexpected path at ${nightlyPath}. Expected a workspace symlink to ${config.projectRoot}`,
-					)
+					);
 				}
 
-				log.info(`Restoring workspace self-link: ${config.nightlyName} -> ${config.originalName}`)
-				fs.renameSync(nightlyPath, originalPath)
+				log.info(
+					`Restoring workspace self-link: ${config.nightlyName} -> ${config.originalName}`,
+				);
+				fs.renameSync(nightlyPath, originalPath);
 			} else if (this.didCreateNightlyWorkspaceLink) {
 				if (!this.isExpectedWorkspaceSelfLink(nightlyPath)) {
 					throw new Error(
 						`Refusing to remove: unexpected path at ${nightlyPath}. Expected a workspace symlink to ${config.projectRoot}`,
-					)
+					);
 				}
 
-				log.info(`Removing temporary workspace self-link: ${config.nightlyName}`)
-				fs.unlinkSync(nightlyPath)
+				log.info(
+					`Removing temporary workspace self-link: ${config.nightlyName}`,
+				);
+				fs.unlinkSync(nightlyPath);
 			}
 		}
 
-		this.didRenameWorkspaceLink = false
-		this.didCreateNightlyWorkspaceLink = false
+		this.didRenameWorkspaceLink = false;
+		this.didCreateNightlyWorkspaceLink = false;
 	}
 
 	/**
@@ -300,10 +317,10 @@ class NightlyPublisher {
 	 * `vsce package` time and there's no flag to redirect it.
 	 */
 	swapMarketplaceReadme() {
-		const result = swapInMarketplaceReadme()
-		this.didSwapMarketplaceReadme = !result.skipped
+		const result = swapInMarketplaceReadme();
+		this.didSwapMarketplaceReadme = !result.skipped;
 		if (this.didSwapMarketplaceReadme) {
-			log.info("Swapped README.marketplace.md into README.md for packaging")
+			log.info("Swapped README.marketplace.md into README.md for packaging");
 		}
 	}
 
@@ -312,15 +329,15 @@ class NightlyPublisher {
 	 */
 	restoreMarketplaceReadme() {
 		if (!this.didSwapMarketplaceReadme) {
-			return
+			return;
 		}
 		try {
-			restoreMarketplaceReadme()
-			log.info("Restored original README.md")
+			restoreMarketplaceReadme();
+			log.info("Restored original README.md");
 		} catch (error) {
-			log.error(`Failed to restore README.md: ${error.message}`)
+			log.error(`Failed to restore README.md: ${error.message}`);
 		}
-		this.didSwapMarketplaceReadme = false
+		this.didSwapMarketplaceReadme = false;
 	}
 
 	/**
@@ -329,49 +346,59 @@ class NightlyPublisher {
 	 */
 	generateVersion(currentVersion) {
 		// Extract major.minor from current version (e.g., "3.27.1" -> "3.27")
-		const versionParts = currentVersion.split(".")
+		const versionParts = currentVersion.split(".");
 		if (versionParts.length < 2) {
-			throw new Error(`Invalid version format: ${currentVersion}`)
+			throw new Error(`Invalid version format: ${currentVersion}`);
 		}
 
-		const major = versionParts[0]
-		const minor = versionParts[1]
-		const timestamp = Math.floor(Date.now() / 1000)
+		const major = versionParts[0];
+		const minor = versionParts[1];
+		const timestamp = Math.floor(Date.now() / 1000);
 
-		return `${major}.${minor}.${timestamp}`
+		return `${major}.${minor}.${timestamp}`;
 	}
 
 	/**
 	 * Update package.json with nightly configuration
 	 */
 	updatePackageJson() {
-		// Replace any occurrences cline. or claude-dev with nightly name
-		const rawContent = fs.readFileSync(config.packageJsonPath, "utf-8")
-		const content = rawContent.replaceAll("claude-dev", config.nightlyName).replaceAll('"cline.', `"${config.nightlyName}.`)
+		// Replace the stable package and command namespace with the nightly name.
+		const rawContent = fs.readFileSync(config.packageJsonPath, "utf-8");
+		const content = rawContent
+			.replaceAll(`${config.originalName}.`, `${config.nightlyName}.`)
+			.replaceAll(
+				`${config.originalName}-ActivityBar`,
+				`${config.nightlyName}-ActivityBar`,
+			)
+			.replaceAll(
+				`${config.originalName}-ai-review`,
+				`${config.nightlyName}-ai-review`,
+			);
 
-		const pkg = JSON.parse(content)
-		const currentVersion = pkg.version
+		const pkg = JSON.parse(content);
+		const currentVersion = pkg.version;
 
 		if (!currentVersion) {
-			throw new Error("Could not read version from package.json")
+			throw new Error("Could not read version from package.json");
 		}
 
-		log.info(`Current version: ${currentVersion}`)
+		log.info(`Current version: ${currentVersion}`);
 
-		const newVersion = this.generateVersion(currentVersion)
-		log.info(`New version: ${newVersion}`)
+		const newVersion = this.generateVersion(currentVersion);
+		log.info(`New version: ${newVersion}`);
 
 		// Update package.json fields
-		pkg.version = newVersion
-		pkg.name = config.nightlyName
-		pkg.displayName = config.nightlyDisplayName
-		pkg.contributes.viewsContainers.activitybar.title = config.nightlyDisplayName
+		pkg.version = newVersion;
+		pkg.name = config.nightlyName;
+		pkg.displayName = config.nightlyDisplayName;
+		pkg.contributes.viewsContainers.activitybar.title =
+			config.nightlyDisplayName;
 
 		// Save updated package.json
-		log.info("Updating package.json for nightly build")
-		fs.writeFileSync(config.packageJsonPath, JSON.stringify(pkg, null, "\t"))
+		log.info("Updating package.json for nightly build");
+		fs.writeFileSync(config.packageJsonPath, JSON.stringify(pkg, null, "\t"));
 
-		return newVersion
+		return newVersion;
 	}
 
 	/**
@@ -380,30 +407,31 @@ class NightlyPublisher {
 	packageExtension(isPreRelease = false) {
 		// Ensure dist directory exists
 		if (!fs.existsSync(config.distDir)) {
-			fs.mkdirSync(config.distDir, { recursive: true })
+			fs.mkdirSync(config.distDir, { recursive: true });
 		}
 
-		log.info(`Packaging extension${isPreRelease ? " (pre-release)" : ""}`)
+		log.info(`Packaging extension${isPreRelease ? " (pre-release)" : ""}`);
 
 		const args = [
 			"package",
 			...(isPreRelease ? ["--pre-release"] : []),
+			"--allow-missing-repository",
 			"--no-update-package-json",
 			"--no-git-tag-version",
 			"--allow-package-secrets",
 			"sendgrid",
 			"--out",
 			config.vsixPath,
-		]
+		];
 
 		try {
 			execFileSync("vsce", args, {
 				stdio: "inherit",
 				cwd: config.projectRoot,
-			})
-			log.info(`Package created: ${config.vsixPath}`)
+			});
+			log.info(`Package created: ${config.vsixPath}`);
 		} catch (error) {
-			throw new Error(`Failed to package extension: ${error.message}`)
+			throw new Error(`Failed to package extension: ${error.message}`);
 		}
 	}
 
@@ -411,14 +439,16 @@ class NightlyPublisher {
 	 * Publish to VS Code Marketplace
 	 */
 	publishToVSCodeMarketplace(isPreRelease = false) {
-		const token = process.env.VSCE_PAT
+		const token = process.env.VSCE_PAT;
 
 		if (!token) {
-			log.warn("VSCE_PAT not set, skipping VS Code Marketplace publish")
-			return false
+			log.warn("VSCE_PAT not set, skipping VS Code Marketplace publish");
+			return false;
 		}
 
-		log.info(`Publishing to VS Code Marketplace${isPreRelease ? " (pre-release channel)" : ""}`)
+		log.info(
+			`Publishing to VS Code Marketplace${isPreRelease ? " (pre-release channel)" : ""}`,
+		);
 
 		const args = [
 			"publish",
@@ -426,18 +456,20 @@ class NightlyPublisher {
 			"--no-git-tag-version",
 			"--packagePath",
 			config.vsixPath,
-		]
+		];
 
 		try {
 			execFileSync("vsce", args, {
 				env: { ...process.env, VSCE_PAT: token },
 				stdio: "inherit",
 				cwd: config.projectRoot,
-			})
-			log.info("Successfully published to VS Code Marketplace")
-			return true
+			});
+			log.info("Successfully published to VS Code Marketplace");
+			return true;
 		} catch (error) {
-			throw new Error(`Failed to publish to VS Code Marketplace: ${error.message}`)
+			throw new Error(
+				`Failed to publish to VS Code Marketplace: ${error.message}`,
+			);
 		}
 	}
 
@@ -445,14 +477,16 @@ class NightlyPublisher {
 	 * Publish to OpenVSX Registry
 	 */
 	publishToOpenVSX(isPreRelease = false) {
-		const token = process.env.OVSX_PAT
+		const token = process.env.OVSX_PAT;
 
 		if (!token) {
-			log.warn("OVSX_PAT not set, skipping OpenVSX Registry publish")
-			return false
+			log.warn("OVSX_PAT not set, skipping OpenVSX Registry publish");
+			return false;
 		}
 
-		log.info(`Publishing to OpenVSX Registry${isPreRelease ? " (pre-release channel)" : ""}`)
+		log.info(
+			`Publishing to OpenVSX Registry${isPreRelease ? " (pre-release channel)" : ""}`,
+		);
 
 		const args = [
 			"ovsx",
@@ -462,17 +496,19 @@ class NightlyPublisher {
 			config.vsixPath,
 			"--pat",
 			token,
-		]
+		];
 
 		try {
 			execFileSync("npx", args, {
 				stdio: "inherit",
 				cwd: config.projectRoot,
-			})
-			log.info("Successfully published to OpenVSX Registry")
-			return true
+			});
+			log.info("Successfully published to OpenVSX Registry");
+			return true;
 		} catch (error) {
-			throw new Error(`Failed to publish to OpenVSX Registry: ${error.message}`)
+			throw new Error(
+				`Failed to publish to OpenVSX Registry: ${error.message}`,
+			);
 		}
 	}
 
@@ -481,98 +517,108 @@ class NightlyPublisher {
 	 */
 	async run({ isDryRun = false, isPreRelease = false } = {}) {
 		try {
-			const channelLabel = isPreRelease ? " (pre-release channel)" : " (release channel)"
-			log.info(`Starting nightly publish process${channelLabel}${isDryRun ? " (dry run)" : ""}`)
+			const channelLabel = isPreRelease
+				? " (pre-release channel)"
+				: " (release channel)";
+			log.info(
+				`Starting nightly publish process${channelLabel}${isDryRun ? " (dry run)" : ""}`,
+			);
 
 			// Step 1: Check dependencies
-			this.checkDependencies()
+			this.checkDependencies();
 
 			// Step 2: Backup package.json
-			this.backupPackageJson()
+			this.backupPackageJson();
 
 			// Step 3: Update package.json
-			const newVersion = this.updatePackageJson()
+			const newVersion = this.updatePackageJson();
 
 			// Step 3.5: Keep npm workspace self-link aligned with nightly package name
-			this.reconcileWorkspaceSelfLinkForNightly()
+			this.reconcileWorkspaceSelfLinkForNightly();
 
 			// Step 3.6: Swap in marketplace README before packaging
-			this.swapMarketplaceReadme()
+			this.swapMarketplaceReadme();
 
 			// Step 4: Package extension
-			this.packageExtension(isPreRelease)
+			this.packageExtension(isPreRelease);
 
 			// Step 5: Publish to marketplaces (skip if dry run)
-			let vsCodePublished = false
-			let openVSXPublished = false
+			let vsCodePublished = false;
+			let openVSXPublished = false;
 
 			if (isDryRun) {
-				log.info("Dry run mode: Skipping marketplace publishing")
+				log.info("Dry run mode: Skipping marketplace publishing");
 			} else {
-				vsCodePublished = this.publishToVSCodeMarketplace(isPreRelease)
-				openVSXPublished = this.publishToOpenVSX(isPreRelease)
+				vsCodePublished = this.publishToVSCodeMarketplace(isPreRelease);
+				openVSXPublished = this.publishToOpenVSX(isPreRelease);
 			}
 
 			// Summary
-			log.info(`Nightly publish process completed successfully${isDryRun ? " (dry run)" : ""}`)
-			log.info(`Package created for v${newVersion}: ${config.vsixPath}`)
+			log.info(
+				`Nightly publish process completed successfully${isDryRun ? " (dry run)" : ""}`,
+			);
+			log.info(`Package created for v${newVersion}: ${config.vsixPath}`);
 
 			if (!isDryRun && !vsCodePublished && !openVSXPublished) {
-				log.warn("Extension was packaged but not published to any marketplace")
-				log.warn("Set VSCE_PAT and/or OVSX_PAT environment variables to enable publishing")
+				log.warn("Extension was packaged but not published to any marketplace");
+				log.warn(
+					"Set VSCE_PAT and/or OVSX_PAT environment variables to enable publishing",
+				);
 			}
 		} catch (error) {
-			log.error(`Publish failed: ${error.message}`)
-			process.exit(1)
+			log.error(`Publish failed: ${error.message}`);
+			process.exit(1);
 		} finally {
 			// Always restore workspace link first
-			this.restoreWorkspaceSelfLink()
+			this.restoreWorkspaceSelfLink();
 
 			// Always restore package.json
-			this.restorePackageJson()
+			this.restorePackageJson();
 
 			// Always restore README.md
-			this.restoreMarketplaceReadme()
+			this.restoreMarketplaceReadme();
 		}
 	}
 }
 
 // Handle cleanup on process exit
-const publisher = new NightlyPublisher()
+const publisher = new NightlyPublisher();
 
 process.on("exit", () => {
-	publisher.restoreWorkspaceSelfLink()
-	publisher.restorePackageJson()
-	publisher.restoreMarketplaceReadme()
-})
+	publisher.restoreWorkspaceSelfLink();
+	publisher.restorePackageJson();
+	publisher.restoreMarketplaceReadme();
+});
 
 process.on("SIGINT", () => {
-	log.info("\nInterrupted, cleaning up...")
-	publisher.restoreWorkspaceSelfLink()
-	publisher.restorePackageJson()
-	publisher.restoreMarketplaceReadme()
-	process.exit(130)
-})
+	log.info("\nInterrupted, cleaning up...");
+	publisher.restoreWorkspaceSelfLink();
+	publisher.restorePackageJson();
+	publisher.restoreMarketplaceReadme();
+	process.exit(130);
+});
 
 process.on("SIGTERM", () => {
-	log.info("\nTerminated, cleaning up...")
-	publisher.restoreWorkspaceSelfLink()
-	publisher.restorePackageJson()
-	publisher.restoreMarketplaceReadme()
-	process.exit(143)
-})
+	log.info("\nTerminated, cleaning up...");
+	publisher.restoreWorkspaceSelfLink();
+	publisher.restorePackageJson();
+	publisher.restoreMarketplaceReadme();
+	process.exit(143);
+});
 
 // Parse command line arguments
-const args = process.argv.slice(2)
-const isDryRun = args.includes("--dry-run") || args.includes("-n")
-const isPreRelease = args.includes("--pre-release")
-const knownFlags = ["--dry-run", "-n", "--pre-release", "--help", "-h"]
-const unknownArgs = args.filter((a) => !knownFlags.includes(a))
+const args = process.argv.slice(2);
+const isDryRun = args.includes("--dry-run") || args.includes("-n");
+const isPreRelease = args.includes("--pre-release");
+const knownFlags = ["--dry-run", "-n", "--pre-release", "--help", "-h"];
+const unknownArgs = args.filter((a) => !knownFlags.includes(a));
 if (unknownArgs.length > 0) {
-	log.error(`Unknown argument(s): ${unknownArgs.join(", ")}. Run with --help for usage.`)
-	process.exit(1)
+	log.error(
+		`Unknown argument(s): ${unknownArgs.join(", ")}. Run with --help for usage.`,
+	);
+	process.exit(1);
 }
-const showHelp = args.includes("--help") || args.includes("-h")
+const showHelp = args.includes("--help") || args.includes("-h");
 
 if (showHelp) {
 	console.log(`
@@ -582,7 +628,7 @@ Usage:
   npm run publish:marketplace:nightly [options]
 
 Options:
-  --pre-release    Publish to the pre-release channel of cline-nightly.
+  --pre-release    Publish to the pre-release channel of coderx-nightly.
                    Default is the release channel (used by the scheduled
                    nightly workflow).
   --dry-run, -n    Run without actually publishing (package only)
@@ -597,12 +643,12 @@ Examples:
   npm run publish:marketplace:nightly -- --pre-release     # Pre-release channel publish
   npm run publish:marketplace:nightly -- --dry-run         # Package only
   VSCE_PAT="token" npm run publish:marketplace:nightly     # Publish to VS Code only
-`)
-	process.exit(0)
+`);
+	process.exit(0);
 }
 
 // Run the publisher
 publisher.run({ isDryRun, isPreRelease }).catch((error) => {
-	log.error(error.message)
-	process.exit(1)
-})
+	log.error(error.message);
+	process.exit(1);
+});

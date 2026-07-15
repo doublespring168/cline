@@ -1,35 +1,45 @@
-import fs from "fs/promises"
-import { after, beforeEach, describe, it } from "mocha"
-import os from "os"
-import path from "path"
-import { ClineIgnoreController } from "./ClineIgnoreController"
-import "should"
+import fs from "fs/promises";
+import { after, beforeEach, describe, it } from "mocha";
+import os from "os";
+import path from "path";
+import { ClineIgnoreController } from "./ClineIgnoreController";
+import "should";
 
 describe("ClineIgnoreController", () => {
-	let tempDir: string
-	let controller: ClineIgnoreController
+	let tempDir: string;
+	let controller: ClineIgnoreController;
 
 	beforeEach(async () => {
 		// Create a temp directory for testing
-		tempDir = path.join(os.tmpdir(), `llm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`)
-		await fs.mkdir(tempDir)
+		tempDir = path.join(
+			os.tmpdir(),
+			`llm-test-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+		);
+		await fs.mkdir(tempDir);
 
-		// Create default .clineignore file
+		// Create default .coderxignore file
 		await fs.writeFile(
-			path.join(tempDir, ".clineignore"),
-			[".env", "*.secret", "private/", "# This is a comment", "", "temp.*", "file-with-space-at-end.* ", "**/.git/**"].join(
-				"\n",
-			),
-		)
+			path.join(tempDir, ".coderxignore"),
+			[
+				".env",
+				"*.secret",
+				"private/",
+				"# This is a comment",
+				"",
+				"temp.*",
+				"file-with-space-at-end.* ",
+				"**/.git/**",
+			].join("\n"),
+		);
 
-		controller = new ClineIgnoreController(tempDir)
-		await controller.initialize()
-	})
+		controller = new ClineIgnoreController(tempDir);
+		await controller.initialize();
+	});
 
 	after(async () => {
 		// Clean up temp directory
-		await fs.rm(tempDir, { recursive: true, force: true })
-	})
+		await fs.rm(tempDir, { recursive: true, force: true });
+	});
 
 	describe("Default Patterns", () => {
 		// it("should block access to common ignored files", async () => {
@@ -46,15 +56,15 @@ describe("ClineIgnoreController", () => {
 				controller.validateAccess("src/index.ts"),
 				controller.validateAccess("README.md"),
 				controller.validateAccess("package.json"),
-			]
-			results.forEach((result) => result.should.be.true())
-		})
+			];
+			results.forEach((result) => result.should.be.true());
+		});
 
-		it("should block access to .clineignore file", async () => {
-			const result = controller.validateAccess(".clineignore")
-			result.should.be.false()
-		})
-	})
+		it("should block access to .coderxignore file", async () => {
+			const result = controller.validateAccess(".coderxignore");
+			result.should.be.false();
+		});
+	});
 
 	describe("Custom Patterns", () => {
 		it("should block access to custom ignored patterns", async () => {
@@ -64,9 +74,9 @@ describe("ClineIgnoreController", () => {
 				controller.validateAccess("temp.json"),
 				controller.validateAccess("nested/deep/file.secret"),
 				controller.validateAccess("private/nested/deep/file.txt"),
-			]
-			results.forEach((result) => result.should.be.false())
-		})
+			];
+			results.forEach((result) => result.should.be.false());
+		});
 
 		it("should allow access to non-ignored files", async () => {
 			const results = [
@@ -75,35 +85,35 @@ describe("ClineIgnoreController", () => {
 				controller.validateAccess("src/temp/file.ts"),
 				controller.validateAccess("nested/deep/file.txt"),
 				controller.validateAccess("not-private/data.txt"),
-			]
-			results.forEach((result) => result.should.be.true())
-		})
+			];
+			results.forEach((result) => result.should.be.true());
+		});
 
 		it("should handle pattern edge cases", async () => {
 			await fs.writeFile(
-				path.join(tempDir, ".clineignore"),
+				path.join(tempDir, ".coderxignore"),
 				["*.secret", "private/", "*.tmp", "data-*.json", "temp/*"].join("\n"),
-			)
+			);
 
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
 			const results = [
 				controller.validateAccess("data-123.json"), // Should be false (wildcard)
 				controller.validateAccess("data.json"), // Should be true (doesn't match pattern)
 				controller.validateAccess("script.tmp"), // Should be false (extension match)
-			]
+			];
 
-			results[0].should.be.false() // data-123.json
-			results[1].should.be.true() // data.json
-			results[2].should.be.false() // script.tmp
-		})
+			results[0].should.be.false(); // data-123.json
+			results[1].should.be.true(); // data.json
+			results[2].should.be.false(); // script.tmp
+		});
 
 		// ToDo: handle negation patterns successfully
 
 		// it("should handle negation patterns", async () => {
 		// 	await fs.writeFile(
-		// 		path.join(tempDir, ".clineignore"),
+		// 		path.join(tempDir, ".coderxignore"),
 		// 		[
 		// 			"temp/*", // Ignore everything in temp
 		// 			"!temp/allowed/*", // But allow files in temp/allowed
@@ -148,146 +158,168 @@ describe("ClineIgnoreController", () => {
 		// 	results[9].should.be.true() // assets/public/data.json
 		// })
 
-		it("should handle comments in .clineignore", async () => {
-			// Create a new .clineignore with comments
+		it("should handle comments in .coderxignore", async () => {
+			// Create a new .coderxignore with comments
 			await fs.writeFile(
-				path.join(tempDir, ".clineignore"),
+				path.join(tempDir, ".coderxignore"),
 				["# Comment line", "*.secret", "private/", "temp.*"].join("\n"),
-			)
+			);
 
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
-			const result = controller.validateAccess("test.secret")
-			result.should.be.false()
-		})
-	})
+			const result = controller.validateAccess("test.secret");
+			result.should.be.false();
+		});
+	});
 
 	describe("Path Handling", () => {
 		it("should handle absolute paths and match ignore patterns", async () => {
 			// Test absolute path that should be allowed
-			const allowedPath = path.join(tempDir, "src/file.ts")
-			const allowedResult = controller.validateAccess(allowedPath)
-			allowedResult.should.be.true()
+			const allowedPath = path.join(tempDir, "src/file.ts");
+			const allowedResult = controller.validateAccess(allowedPath);
+			allowedResult.should.be.true();
 
 			// Test absolute path that matches an ignore pattern (*.secret)
-			const ignoredPath = path.join(tempDir, "config.secret")
-			const ignoredResult = controller.validateAccess(ignoredPath)
-			ignoredResult.should.be.false()
+			const ignoredPath = path.join(tempDir, "config.secret");
+			const ignoredResult = controller.validateAccess(ignoredPath);
+			ignoredResult.should.be.false();
 
 			// Test absolute path in ignored directory (private/)
-			const ignoredDirPath = path.join(tempDir, "private/data.txt")
-			const ignoredDirResult = controller.validateAccess(ignoredDirPath)
-			ignoredDirResult.should.be.false()
-		})
+			const ignoredDirPath = path.join(tempDir, "private/data.txt");
+			const ignoredDirResult = controller.validateAccess(ignoredDirPath);
+			ignoredDirResult.should.be.false();
+		});
 
 		it("should handle relative paths and match ignore patterns", async () => {
 			// Test relative path that should be allowed
-			const allowedResult = controller.validateAccess("./src/file.ts")
-			allowedResult.should.be.true()
+			const allowedResult = controller.validateAccess("./src/file.ts");
+			allowedResult.should.be.true();
 
 			// Test relative path that matches an ignore pattern (*.secret)
-			const ignoredResult = controller.validateAccess("./config.secret")
-			ignoredResult.should.be.false()
+			const ignoredResult = controller.validateAccess("./config.secret");
+			ignoredResult.should.be.false();
 
 			// Test relative path in ignored directory (private/)
-			const ignoredDirResult = controller.validateAccess("./private/data.txt")
-			ignoredDirResult.should.be.false()
-		})
+			const ignoredDirResult = controller.validateAccess("./private/data.txt");
+			ignoredDirResult.should.be.false();
+		});
 
 		it("should normalize paths with backslashes", async () => {
-			const result = controller.validateAccess("src\\file.ts")
-			result.should.be.true()
-		})
-	})
+			const result = controller.validateAccess("src\\file.ts");
+			result.should.be.true();
+		});
+	});
 
 	describe("Batch Filtering", () => {
 		it("should filter an array of paths", async () => {
-			const paths = ["src/index.ts", ".env", "lib/utils.ts", ".git/config", "dist/bundle.js"]
+			const paths = [
+				"src/index.ts",
+				".env",
+				"lib/utils.ts",
+				".git/config",
+				"dist/bundle.js",
+			];
 
-			const filtered = controller.filterPaths(paths)
-			filtered.should.deepEqual(["src/index.ts", "lib/utils.ts", "dist/bundle.js"])
-		})
-	})
+			const filtered = controller.filterPaths(paths);
+			filtered.should.deepEqual([
+				"src/index.ts",
+				"lib/utils.ts",
+				"dist/bundle.js",
+			]);
+		});
+	});
 
 	describe("Error Handling", () => {
 		it("should handle invalid paths", async () => {
 			// Test with an invalid path containing null byte
-			const result = controller.validateAccess("\0invalid")
-			result.should.be.true()
-		})
+			const result = controller.validateAccess("\0invalid");
+			result.should.be.true();
+		});
 
-		it("should handle missing .clineignore gracefully", async () => {
-			// Create a new controller in a directory without .clineignore
-			const emptyDir = path.join(os.tmpdir(), `llm-test-empty-${Date.now()}`)
-			await fs.mkdir(emptyDir)
+		it("should handle missing .coderxignore gracefully", async () => {
+			// Create a new controller in a directory without .coderxignore
+			const emptyDir = path.join(os.tmpdir(), `llm-test-empty-${Date.now()}`);
+			await fs.mkdir(emptyDir);
 
 			try {
-				const controller = new ClineIgnoreController(emptyDir)
-				await controller.initialize()
-				const result = controller.validateAccess("file.txt")
-				result.should.be.true()
+				const controller = new ClineIgnoreController(emptyDir);
+				await controller.initialize();
+				const result = controller.validateAccess("file.txt");
+				result.should.be.true();
 			} finally {
-				await fs.rm(emptyDir, { recursive: true, force: true })
+				await fs.rm(emptyDir, { recursive: true, force: true });
 			}
-		})
+		});
 
-		it("should handle empty .clineignore", async () => {
-			await fs.writeFile(path.join(tempDir, ".clineignore"), "")
+		it("should handle empty .coderxignore", async () => {
+			await fs.writeFile(path.join(tempDir, ".coderxignore"), "");
 
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
-			const result = controller.validateAccess("regular-file.txt")
-			result.should.be.true()
-		})
-	})
+			const result = controller.validateAccess("regular-file.txt");
+			result.should.be.true();
+		});
+	});
 
 	describe("Include Directive", () => {
 		it("should load patterns from an included file", async () => {
 			// Create a .gitignore file with patterns "*.log" and "debug/"
-			await fs.writeFile(path.join(tempDir, ".gitignore"), ["*.log", "debug/"].join("\n"))
+			await fs.writeFile(
+				path.join(tempDir, ".gitignore"),
+				["*.log", "debug/"].join("\n"),
+			);
 
-			// Create a .clineignore file that includes .gitignore and adds an extra pattern "secret.txt"
-			await fs.writeFile(path.join(tempDir, ".clineignore"), ["!include .gitignore", "secret.txt"].join("\n"))
+			// Create a .coderxignore file that includes .gitignore and adds an extra pattern "secret.txt"
+			await fs.writeFile(
+				path.join(tempDir, ".coderxignore"),
+				["!include .gitignore", "secret.txt"].join("\n"),
+			);
 
-			// Initialize the controller to load the updated .clineignore
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			// Initialize the controller to load the updated .coderxignore
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
 			// "server.log" should be ignored due to the "*.log" pattern from .gitignore
-			controller.validateAccess("server.log").should.be.false()
+			controller.validateAccess("server.log").should.be.false();
 			// "debug/app.js" should be ignored due to the "debug/" pattern from .gitignore
-			controller.validateAccess("debug/app.js").should.be.false()
-			// "secret.txt" should be ignored as specified directly in .clineignore
-			controller.validateAccess("secret.txt").should.be.false()
+			controller.validateAccess("debug/app.js").should.be.false();
+			// "secret.txt" should be ignored as specified directly in .coderxignore
+			controller.validateAccess("secret.txt").should.be.false();
 			// Other files should be allowed
-			controller.validateAccess("app.js").should.be.true()
-		})
+			controller.validateAccess("app.js").should.be.true();
+		});
 
 		it("should handle non-existent included file gracefully", async () => {
-			// Create a .clineignore file that includes a non-existent file
-			await fs.writeFile(path.join(tempDir, ".clineignore"), ["!include missing-file.txt"].join("\n"))
+			// Create a .coderxignore file that includes a non-existent file
+			await fs.writeFile(
+				path.join(tempDir, ".coderxignore"),
+				["!include missing-file.txt"].join("\n"),
+			);
 
 			// Initialize the controller
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
 			// Validate access to a regular file; it should be allowed because the missing include should not break everything
-			controller.validateAccess("regular-file.txt").should.be.true()
-		})
+			controller.validateAccess("regular-file.txt").should.be.true();
+		});
 
 		it("should handle non-existent included file gracefully alongside a valid pattern", async () => {
 			// Test with an include directive for a non-existent file alongside a valid pattern ("*.tmp")
-			await fs.writeFile(path.join(tempDir, ".clineignore"), ["!include non-existent.txt", "*.tmp"].join("\n"))
+			await fs.writeFile(
+				path.join(tempDir, ".coderxignore"),
+				["!include non-existent.txt", "*.tmp"].join("\n"),
+			);
 
-			controller = new ClineIgnoreController(tempDir)
-			await controller.initialize()
+			controller = new ClineIgnoreController(tempDir);
+			await controller.initialize();
 
 			// "file.tmp" should be ignored because of the "*.tmp" pattern
-			controller.validateAccess("file.tmp").should.be.false()
+			controller.validateAccess("file.tmp").should.be.false();
 			// Files that do not match "*.tmp" should be allowed
-			controller.validateAccess("file.log").should.be.true()
-		})
-	})
-})
+			controller.validateAccess("file.log").should.be.true();
+		});
+	});
+});

@@ -1,25 +1,28 @@
-import type { ToolUse } from "@core/assistant-message"
-import { formatResponse } from "@core/prompts/responses"
-import { ClineAsk, ClineAskUseMcpServer } from "@shared/ExtensionMessage"
-import { truncateContent } from "@/shared/content-limits"
-import { ClineDefaultTool } from "@/shared/tools"
-import type { ToolResponse } from "../../index"
-import { showNotificationForApproval } from "../../utils"
-import type { IFullyManagedTool } from "../ToolExecutorCoordinator"
-import type { TaskConfig } from "../types/TaskConfig"
-import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
-import { ToolResultUtils } from "../utils/ToolResultUtils"
+import type { ToolUse } from "@core/assistant-message";
+import { formatResponse } from "@core/prompts/responses";
+import { ClineAsk, ClineAskUseMcpServer } from "@shared/ExtensionMessage";
+import { truncateContent } from "@/shared/content-limits";
+import { ClineDefaultTool } from "@/shared/tools";
+import type { ToolResponse } from "../../index";
+import { showNotificationForApproval } from "../../utils";
+import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
+import type { TaskConfig } from "../types/TaskConfig";
+import type { StronglyTypedUIHelpers } from "../types/UIHelpers";
+import { ToolResultUtils } from "../utils/ToolResultUtils";
 
 export class AccessMcpResourceHandler implements IFullyManagedTool {
-	readonly name = ClineDefaultTool.MCP_ACCESS
+	readonly name = ClineDefaultTool.MCP_ACCESS;
 
 	getDescription(block: ToolUse): string {
-		return `[${block.name} for '${block.params.server_name}']`
+		return `[${block.name} for '${block.params.server_name}']`;
 	}
 
-	async handlePartialBlock(block: ToolUse, uiHelpers: StronglyTypedUIHelpers): Promise<void> {
-		const server_name = block.params.server_name
-		const uri = block.params.uri
+	async handlePartialBlock(
+		block: ToolUse,
+		uiHelpers: StronglyTypedUIHelpers,
+	): Promise<void> {
+		const server_name = block.params.server_name;
+		const uri = block.params.uri;
 
 		const partialMessage = JSON.stringify({
 			type: this.name,
@@ -27,41 +30,66 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 			toolName: undefined,
 			uri: uiHelpers.removeClosingTag(block, "uri", uri),
 			arguments: undefined,
-		} satisfies ClineAskUseMcpServer)
+		} satisfies ClineAskUseMcpServer);
 
 		// Check if tool should be auto-approved (access_mcp_resource uses general auto-approval)
-		const shouldAutoApprove = uiHelpers.shouldAutoApproveTool(block.name)
+		const shouldAutoApprove = uiHelpers.shouldAutoApproveTool(block.name);
 
 		if (shouldAutoApprove) {
-			await uiHelpers.removeLastPartialMessageIfExistsWithType("ask", "use_mcp_server")
-			await uiHelpers.say("use_mcp_server" as any, partialMessage, undefined, undefined, block.partial)
+			await uiHelpers.removeLastPartialMessageIfExistsWithType(
+				"ask",
+				"use_mcp_server",
+			);
+			await uiHelpers.say(
+				"use_mcp_server" as any,
+				partialMessage,
+				undefined,
+				undefined,
+				block.partial,
+			);
 		} else {
-			await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "use_mcp_server")
-			await uiHelpers.ask("use_mcp_server" as ClineAsk, partialMessage, block.partial).catch(() => {})
+			await uiHelpers.removeLastPartialMessageIfExistsWithType(
+				"say",
+				"use_mcp_server",
+			);
+			await uiHelpers
+				.ask("use_mcp_server" as ClineAsk, partialMessage, block.partial)
+				.catch(() => {});
 		}
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {
-		const server_name: string | undefined = block.params.server_name
-		const uri: string | undefined = block.params.uri
+		const server_name: string | undefined = block.params.server_name;
+		const uri: string | undefined = block.params.uri;
 
 		// Read the active provider for local tool context.
-		const apiConfig = config.services.stateManager.getApiConfiguration()
-		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
-		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
+		const apiConfig = config.services.stateManager.getApiConfiguration();
+		const currentMode =
+			config.services.stateManager.getGlobalSettingsKey("mode");
+		const provider = (
+			currentMode === "plan"
+				? apiConfig.planModeApiProvider
+				: apiConfig.actModeApiProvider
+		) as string;
 
 		// Validate required parameters
 		if (!server_name) {
-			config.taskState.consecutiveMistakeCount++
-			return await config.callbacks.sayAndCreateMissingParamError(ClineDefaultTool.MCP_ACCESS, "server_name")
+			config.taskState.consecutiveMistakeCount++;
+			return await config.callbacks.sayAndCreateMissingParamError(
+				ClineDefaultTool.MCP_ACCESS,
+				"server_name",
+			);
 		}
 
 		if (!uri) {
-			config.taskState.consecutiveMistakeCount++
-			return await config.callbacks.sayAndCreateMissingParamError(ClineDefaultTool.MCP_ACCESS, "uri")
+			config.taskState.consecutiveMistakeCount++;
+			return await config.callbacks.sayAndCreateMissingParamError(
+				ClineDefaultTool.MCP_ACCESS,
+				"uri",
+			);
 		}
 
-		config.taskState.consecutiveMistakeCount = 0
+		config.taskState.consecutiveMistakeCount = 0;
 
 		// Handle approval flow
 		const completeMessage = JSON.stringify({
@@ -70,68 +98,94 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 			toolName: undefined,
 			uri: uri,
 			arguments: undefined,
-		} satisfies ClineAskUseMcpServer)
+		} satisfies ClineAskUseMcpServer);
 
-		const shouldAutoApprove = config.callbacks.shouldAutoApproveTool(block.name)
+		const shouldAutoApprove = config.callbacks.shouldAutoApproveTool(
+			block.name,
+		);
 
 		if (shouldAutoApprove) {
 			// Auto-approval flow
-			await config.callbacks.removeLastPartialMessageIfExistsWithType("ask", "use_mcp_server")
-			await config.callbacks.say("use_mcp_server", completeMessage, undefined, undefined, false)
+			await config.callbacks.removeLastPartialMessageIfExistsWithType(
+				"ask",
+				"use_mcp_server",
+			);
+			await config.callbacks.say(
+				"use_mcp_server",
+				completeMessage,
+				undefined,
+				undefined,
+				false,
+			);
 
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `Cline wants to access ${uri || "unknown resource"} on ${server_name || "unknown server"}`
+			const notificationMessage = `coderX wants to access ${uri || "unknown resource"} on ${server_name || "unknown server"}`;
 
 			// Show notification
-			showNotificationForApproval(notificationMessage, config.autoApprovalSettings.enableNotifications)
+			showNotificationForApproval(
+				notificationMessage,
+				config.autoApprovalSettings.enableNotifications,
+			);
 
-			await config.callbacks.removeLastPartialMessageIfExistsWithType("say", "use_mcp_server")
+			await config.callbacks.removeLastPartialMessageIfExistsWithType(
+				"say",
+				"use_mcp_server",
+			);
 
-			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("use_mcp_server", completeMessage, config)
+			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback(
+				"use_mcp_server",
+				completeMessage,
+				config,
+			);
 			if (!didApprove) {
-				return formatResponse.toolDenied()
+				return formatResponse.toolDenied();
 			} else {
 			}
 		}
 
 		// Run PreToolUse hook after approval but before execution
 		try {
-			const { ToolHookUtils } = await import("../utils/ToolHookUtils")
-			await ToolHookUtils.runPreToolUseIfEnabled(config, block)
+			const { ToolHookUtils } = await import("../utils/ToolHookUtils");
+			await ToolHookUtils.runPreToolUseIfEnabled(config, block);
 		} catch (error) {
-			const { PreToolUseHookCancellationError } = await import("@core/hooks/PreToolUseHookCancellationError")
+			const { PreToolUseHookCancellationError } = await import(
+				"@core/hooks/PreToolUseHookCancellationError"
+			);
 			if (error instanceof PreToolUseHookCancellationError) {
-				return formatResponse.toolDenied()
+				return formatResponse.toolDenied();
 			}
-			throw error
+			throw error;
 		}
 
-		await config.callbacks.say("mcp_server_request_started")
+		await config.callbacks.say("mcp_server_request_started");
 
 		// Execute the MCP resource access
-		const resourceResult = await config.services.mcpHub.readResource(server_name, uri)
+		const resourceResult = await config.services.mcpHub.readResource(
+			server_name,
+			uri,
+		);
 
 		// Process the resource result
 		const resourceResultPretty =
 			resourceResult?.contents
 				.map((item: any) => {
 					if (item.text) {
-						return item.text
+						return item.text;
 					}
-					return ""
+					return "";
 				})
 				.filter(Boolean)
-				.join("\n\n") || "(Empty response)"
+				.join("\n\n") || "(Empty response)";
 
 		// Display result to user
-		await config.callbacks.say("mcp_server_response", resourceResultPretty)
+		await config.callbacks.say("mcp_server_response", resourceResultPretty);
 
 		// Truncate response if it exceeds 400KB to prevent context overflow
-		const truncatedResult = truncateContent(resourceResultPretty)
+		const truncatedResult = truncateContent(resourceResultPretty);
 
 		// Return formatted result
-		return formatResponse.toolResult(truncatedResult)
+		return formatResponse.toolResult(truncatedResult);
 	}
 }

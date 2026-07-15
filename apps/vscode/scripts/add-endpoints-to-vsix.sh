@@ -81,4 +81,4 @@ cd - > /dev/null
 echo "✓ Successfully created $OUTPUT_VSIX with bundled endpoints.json"
 echo ""
 echo "The package is ready for enterprise distribution."
-echo "When installed, Cline will automatically use the bundled configuration."
+echo "When installed, coderX will automatically use the bundled configuration."

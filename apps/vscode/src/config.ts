@@ -1,47 +1,49 @@
-import * as fs from "fs/promises"
-import * as os from "os"
-import * as path from "path"
-import { Environment, type EnvironmentConfig } from "./shared/config-types"
-import { Logger } from "./shared/services/Logger"
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
+import { Environment, type EnvironmentConfig } from "./shared/config-types";
+import { Logger } from "./shared/services/Logger";
 
-export { Environment, type EnvironmentConfig }
+export { Environment, type EnvironmentConfig };
 
 /**
  * Schema for the endpoints.json configuration file used in on-premise deployments.
  * All fields are required and must be valid URLs.
  */
 interface EndpointsFileSchema {
-	appBaseUrl: string
-	apiBaseUrl: string
+	appBaseUrl: string;
+	apiBaseUrl: string;
 }
 
 /**
- * Error thrown when the Cline configuration file exists but is invalid.
- * This error prevents Cline from starting to avoid misconfiguration in enterprise environments.
+ * Error thrown when the coderX configuration file exists but is invalid.
+ * This error prevents coderX from starting to avoid misconfiguration in enterprise environments.
  */
 export class ClineConfigurationError extends Error {
 	constructor(message: string) {
-		super(message)
-		this.name = "ClineConfigurationError"
+		super(message);
+		this.name = "ClineConfigurationError";
 	}
 }
 
 class ClineEndpoint {
-	private static _instance: ClineEndpoint | null = null
-	private static _initialized = false
-	private static _extensionFsPath: string
+	private static _instance: ClineEndpoint | null = null;
+	private static _initialized = false;
+	private static _extensionFsPath: string;
 
 	// On-premise config loaded from file (null if not on-premise)
-	private onPremiseConfig: EndpointsFileSchema | null = null
-	private environment: Environment = Environment.production
+	private onPremiseConfig: EndpointsFileSchema | null = null;
+	private environment: Environment = Environment.production;
 	// Track if config came from bundled file (enterprise distribution)
-	private isBundled: boolean = false
+	private isBundled: boolean = false;
 
 	private constructor() {
 		// Set environment at module load. Use override if provided.
-		const _env = process?.env?.CLINE_ENVIRONMENT_OVERRIDE || process?.env?.CLINE_ENVIRONMENT
+		const _env =
+			process?.env?.CODERX_ENVIRONMENT_OVERRIDE ||
+			process?.env?.CODERX_ENVIRONMENT;
 		if (_env && Object.values(Environment).includes(_env as Environment)) {
-			this.environment = _env as Environment
+			this.environment = _env as Environment;
 		}
 	}
 
@@ -55,40 +57,40 @@ class ClineEndpoint {
 	 */
 	public static async initialize(extensionFsPath: string): Promise<void> {
 		if (ClineEndpoint._initialized) {
-			return
+			return;
 		}
 
-		ClineEndpoint._extensionFsPath = extensionFsPath
-		ClineEndpoint._instance = new ClineEndpoint()
+		ClineEndpoint._extensionFsPath = extensionFsPath;
+		ClineEndpoint._instance = new ClineEndpoint();
 
 		// Try to load on-premise config from file
-		const endpointsConfig = await ClineEndpoint.loadEndpointsFile()
+		const endpointsConfig = await ClineEndpoint.loadEndpointsFile();
 		if (endpointsConfig) {
-			ClineEndpoint._instance.onPremiseConfig = endpointsConfig
-			Logger.log("Cline running in self-hosted mode with custom endpoints")
+			ClineEndpoint._instance.onPremiseConfig = endpointsConfig;
+			Logger.log("coderX running in self-hosted mode with custom endpoints");
 		}
 
-		ClineEndpoint._initialized = true
+		ClineEndpoint._initialized = true;
 	}
 
 	/**
 	 * Returns true if the ClineEndpoint has been initialized.
 	 */
 	public static isInitialized(): boolean {
-		return ClineEndpoint._initialized
+		return ClineEndpoint._initialized;
 	}
 
 	/**
-	 * Checks if Cline is running in self-hosted/on-premise mode.
+	 * Checks if coderX is running in self-hosted/on-premise mode.
 	 * @returns true if in selfHosted mode, or true if not initialized (safety fallback to prevent accidental external calls)
 	 */
 	public static isSelfHosted(): boolean {
 		// Safety fallback: if not initialized, treat as selfHosted
 		// to prevent accidental external service calls before configuration is loaded
 		if (!ClineEndpoint._initialized) {
-			return true
+			return true;
 		}
-		return ClineEndpoint.config.environment === Environment.selfHosted
+		return ClineEndpoint.config.environment === Environment.selfHosted;
 	}
 
 	/**
@@ -98,9 +100,11 @@ class ClineEndpoint {
 	 */
 	public static isBundledConfig(): boolean {
 		if (!ClineEndpoint._initialized || !ClineEndpoint._instance) {
-			throw new Error("ClineEndpoint not initialized. Call ClineEndpoint.initialize() first.")
+			throw new Error(
+				"ClineEndpoint not initialized. Call ClineEndpoint.initialize() first.",
+			);
 		}
-		return ClineEndpoint._instance.isBundled
+		return ClineEndpoint._instance.isBundled;
 	}
 
 	/**
@@ -109,9 +113,11 @@ class ClineEndpoint {
 	 */
 	public static get instance(): ClineEndpoint {
 		if (!ClineEndpoint._initialized || !ClineEndpoint._instance) {
-			throw new Error("ClineEndpoint not initialized. Call ClineEndpoint.initialize() first.")
+			throw new Error(
+				"ClineEndpoint not initialized. Call ClineEndpoint.initialize() first.",
+			);
 		}
-		return ClineEndpoint._instance
+		return ClineEndpoint._instance;
 	}
 
 	/**
@@ -119,15 +125,15 @@ class ClineEndpoint {
 	 * @throws Error if not initialized
 	 */
 	public static get config(): EnvironmentConfig {
-		return ClineEndpoint.instance.config()
+		return ClineEndpoint.instance.config();
 	}
 
 	/**
 	 * Returns the path to the endpoints.json configuration file.
-	 * Located at ~/.cline/endpoints.json
+	 * Located at ~/.coderx/endpoints.json
 	 */
 	private static getEndpointsFilePath(): string {
-		return path.join(os.homedir(), ".cline", "endpoints.json")
+		return path.join(os.homedir(), ".coderx", "endpoints.json");
 	}
 
 	/**
@@ -135,74 +141,74 @@ class ClineEndpoint {
 	 * Located in the extension installation directory.
 	 */
 	private static getBundledEndpointsFilePath(): string {
-		return path.join(ClineEndpoint._extensionFsPath, "endpoints.json")
+		return path.join(ClineEndpoint._extensionFsPath, "endpoints.json");
 	}
 
 	/**
 	 * Loads and validates the endpoints.json file.
 	 * Checks bundled location first, then falls back to user directory.
-	 * Priority: bundled endpoints.json → ~/.cline/endpoints.json → null (standard mode)
+	 * Priority: bundled endpoints.json → ~/.coderx/endpoints.json → null (standard mode)
 	 * @returns The validated endpoints config, or null if no file exists
 	 * @throws ClineConfigurationError if a file exists but is invalid
 	 */
 	private static async loadEndpointsFile(): Promise<EndpointsFileSchema | null> {
 		// 1. Try bundled file
-		const bundledPath = ClineEndpoint.getBundledEndpointsFilePath()
+		const bundledPath = ClineEndpoint.getBundledEndpointsFilePath();
 		try {
-			await fs.access(bundledPath)
+			await fs.access(bundledPath);
 			// File exists, load and validate it
-			const fileContent = await fs.readFile(bundledPath, "utf8")
-			let data: unknown
+			const fileContent = await fs.readFile(bundledPath, "utf8");
+			let data: unknown;
 
 			try {
-				data = JSON.parse(fileContent)
+				data = JSON.parse(fileContent);
 			} catch (parseError) {
 				throw new ClineConfigurationError(
 					`Invalid JSON in bundled endpoints configuration file (${bundledPath}): ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-				)
+				);
 			}
 
-			const config = ClineEndpoint.validateEndpointsSchema(data, bundledPath)
+			const config = ClineEndpoint.validateEndpointsSchema(data, bundledPath);
 			// Mark as bundled enterprise distribution
-			ClineEndpoint._instance!.isBundled = true
-			return config
+			ClineEndpoint._instance!.isBundled = true;
+			return config;
 		} catch (error) {
 			if (error instanceof ClineConfigurationError) {
-				throw error
+				throw error;
 			}
 			// Bundled file doesn't exist or is not accessible, try user file
 		}
 
-		// 2. Try ~/.cline/endpoints.json
-		const userPath = ClineEndpoint.getEndpointsFilePath()
+		// 2. Try ~/.coderx/endpoints.json
+		const userPath = ClineEndpoint.getEndpointsFilePath();
 		try {
-			await fs.access(userPath)
+			await fs.access(userPath);
 		} catch {
 			// File doesn't exist - not on-premise mode
-			return null
+			return null;
 		}
 
 		// File exists, must be valid or we fail
 		try {
-			const fileContent = await fs.readFile(userPath, "utf8")
-			let data: unknown
+			const fileContent = await fs.readFile(userPath, "utf8");
+			let data: unknown;
 
 			try {
-				data = JSON.parse(fileContent)
+				data = JSON.parse(fileContent);
 			} catch (parseError) {
 				throw new ClineConfigurationError(
 					`Invalid JSON in user endpoints configuration file (${userPath}): ${parseError instanceof Error ? parseError.message : String(parseError)}`,
-				)
+				);
 			}
 
-			return ClineEndpoint.validateEndpointsSchema(data, userPath)
+			return ClineEndpoint.validateEndpointsSchema(data, userPath);
 		} catch (error) {
 			if (error instanceof ClineConfigurationError) {
-				throw error
+				throw error;
 			}
 			throw new ClineConfigurationError(
 				`Failed to read user endpoints configuration file (${userPath}): ${error instanceof Error ? error.message : String(error)}`,
-			)
+			);
 		}
 	}
 
@@ -215,56 +221,61 @@ class ClineEndpoint {
 	 * @returns The validated EndpointsFileSchema
 	 * @throws ClineConfigurationError if validation fails
 	 */
-	private static validateEndpointsSchema(data: unknown, filePath: string): EndpointsFileSchema {
+	private static validateEndpointsSchema(
+		data: unknown,
+		filePath: string,
+	): EndpointsFileSchema {
 		if (typeof data !== "object" || data === null) {
-			throw new ClineConfigurationError(`Endpoints configuration file (${filePath}) must contain a JSON object`)
+			throw new ClineConfigurationError(
+				`Endpoints configuration file (${filePath}) must contain a JSON object`,
+			);
 		}
 
-		const obj = data as Record<string, unknown>
-		const requiredFields = ["appBaseUrl", "apiBaseUrl"] as const
-		const result: Partial<EndpointsFileSchema> = {}
+		const obj = data as Record<string, unknown>;
+		const requiredFields = ["appBaseUrl", "apiBaseUrl"] as const;
+		const result: Partial<EndpointsFileSchema> = {};
 
 		for (const field of requiredFields) {
-			const value = obj[field]
+			const value = obj[field];
 
 			if (value === undefined || value === null) {
 				throw new ClineConfigurationError(
 					`Missing required field "${field}" in endpoints configuration file (${filePath})`,
-				)
+				);
 			}
 
 			if (typeof value !== "string") {
 				throw new ClineConfigurationError(
 					`Field "${field}" in endpoints configuration file (${filePath}) must be a string`,
-				)
+				);
 			}
 
 			if (!value.trim()) {
 				throw new ClineConfigurationError(
 					`Field "${field}" in endpoints configuration file (${filePath}) cannot be empty`,
-				)
+				);
 			}
 
 			// Validate URL format
 			try {
-				new URL(value)
+				new URL(value);
 			} catch {
 				throw new ClineConfigurationError(
 					`Field "${field}" in endpoints configuration file (${filePath}) must be a valid URL. Got: "${value}"`,
-				)
+				);
 			}
 
-			result[field] = value
+			result[field] = value;
 		}
 
-		return result as EndpointsFileSchema
+		return result as EndpointsFileSchema;
 	}
 
 	/**
 	 * Returns the current environment configuration.
 	 */
 	public config(): EnvironmentConfig {
-		return this.getEnvironment()
+		return this.getEnvironment();
 	}
 
 	/**
@@ -273,19 +284,21 @@ class ClineEndpoint {
 	 */
 	public setEnvironment(env: string) {
 		if (this.onPremiseConfig) {
-			throw new Error("Cannot change environment in on-premise mode. Endpoints are configured via ~/.cline/endpoints.json")
+			throw new Error(
+				"Cannot change environment in on-premise mode. Endpoints are configured via ~/.coderx/endpoints.json",
+			);
 		}
 
 		switch (env.toLowerCase()) {
 			case "staging":
-				this.environment = Environment.staging
-				break
+				this.environment = Environment.staging;
+				break;
 			case "local":
-				this.environment = Environment.local
-				break
+				this.environment = Environment.local;
+				break;
 			default:
-				this.environment = Environment.production
-				break
+				this.environment = Environment.production;
+				break;
 		}
 	}
 
@@ -300,7 +313,7 @@ class ClineEndpoint {
 				environment: Environment.selfHosted,
 				appBaseUrl: this.onPremiseConfig.appBaseUrl,
 				apiBaseUrl: this.onPremiseConfig.apiBaseUrl,
-			}
+			};
 		}
 
 		// Standard mode: use built-in environment URLs
@@ -310,19 +323,19 @@ class ClineEndpoint {
 					environment: Environment.staging,
 					appBaseUrl: "https://staging-app.cline.bot",
 					apiBaseUrl: "https://core-api.staging.int.cline.bot",
-				}
+				};
 			case Environment.local:
 				return {
 					environment: Environment.local,
 					appBaseUrl: "http://localhost:3000",
 					apiBaseUrl: "http://localhost:7777",
-				}
+				};
 			default:
 				return {
 					environment: Environment.production,
 					appBaseUrl: "https://app.cline.bot",
 					apiBaseUrl: "https://api.cline.bot",
-				}
+				};
 		}
 	}
 }
@@ -339,7 +352,7 @@ export const ClineEnv = {
 	config: () => ClineEndpoint.config,
 	setEnvironment: (env: string) => ClineEndpoint.instance.setEnvironment(env),
 	getEnvironment: () => ClineEndpoint.instance.getEnvironment(),
-}
+};
 
 // Export the class for initialization
-export { ClineEndpoint }
+export { ClineEndpoint };

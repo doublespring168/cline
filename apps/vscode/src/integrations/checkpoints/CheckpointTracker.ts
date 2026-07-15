@@ -1,21 +1,24 @@
-import { sendCheckpointEvent } from "@core/controller/checkpoints/subscribeToCheckpoints"
-import fs from "fs/promises"
-import { isBinaryFile } from "isbinaryfile"
-import * as path from "path"
-import simpleGit from "simple-git"
-import { Logger } from "@/shared/services/Logger"
-import { GitOperations } from "./CheckpointGitOperations"
-import { getShadowGitPath, hashWorkingDir } from "./CheckpointUtils"
+import { sendCheckpointEvent } from "@core/controller/checkpoints/subscribeToCheckpoints";
+import fs from "fs/promises";
+import { isBinaryFile } from "isbinaryfile";
+import * as path from "path";
+import simpleGit from "simple-git";
+import { Logger } from "@/shared/services/Logger";
+import { GitOperations } from "./CheckpointGitOperations";
+import { getShadowGitPath, hashWorkingDir } from "./CheckpointUtils";
 
 /**
  * Operation types for checkpoint events
  */
-type CheckpointOperation = "CHECKPOINT_INIT" | "CHECKPOINT_COMMIT" | "CHECKPOINT_RESTORE"
+type CheckpointOperation =
+	| "CHECKPOINT_INIT"
+	| "CHECKPOINT_COMMIT"
+	| "CHECKPOINT_RESTORE";
 
 /**
  * CheckpointTracker Module
  *
- * Core implementation of Cline's Checkpoints system that provides version control
+ * Core implementation of coderX's Checkpoints system that provides version control
  * capabilities without interfering with the user's main Git repository. Key features:
  *
  * Shadow Git Repository:
@@ -45,18 +48,18 @@ type CheckpointOperation = "CHECKPOINT_INIT" | "CHECKPOINT_COMMIT" | "CHECKPOINT
  */
 
 class CheckpointTracker {
-	private taskId: string
-	private cwd: string
-	private cwdHash: string
-	private lastRetrievedShadowGitConfigWorkTree?: string
-	private gitOperations: GitOperations
+	private taskId: string;
+	private cwd: string;
+	private cwdHash: string;
+	private lastRetrievedShadowGitConfigWorkTree?: string;
+	private gitOperations: GitOperations;
 
 	/**
 	 * Helper method to clean commit hashes that might have a "HEAD " prefix.
 	 * Used for backward compatibility with old tasks that stored hashes with the prefix.
 	 */
 	private cleanCommitHash(hash: string): string {
-		return hash.startsWith("HEAD ") ? hash.slice(5) : hash
+		return hash.startsWith("HEAD ") ? hash.slice(5) : hash;
 	}
 
 	/**
@@ -78,9 +81,9 @@ class CheckpointTracker {
 				isActive,
 				taskId: this.taskId,
 				commitHash,
-			})
+			});
 		} catch (error) {
-			Logger.debug("Failed to send checkpoint event:", error)
+			Logger.debug("Failed to send checkpoint event:", error);
 		}
 	}
 
@@ -93,10 +96,10 @@ class CheckpointTracker {
 	 * @param cwdHash - Hash of the working directory path for shadow git organization
 	 */
 	private constructor(taskId: string, cwd: string, cwdHash: string) {
-		this.taskId = taskId
-		this.cwd = cwd
-		this.cwdHash = cwdHash
-		this.gitOperations = new GitOperations(cwd)
+		this.taskId = taskId;
+		this.cwd = cwd;
+		this.cwdHash = cwdHash;
+		this.gitOperations = new GitOperations(cwd);
 	}
 
 	/**
@@ -127,52 +130,59 @@ class CheckpointTracker {
 		workspacePaths: string | string[],
 	): Promise<CheckpointTracker | undefined> {
 		try {
-			Logger.info(`Creating new CheckpointTracker for task ${taskId}`)
-			const startTime = performance.now()
+			Logger.info(`Creating new CheckpointTracker for task ${taskId}`);
+			const startTime = performance.now();
 
 			// Check if checkpoints are disabled by setting
 			if (!enableCheckpointsSetting) {
-				Logger.info(`Checkpoints disabled by setting for task ${taskId}`)
-				return undefined // Don't create tracker when disabled
+				Logger.info(`Checkpoints disabled by setting for task ${taskId}`);
+				return undefined; // Don't create tracker when disabled
 			}
 
 			// Check if git is installed by attempting to get version
 			try {
-				await simpleGit().version()
+				await simpleGit().version();
 			} catch (_error) {
-				throw new Error("Git must be installed to use checkpoints.") // FIXME: must match what we check for in TaskHeader to show link
+				throw new Error("Git must be installed to use checkpoints."); // FIXME: must match what we check for in TaskHeader to show link
 			}
 
 			// Validate and normalize workspace paths - for now, we just use the first valid path
-			const pathsToValidate = Array.isArray(workspacePaths) ? workspacePaths : [workspacePaths]
-			const { validateWorkspacePath } = await import("./CheckpointUtils")
+			const pathsToValidate = Array.isArray(workspacePaths)
+				? workspacePaths
+				: [workspacePaths];
+			const { validateWorkspacePath } = await import("./CheckpointUtils");
 
 			for (const workspacePath of pathsToValidate) {
 				if (!workspacePath) {
-					throw new Error("At least one workspace path must be provided")
+					throw new Error("At least one workspace path must be provided");
 				}
 
-				await validateWorkspacePath(workspacePath)
+				await validateWorkspacePath(workspacePath);
 			}
 
 			// For now, we just use the first valid path
-			const workingDir = Array.isArray(workspacePaths) ? workspacePaths[0] : workspacePaths
+			const workingDir = Array.isArray(workspacePaths)
+				? workspacePaths[0]
+				: workspacePaths;
 
-			const cwdHash = hashWorkingDir(workingDir)
-			Logger.debug(`Repository ID (cwdHash): ${cwdHash}`)
+			const cwdHash = hashWorkingDir(workingDir);
+			Logger.debug(`Repository ID (cwdHash): ${cwdHash}`);
 
-			const newTracker = new CheckpointTracker(taskId, workingDir, cwdHash)
-			await newTracker.sendCheckpointSubscriptionEvent("CHECKPOINT_INIT", true)
+			const newTracker = new CheckpointTracker(taskId, workingDir, cwdHash);
+			await newTracker.sendCheckpointSubscriptionEvent("CHECKPOINT_INIT", true);
 
-			const gitPath = await getShadowGitPath(newTracker.cwdHash)
-			await newTracker.gitOperations.initShadowGit(gitPath, workingDir, taskId)
-			await newTracker.sendCheckpointSubscriptionEvent("CHECKPOINT_INIT", false)
+			const gitPath = await getShadowGitPath(newTracker.cwdHash);
+			await newTracker.gitOperations.initShadowGit(gitPath, workingDir, taskId);
+			await newTracker.sendCheckpointSubscriptionEvent(
+				"CHECKPOINT_INIT",
+				false,
+			);
 
-			const durationMs = Math.round(performance.now() - startTime)
-			return newTracker
+			const durationMs = Math.round(performance.now() - startTime);
+			return newTracker;
 		} catch (error) {
-			Logger.error("Failed to create CheckpointTracker:", error)
-			throw error
+			Logger.error("Failed to create CheckpointTracker:", error);
+			throw error;
 		}
 	}
 
@@ -206,39 +216,47 @@ class CheckpointTracker {
 	 */
 	public async commit(): Promise<string | undefined> {
 		try {
-			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_COMMIT", true)
-			Logger.info(`Creating new checkpoint commit for task ${this.taskId}`)
-			const startTime = performance.now()
+			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_COMMIT", true);
+			Logger.info(`Creating new checkpoint commit for task ${this.taskId}`);
+			const startTime = performance.now();
 
-			const gitPath = await getShadowGitPath(this.cwdHash)
-			const git = simpleGit(path.dirname(gitPath))
+			const gitPath = await getShadowGitPath(this.cwdHash);
+			const git = simpleGit(path.dirname(gitPath));
 
-			Logger.info(`Using shadow git at: ${gitPath}`)
+			Logger.info(`Using shadow git at: ${gitPath}`);
 
-			const addFilesResult = await this.gitOperations.addCheckpointFiles(git)
+			const addFilesResult = await this.gitOperations.addCheckpointFiles(git);
 			if (!addFilesResult.success) {
-				Logger.error("Failed to add at least one file(s) to checkpoints shadow git")
+				Logger.error(
+					"Failed to add at least one file(s) to checkpoints shadow git",
+				);
 			}
 
-			const commitMessage = "checkpoint-" + this.cwdHash + "-" + this.taskId
+			const commitMessage = "checkpoint-" + this.cwdHash + "-" + this.taskId;
 
-			Logger.info(`Creating checkpoint commit with message: ${commitMessage}`)
+			Logger.info(`Creating checkpoint commit with message: ${commitMessage}`);
 			const result = await git.commit(commitMessage, {
 				"--allow-empty": null,
 				"--no-verify": null,
-			})
-			const commitHash = (result.commit || "").replace(/^HEAD\s+/, "")
-			Logger.warn(`Checkpoint commit created: `, commitHash)
+			});
+			const commitHash = (result.commit || "").replace(/^HEAD\s+/, "");
+			Logger.warn(`Checkpoint commit created: `, commitHash);
 
-			const durationMs = Math.round(performance.now() - startTime)
-			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_COMMIT", false, commitHash)
-			return commitHash
+			const durationMs = Math.round(performance.now() - startTime);
+			await this.sendCheckpointSubscriptionEvent(
+				"CHECKPOINT_COMMIT",
+				false,
+				commitHash,
+			);
+			return commitHash;
 		} catch (error) {
 			Logger.error("Failed to create checkpoint:", {
 				taskId: this.taskId,
 				error,
-			})
-			throw new Error(`Failed to create checkpoint: ${error instanceof Error ? error.message : String(error)}`)
+			});
+			throw new Error(
+				`Failed to create checkpoint: ${error instanceof Error ? error.message : String(error)}`,
+			);
 		}
 	}
 
@@ -267,15 +285,16 @@ class CheckpointTracker {
 	 */
 	public async getShadowGitConfigWorkTree(): Promise<string | undefined> {
 		if (this.lastRetrievedShadowGitConfigWorkTree) {
-			return this.lastRetrievedShadowGitConfigWorkTree
+			return this.lastRetrievedShadowGitConfigWorkTree;
 		}
 		try {
-			const gitPath = await getShadowGitPath(this.cwdHash)
-			this.lastRetrievedShadowGitConfigWorkTree = await this.gitOperations.getShadowGitConfigWorkTree(gitPath)
-			return this.lastRetrievedShadowGitConfigWorkTree
+			const gitPath = await getShadowGitPath(this.cwdHash);
+			this.lastRetrievedShadowGitConfigWorkTree =
+				await this.gitOperations.getShadowGitConfigWorkTree(gitPath);
+			return this.lastRetrievedShadowGitConfigWorkTree;
 		} catch (error) {
-			Logger.error("Failed to get shadow git config worktree:", error)
-			return undefined
+			Logger.error("Failed to get shadow git config worktree:", error);
+			return undefined;
 		}
 	}
 
@@ -303,24 +322,32 @@ class CheckpointTracker {
 	 */
 	public async resetHead(commitHash: string): Promise<void> {
 		try {
-			Logger.info(`Resetting to checkpoint: ${commitHash}`)
-			const startTime = performance.now()
-			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_RESTORE", true, commitHash)
-			const gitPath = await getShadowGitPath(this.cwdHash)
-			const git = simpleGit(path.dirname(gitPath))
-			Logger.debug(`Using shadow git at: ${gitPath}`)
-			await git.reset(["--hard", this.cleanCommitHash(commitHash)]) // Hard reset to target commit
-			Logger.debug(`Successfully reset to checkpoint: ${commitHash}`)
+			Logger.info(`Resetting to checkpoint: ${commitHash}`);
+			const startTime = performance.now();
+			await this.sendCheckpointSubscriptionEvent(
+				"CHECKPOINT_RESTORE",
+				true,
+				commitHash,
+			);
+			const gitPath = await getShadowGitPath(this.cwdHash);
+			const git = simpleGit(path.dirname(gitPath));
+			Logger.debug(`Using shadow git at: ${gitPath}`);
+			await git.reset(["--hard", this.cleanCommitHash(commitHash)]); // Hard reset to target commit
+			Logger.debug(`Successfully reset to checkpoint: ${commitHash}`);
 
-			const durationMs = Math.round(performance.now() - startTime)
-			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_RESTORE", false, commitHash)
+			const durationMs = Math.round(performance.now() - startTime);
+			await this.sendCheckpointSubscriptionEvent(
+				"CHECKPOINT_RESTORE",
+				false,
+				commitHash,
+			);
 		} catch (error) {
 			Logger.error("Failed to reset to checkpoint:", {
 				taskId: this.taskId,
 				commitHash,
 				error,
-			})
-			throw error
+			});
+			throw error;
 		}
 	}
 
@@ -342,66 +369,81 @@ class CheckpointTracker {
 		rhsHash?: string,
 	): Promise<
 		Array<{
-			relativePath: string
-			absolutePath: string
-			before: string
-			after: string
+			relativePath: string;
+			absolutePath: string;
+			before: string;
+			after: string;
 		}>
 	> {
-		const startTime = performance.now()
+		const startTime = performance.now();
 
-		const gitPath = await getShadowGitPath(this.cwdHash)
-		const git = simpleGit(path.dirname(gitPath))
+		const gitPath = await getShadowGitPath(this.cwdHash);
+		const git = simpleGit(path.dirname(gitPath));
 
-		Logger.info(`Getting diff between commits: ${lhsHash || "initial"} -> ${rhsHash || "working directory"}`)
+		Logger.info(
+			`Getting diff between commits: ${lhsHash || "initial"} -> ${rhsHash || "working directory"}`,
+		);
 
 		// Stage all changes so that untracked files appear in diff summary
-		await this.gitOperations.addCheckpointFiles(git)
+		await this.gitOperations.addCheckpointFiles(git);
 
-		const cleanRhs = rhsHash ? this.cleanCommitHash(rhsHash) : undefined
-		const diffRange = cleanRhs ? `${this.cleanCommitHash(lhsHash)}..${cleanRhs}` : this.cleanCommitHash(lhsHash)
-		Logger.info(`Diff range: ${diffRange}`)
-		const diffSummary = await git.diffSummary([diffRange])
+		const cleanRhs = rhsHash ? this.cleanCommitHash(rhsHash) : undefined;
+		const diffRange = cleanRhs
+			? `${this.cleanCommitHash(lhsHash)}..${cleanRhs}`
+			: this.cleanCommitHash(lhsHash);
+		Logger.info(`Diff range: ${diffRange}`);
+		const diffSummary = await git.diffSummary([diffRange]);
 
-		const result = []
+		const result = [];
 		for (const file of diffSummary.files) {
-			const filePath = file.file
-			const absolutePath = path.join(this.cwd, filePath)
+			const filePath = file.file;
+			const absolutePath = path.join(this.cwd, filePath);
 
 			// For extensionless files or dotfiles: exclude from diff result if binary
-			const lastDotIndex = filePath.lastIndexOf(".")
-			const lastSlashIndex = Math.max(filePath.lastIndexOf("/"), filePath.lastIndexOf("\\"))
-			const ext = lastDotIndex > lastSlashIndex ? filePath.substring(lastDotIndex).toLowerCase() : ""
-			const isDotfile = lastDotIndex !== -1 && lastDotIndex === lastSlashIndex + 1
+			const lastDotIndex = filePath.lastIndexOf(".");
+			const lastSlashIndex = Math.max(
+				filePath.lastIndexOf("/"),
+				filePath.lastIndexOf("\\"),
+			);
+			const ext =
+				lastDotIndex > lastSlashIndex
+					? filePath.substring(lastDotIndex).toLowerCase()
+					: "";
+			const isDotfile =
+				lastDotIndex !== -1 && lastDotIndex === lastSlashIndex + 1;
 
 			if (!ext || isDotfile) {
 				try {
-					const isBinary = await isBinaryFile(absolutePath).catch(() => false)
+					const isBinary = await isBinaryFile(absolutePath).catch(() => false);
 					if (isBinary) {
-						continue
+						continue;
 					}
 				} catch {
-					continue
+					continue;
 				}
 			}
 
-			let beforeContent = ""
+			let beforeContent = "";
 			try {
-				beforeContent = await git.show([`${this.cleanCommitHash(lhsHash)}:${filePath}`])
+				beforeContent = await git.show([
+					`${this.cleanCommitHash(lhsHash)}:${filePath}`,
+				]);
 			} catch (_) {
 				// file didn't exist in older commit => remains empty
 			}
 
-			let afterContent = ""
+			let afterContent = "";
 			if (rhsHash) {
 				try {
-					afterContent = await git.show([`${this.cleanCommitHash(rhsHash)}:${filePath}`])
+					afterContent = await git.show([
+						`${this.cleanCommitHash(rhsHash)}:${filePath}`,
+					]);
 				} catch (_) {
 					// file didn't exist in newer commit => remains empty
 				}
 			} else {
 				try {
-					afterContent = await fs.readFile(absolutePath, "utf8")
+					afterContent = await fs.readFile(absolutePath, "utf8");
 				} catch (_) {
 					// file might be deleted => remains empty
 				}
@@ -412,11 +454,11 @@ class CheckpointTracker {
 				absolutePath,
 				before: beforeContent,
 				after: afterContent,
-			})
+			});
 		}
 
-		const durationMs = Math.round(performance.now() - startTime)
-		return result
+		const durationMs = Math.round(performance.now() - startTime);
+		return result;
 	}
 
 	/**
@@ -427,24 +469,31 @@ class CheckpointTracker {
 	 *                  If omitted, we compare to the working directory.
 	 * @returns The number of files changed between the commits
 	 */
-	public async getDiffCount(lhsHash: string, rhsHash?: string): Promise<number> {
-		const startTime = performance.now()
+	public async getDiffCount(
+		lhsHash: string,
+		rhsHash?: string,
+	): Promise<number> {
+		const startTime = performance.now();
 
-		const gitPath = await getShadowGitPath(this.cwdHash)
-		const git = simpleGit(path.dirname(gitPath))
+		const gitPath = await getShadowGitPath(this.cwdHash);
+		const git = simpleGit(path.dirname(gitPath));
 
-		Logger.info(`Getting diff count between commits: ${lhsHash || "initial"} -> ${rhsHash || "working directory"}`)
+		Logger.info(
+			`Getting diff count between commits: ${lhsHash || "initial"} -> ${rhsHash || "working directory"}`,
+		);
 
 		// Stage all changes so that untracked files appear in diff summary
-		await this.gitOperations.addCheckpointFiles(git)
+		await this.gitOperations.addCheckpointFiles(git);
 
-		const cleanRhs = rhsHash ? this.cleanCommitHash(rhsHash) : undefined
-		const diffRange = cleanRhs ? `${this.cleanCommitHash(lhsHash)}..${cleanRhs}` : this.cleanCommitHash(lhsHash)
-		const diffSummary = await git.diffSummary([diffRange])
+		const cleanRhs = rhsHash ? this.cleanCommitHash(rhsHash) : undefined;
+		const diffRange = cleanRhs
+			? `${this.cleanCommitHash(lhsHash)}..${cleanRhs}`
+			: this.cleanCommitHash(lhsHash);
+		const diffSummary = await git.diffSummary([diffRange]);
 
-		const durationMs = Math.round(performance.now() - startTime)
-		return diffSummary.files.length
+		const durationMs = Math.round(performance.now() - startTime);
+		return diffSummary.files.length;
 	}
 }
 
-export default CheckpointTracker
+export default CheckpointTracker;
