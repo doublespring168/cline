@@ -26,6 +26,10 @@ eslint-rules/**
 .github/**
 .husky/**
 .env
+test-setup.js
+skills-lock.json
+knip.json
+.nycrc*
 
 # sdk (separate monorepo with its own build/release pipeline)
 sdk/**
@@ -50,8 +54,7 @@ scripts/
 proto/
 dist/proto/
 assets/icon-bk/
-assets/icons/social/
-assets/icons/.DS_Store
+assets/icons/**
 evals/
 .codespellrc
 .mocharc.json
@@ -68,6 +71,9 @@ webview-ui/package-lock.json
 webview-ui/node_modules/**
 webview-ui/.storybook/**
 webview-ui/tailwind.config.mjs
+webview-ui/tsconfig*.json
+webview-ui/components.json
+webview-ui/.vite-port
 **/.gitignore
 
 # Ignore docs
@@ -81,8 +87,10 @@ old_docs/**
 # Include default themes JSON files used in getTheme
 !src/integrations/theme/default-themes/**
 
-# Include icons
-!assets/icons/**
+# Include only icons referenced by package.json.
+!assets/icons/icon.png
+!assets/icons/icon.svg
+!assets/icons/cline-bot.woff
 
 # Ignore E2E build files
 e2e-build.mjs
