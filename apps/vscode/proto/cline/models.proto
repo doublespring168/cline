@@ -380,6 +380,9 @@ message UpdateApiConfigurationPartialRequest {
 
 // Model info for OCA (OpenAI-compatible) models exposed by the OCA provider
 message OcaModelInfo {
+  reserved 14, 15, 16;
+  reserved "survey_content", "survey_id", "banner";
+
   // Maximum completion tokens per request supported by this model
   optional int64 max_tokens = 1;
   // Total context window in tokens (input + output)
@@ -402,12 +405,6 @@ message OcaModelInfo {
   optional string description = 11;
   // Recommended default temperature for this model
   optional double temperature = 13;
-  // Optional survey content to display in the UI
-  optional string survey_content = 14;
-  // Identifier for the survey associated with this model
-  optional string survey_id = 15;
-  // Optional provider notice (for example, deprecation or compliance guidance)
-  optional string banner = 16;
   // Canonical model identifier as reported by OCA
   string model_name = 17;
   // The API format used by this model

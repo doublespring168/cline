@@ -103,9 +103,6 @@ export interface OpenAiCompatibleModelInfo extends ModelInfo {
 
 export interface OcaModelInfo extends OpenAiCompatibleModelInfo {
 	modelName: string
-	surveyId?: string
-	banner?: string
-	surveyContent?: string
 	supportsReasoning?: boolean
 	reasoningEffortOptions: string[]
 }

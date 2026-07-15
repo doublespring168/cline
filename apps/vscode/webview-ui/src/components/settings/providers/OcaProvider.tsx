@@ -19,17 +19,6 @@ interface OcaProviderProps {
 	currentMode: Mode
 }
 
-function InfoCard({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
-	return (
-		<div
-			className="mt-2 mb-2 flex items-start gap-3 rounded-none px-5 py-4 pb-8 border shadow-sm min-w-[40%] max-w-[90%] w-full box-border
-                 bg-input-background border-input-border">
-			<div className="min-w-[22px] h-[22px] flex items-center justify-center shrink-0 mt-2">{icon}</div>
-			<div className="flex-1">{children}</div>
-		</div>
-	)
-}
-
 /**
  * Auth hook:
  * - Subscribes to auth state (single source of truth).
@@ -372,70 +361,6 @@ export const OcaProvider = ({ isPopup, currentMode }: OcaProviderProps) => {
 						</div>
 					)}
 
-					<InfoCard
-						icon={
-							<svg
-								aria-hidden
-								fill="none"
-								height="20"
-								role="img"
-								style={{ color: `var(${VSC_DESCRIPTION_FOREGROUND})` }}
-								viewBox="0 0 36 35"
-								width="20">
-								<g clipPath="url(#clip0)">
-									<path
-										d="M20 13.5991C20 14.672 19.1046 15.5418 18 15.5418C16.8954 15.5418 16 14.672 16 13.5991C16 12.5261 16.8954 11.6563 18 11.6563C19.1046 11.6563 20 12.5261 20 13.5991Z"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="1.25"
-									/>
-									<path
-										d="M10 15.5418C11.1046 15.5418 12 14.672 12 13.5991C12 12.5261 11.1046 11.6563 10 11.6563C8.89543 11.6563 8 12.5261 8 13.5991C8 14.672 8.89543 15.5418 10 15.5418Z"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="1.25"
-									/>
-									<path
-										d="M28 13.5991C28 14.672 27.1046 15.5418 26 15.5418C24.8954 15.5418 24 14.672 24 13.5991C24 12.5261 24.8954 11.6563 26 11.6563C27.1046 11.6563 28 12.5261 28 13.5991Z"
-										fill="none"
-										stroke="currentColor"
-										strokeWidth="1.25"
-									/>
-									<path
-										clipRule="evenodd"
-										d="M0 0V25.2554H10V34.4L19.4142 25.2554H36V0H0ZM2 23.3127V1.94272H34V23.3127H18.5858L12 29.7099V23.3127H2Z"
-										fill="none"
-										fillRule="evenodd"
-										stroke="currentColor"
-										strokeWidth="1.25"
-									/>
-								</g>
-								<defs>
-									<clipPath id="clip0">
-										<rect fill="white" height="35" width="36" />
-									</clipPath>
-								</defs>
-							</svg>
-						}>
-						<div
-							style={{
-								display: "flex",
-								flexDirection: "column",
-								alignItems: "center", // center title and button
-								width: "100%",
-							}}>
-							<div
-								style={{
-									fontSize: 14,
-									color: VSC_DESCRIPTION_FOREGROUND,
-									fontWeight: 600,
-									marginBottom: 18,
-									marginTop: 2,
-								}}>
-								Have an idea for Oracle Code Assist?
-							</div>
-						</div>
-					</InfoCard>
 				</div>
 			)}
 		</div>
