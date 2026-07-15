@@ -41,6 +41,20 @@ describe("getButtonConfig", () => {
 		})
 	})
 
+	it("does not render standalone Start New Task actions above the input", () => {
+		const affectedConfigs = [
+			BUTTON_CONFIGS.api_req_failed,
+			BUTTON_CONFIGS.mistake_limit_reached,
+			BUTTON_CONFIGS.completion_result,
+			BUTTON_CONFIGS.resume_completed_task,
+		]
+
+		for (const config of affectedConfigs) {
+			expect(config.primaryText).not.toBe("Start New Task")
+			expect(config.secondaryText).not.toBe("Start New Task")
+		}
+	})
+
 	// Test tool approval states
 	describe("Tool Approval States", () => {
 		it("returns tool_approve config for generic tool ask", () => {

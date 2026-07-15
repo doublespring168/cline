@@ -12,6 +12,7 @@ import { DEFAULT_CHAT_FONT_SIZE, MAX_CHAT_FONT_SIZE, MIN_CHAT_FONT_SIZE } from "
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
+import AutoApproveSettings from "../AutoApproveSettings"
 import PreferredLanguageSetting from "../PreferredLanguageSetting"
 import Section from "../Section"
 import SettingsSlider from "../SettingsSlider"
@@ -69,6 +70,8 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 						</TooltipTrigger>
 					</Tooltip>
 				</div>
+
+				<AutoApproveSettings />
 			</Section>
 		</div>
 	)

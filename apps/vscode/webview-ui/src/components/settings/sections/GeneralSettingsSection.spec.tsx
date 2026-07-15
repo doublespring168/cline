@@ -26,6 +26,10 @@ vi.mock("../SettingsSlider", () => ({
 	),
 }))
 
+vi.mock("../AutoApproveSettings", () => ({
+	default: () => <div data-testid="auto-approve-settings-section">Auto-approve settings</div>,
+}))
+
 describe("GeneralSettingsSection", () => {
 	beforeEach(() => {
 		mockUpdateSetting.mockClear()
@@ -45,5 +49,12 @@ describe("GeneralSettingsSection", () => {
 		fireEvent.change(slider, { target: { value: "16" } })
 
 		expect(mockUpdateSetting).toHaveBeenCalledWith("chatFontSize", 16)
+	})
+
+	it("renders Auto-approve settings as the last General section", () => {
+		render(<GeneralSettingsSection renderSectionHeader={() => null} />)
+		const autoApproveSettings = screen.getByTestId("auto-approve-settings-section")
+
+		expect(autoApproveSettings.parentElement?.lastElementChild).toBe(autoApproveSettings)
 	})
 })

@@ -1,12 +1,76 @@
 /* Import external CSS files */
 @import url("../../node_modules/@vscode/codicons/dist/codicon.css");
 @import url("../node_modules/@fontsource/azeret-mono/index.css");
+@import "./css/github-markdown.css";
 
 /* Tailwind CSS */
 @import "tailwindcss";
 @import "./theme.css";
 @plugin "tailwindcss-animate";
 @custom-variant dark (&:is(.dark *));
+
+/* GitHub Markdown palette adapted to the active VS Code theme. */
+.markdown-body {
+	--fgColor-default: var(--vscode-foreground, #1f2328);
+	--fgColor-muted: var(--vscode-descriptionForeground, #59636e);
+	--fgColor-accent: var(--vscode-textLink-foreground, #0969da);
+	--fgColor-success: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #1a7f37));
+	--fgColor-danger: var(--vscode-errorForeground, #cf222e);
+	--fgColor-attention: var(--vscode-editorWarning-foreground, #9a6700);
+	--fgColor-done: var(--vscode-charts-purple, #8250df);
+	--bgColor-default: transparent;
+	--bgColor-muted: var(
+		--vscode-textCodeBlock-background,
+		var(--vscode-editorWidget-background, var(--vscode-sideBar-background, rgba(127, 127, 127, 0.12)))
+	);
+	--bgColor-neutral-muted: color-mix(in srgb, var(--vscode-foreground, #59636e) 10%, transparent);
+	--bgColor-attention-muted: color-mix(in srgb, var(--vscode-editorWarning-foreground, #9a6700) 16%, transparent);
+	--borderColor-default: var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(127, 127, 127, 0.35)));
+	--borderColor-muted: color-mix(in srgb, var(--vscode-foreground, #59636e) 18%, transparent);
+	--borderColor-neutral-muted: color-mix(in srgb, var(--vscode-foreground, #59636e) 22%, transparent);
+	--borderColor-accent-emphasis: var(--vscode-focusBorder, #0969da);
+	--borderColor-success-emphasis: var(--vscode-testing-iconPassed, var(--vscode-charts-green, #1a7f37));
+	--borderColor-danger-emphasis: var(--vscode-errorForeground, #cf222e);
+	--borderColor-attention-emphasis: var(--vscode-editorWarning-foreground, #9a6700);
+	--borderColor-done-emphasis: var(--vscode-charts-purple, #8250df);
+	--color-prettylights-syntax-comment: var(--vscode-descriptionForeground, #59636e);
+	--color-prettylights-syntax-constant: var(--vscode-debugTokenExpression-constant, var(--vscode-charts-blue, #0550ae));
+	--color-prettylights-syntax-entity: var(--vscode-debugTokenExpression-type, var(--vscode-charts-purple, #6639ba));
+	--color-prettylights-syntax-entity-tag: var(--vscode-textLink-foreground, #0550ae);
+	--color-prettylights-syntax-keyword: var(--vscode-textLink-foreground, #cf222e);
+	--color-prettylights-syntax-string: var(--vscode-debugTokenExpression-string, var(--vscode-charts-green, #0a3069));
+	--color-prettylights-syntax-variable: var(--vscode-debugTokenExpression-name, var(--vscode-charts-orange, #953800));
+	--color-prettylights-syntax-markup-heading: var(--vscode-textLink-foreground, #0550ae);
+	--color-prettylights-syntax-markup-inserted-bg: var(--vscode-diffEditor-insertedTextBackground, #dafbe1);
+	--color-prettylights-syntax-markup-deleted-bg: var(--vscode-diffEditor-removedTextBackground, #ffebe9);
+	--color-prettylights-syntax-markup-changed-bg: var(--vscode-editorWarning-foreground, #ffd8b5);
+	font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif);
+	font-size: var(--vscode-font-size, 14px);
+	line-height: 1.55;
+	color: var(--fgColor-default);
+	background-color: transparent;
+	word-wrap: break-word;
+	overflow-wrap: anywhere;
+}
+
+.markdown-body pre {
+	box-sizing: border-box;
+	max-width: 100%;
+	margin-right: 0;
+	margin-left: 0;
+	padding-right: 4.5rem;
+	border: 1px solid color-mix(in srgb, var(--borderColor-default) 50%, transparent);
+	background-color: color-mix(in srgb, var(--bgColor-muted) 40%, transparent);
+}
+
+.markdown-body pre > code {
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	font-size: inherit;
+}
+
+.markdown-body table {
+	width: 100%;
+}
 
 /**
  * The default styles for each defined element.
@@ -68,4 +132,30 @@
 	[role="checkbox"] {
 		margin: calc(var(--design-unit) * 1px) 0;
 	}
+}
+
+/* Keep the chat history scrollbar scoped to the Virtuoso message list. */
+.chat-messages-scrollbar {
+	scrollbar-gutter: stable;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar {
+	width: 6px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb {
+	background-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+	border-radius: 999px;
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb:hover {
+	background-color: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
+}
+
+.chat-messages-scrollbar::-webkit-scrollbar-thumb:active {
+	background-color: var(--vscode-scrollbarSlider-activeBackground, rgba(85, 85, 85, 0.8));
 }

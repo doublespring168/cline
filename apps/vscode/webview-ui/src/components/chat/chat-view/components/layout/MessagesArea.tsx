@@ -39,7 +39,6 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 		toggleRowExpansion,
 		handleRowHeightChange,
 		setIsAtBottom,
-		setShowScrollToBottom,
 		disableAutoScrollRef,
 		handleRangeChanged,
 		scrolledPastUserMessage,
@@ -201,11 +200,11 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 	)
 
 	return (
-		<div className="overflow-hidden flex flex-col h-full relative">
+		<div className="overflow-hidden flex flex-col h-full relative bg-white">
 			{/* Sticky User Message - positioned absolutely to avoid layout shifts */}
 			<div
 				className={cn(
-					"absolute top-0 left-0 right-0 z-10 pl-[15px] pr-[14px] bg-background",
+					"absolute top-0 left-0 right-0 z-10 pl-[15px] pr-[14px] bg-white",
 					scrolledPastUserMessage && "pb-2",
 				)}>
 				<StickyUserMessage
@@ -222,10 +221,9 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 						if (isAtBottom) {
 							disableAutoScrollRef.current = false
 						}
-						setShowScrollToBottom(disableAutoScrollRef.current && !isAtBottom)
 					}}
 					atBottomThreshold={10} // trick to make sure virtuoso re-renders when task changes, and we use initialTopMostItemIndex to start at the bottom
-					className="scrollable grow overflow-y-scroll"
+					className="chat-messages-scrollbar scrollable grow overflow-y-scroll bg-white"
 					components={virtuosoComponents}
 					data={displayedGroupedMessages}
 					// increasing top by 3_000 to prevent jumping around when user collapses a row
@@ -239,8 +237,6 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 					rangeChanged={handleRangeChanged}
 					ref={virtuosoRef} // anything lower causes issues with followOutput
 					style={{
-						scrollbarWidth: "none", // Firefox
-						msOverflowStyle: "none", // IE/Edge
 						overflowAnchor: "none", // prevent scroll jump when content expands
 					}}
 				/>

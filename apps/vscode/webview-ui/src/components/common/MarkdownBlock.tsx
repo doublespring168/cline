@@ -413,7 +413,7 @@ const InlineCodeWithFileCheck: React.FC<ComponentProps<"code"> & { [key: string]
 
 const MarkdownBlock = memo(({ markdown, compact, showCursor }: MarkdownBlockProps) => {
 	return (
-		<div className="inline-markdown-block">
+		<div className="inline-markdown-block markdown-body">
 			<span
 				className={cn("inline [&>p]:mt-0", {
 					"inline-cursor-container": showCursor,

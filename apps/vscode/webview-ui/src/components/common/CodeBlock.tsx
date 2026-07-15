@@ -5,9 +5,11 @@ import styled from "styled-components"
 import { visit } from "unist-util-visit"
 import "./codeblock-parser.css"
 
-export const CODE_BLOCK_BG_COLOR = "var(--vscode-editor-background, --vscode-sideBar-background, rgb(30 30 30))"
+export const CODE_BLOCK_BG_COLOR =
+	"color-mix(in srgb, var(--vscode-textCodeBlock-background, var(--vscode-editor-background, var(--vscode-sideBar-background, rgb(30 30 30)))) 40%, transparent)"
 
-export const TERMINAL_CODE_BLOCK_BG_COLOR = "var(--vscode-editor-background, --vscode-sideBar-background, rgb(30 30 30))"
+export const TERMINAL_CODE_BLOCK_BG_COLOR =
+	"color-mix(in srgb, var(--vscode-textCodeBlock-background, var(--vscode-editor-background, var(--vscode-sideBar-background, rgb(30 30 30)))) 40%, transparent)"
 
 // Theme-aware background colors for expanded/collapsed states
 export const CHAT_ROW_EXPANDED_BG_COLOR = "var(--vscode-editor-background)"
@@ -39,6 +41,11 @@ const StyledMarkdown = styled.div<{ forceWrap: boolean }>`
 
 	pre {
 		background-color: ${CODE_BLOCK_BG_COLOR};
+		border: 1px solid color-mix(
+			in srgb,
+			var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(127, 127, 127, 0.35))) 50%,
+			transparent
+		);
 		border-radius: 5px;
 		margin: 0;
 		min-width: ${({ forceWrap }) => (forceWrap ? "auto" : "max-content")};

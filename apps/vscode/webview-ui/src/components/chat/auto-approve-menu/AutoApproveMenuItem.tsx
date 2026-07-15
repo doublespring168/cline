@@ -10,13 +10,13 @@ interface AutoApproveMenuItemProps {
 	disabled?: boolean
 }
 
-const SubOptionAnimateIn = styled.div<{ show: boolean; inert?: string }>`
+const SubOptionAnimateIn = styled.div<{ $show: boolean; inert?: string }>`
   position: relative;
-  transform: ${(props) => (props.show ? "scaleY(1)" : "scaleY(0)")};
+  transform: ${(props) => (props.$show ? "scaleY(1)" : "scaleY(0)")};
   transform-origin: top;
   padding-left: 24px;
-  opacity: ${(props) => (props.show ? "1" : "0")};
-  height: ${(props) => (props.show ? "auto" : "0")}; /* Manage height for layout */
+  opacity: ${(props) => (props.$show ? "1" : "0")};
+  height: ${(props) => (props.$show ? "auto" : "0")}; /* Manage height for layout */
   overflow: visible; /* Allow tooltips to escape */
   transition: transform 0.2s ease-in-out;
 `
@@ -50,8 +50,13 @@ const AutoApproveMenuItem = ({ action, isChecked, onToggle, showIcon = true, dis
 				</VSCodeCheckbox>
 			</CheckboxWrapper>
 			{action.subAction && (
-				<SubOptionAnimateIn inert={!checked ? "" : undefined} show={checked}>
-					<AutoApproveMenuItem action={action.subAction} isChecked={isChecked} onToggle={onToggle} />
+				<SubOptionAnimateIn $show={checked} inert={!checked ? "" : undefined}>
+					<AutoApproveMenuItem
+						action={action.subAction}
+						disabled={disabled}
+						isChecked={isChecked}
+						onToggle={onToggle}
+					/>
 				</SubOptionAnimateIn>
 			)}
 		</div>

@@ -295,11 +295,15 @@
 		@apply text-base text-foreground font-base;
 
 		pre {
-			@apply bg-code rounded-xs overflow-x-auto overflow-y-hidden;
+			@apply bg-code-block-background rounded-xs overflow-x-auto overflow-y-hidden;
 			margin: 13px 0;
 			padding: 10px 10px;
 			max-width: calc(100vw - 20px);
 			padding-right: 70px;
+
+			> code {
+				@apply bg-code-block-background;
+			}
 		}
 
 		pre > code .hljs-deletion {
@@ -349,7 +353,13 @@
 		}
 
 		code:not(pre > code) {
-			@apply font-mono text-preformat bg-code-block-background border border-text-separator rounded-xs py-0.5 whitespace-pre-line break-words text-editor-size;
+			@apply font-mono whitespace-pre-line break-words;
+			color: inherit;
+			background-color: transparent;
+			border: 0;
+			border-radius: 0;
+			padding-block: 0;
+			font-size: inherit;
 		}
 
 		/* Inline cursor container - adds blinking cursor after last child */
