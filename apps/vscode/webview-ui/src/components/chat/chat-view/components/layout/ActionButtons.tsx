@@ -3,6 +3,7 @@ import type { Mode } from "@shared/storage/types"
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react"
 import type React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { cn } from "@/lib/utils"
 import { ButtonActionType, getButtonConfig } from "../../shared/buttonConfig"
 import type { ChatState, MessageHandlers } from "../../types/chatTypes"
 
@@ -92,6 +93,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 	// Keep approval/recovery actions in this area, but do not render a standalone Cancel button.
 	const showSecondaryButton = secondaryText && secondaryAction && secondaryAction !== "cancel"
 	const hasVisibleButtons = primaryText || showSecondaryButton
+	const isResumeTaskButton = lastMessage?.type === "ask" && lastMessage.ask === "resume_task"
 
 	if (!hasButtons || !hasVisibleButtons) {
 		return null
@@ -104,7 +106,10 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 			{primaryText && primaryAction && (
 				<VSCodeButton
 					appearance="primary"
-					className={showSecondaryButton ? "flex-1 mr-[6px]" : "flex-2"}
+					className={cn(showSecondaryButton ? "flex-1 mr-[6px]" : "flex-2", {
+						"bg-[rgba(207,236,207,0.7)]! border-[rgba(207,236,207,0.7)]! text-foreground! hover:bg-[rgba(207,236,207,0.7)]! hover:border-[rgba(207,236,207,0.7)]! active:bg-[rgba(207,236,207,0.7)]! active:border-[rgba(207,236,207,0.7)]!":
+							isResumeTaskButton,
+					})}
 					disabled={!canInteract}
 					onClick={() => handleActionClick(primaryAction, inputValue, selectedImages, selectedFiles)}>
 					{primaryText}
