@@ -108,6 +108,11 @@
 				]
 			}
 		],
+		"configurationDefaults": {
+			"workbench.colorCustomizations": {
+				"sideBar.background": "#FFFFFF"
+			}
+		},
 		"viewsContainers": {
 			"activitybar": [
 				{

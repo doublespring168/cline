@@ -166,6 +166,11 @@ vscode-dropdown::part(listbox) {
 	justify-content: center;
 }
 
+/* Keep the enabled send button at the same visual strength as its hover state. */
+.chat-send-button.has-content:not(.disabled) {
+	opacity: 1;
+}
+
 /* Override Codicon's higher-specificity inline-block display so flex centering takes effect. */
 .chat-send-button.codicon[class*="codicon-"] {
 	display: flex;

@@ -202,11 +202,7 @@ export const MessagesArea: React.FC<MessagesAreaProps> = ({
 	return (
 		<div className="overflow-hidden flex flex-col h-full relative bg-white">
 			{/* Sticky User Message - positioned absolutely to avoid layout shifts */}
-			<div
-				className={cn(
-					"absolute top-0 left-0 right-0 z-10 pl-[15px] pr-[14px] bg-white",
-					scrolledPastUserMessage && "pb-2",
-				)}>
+			<div className={cn("absolute top-0 left-0 right-0 z-10 pl-[15px] pr-[4px] bg-white", scrolledPastUserMessage && "pb-2")}>
 				<StickyUserMessage
 					isVisible={!!scrolledPastUserMessage}
 					lastUserMessage={scrolledPastUserMessage}

@@ -1436,7 +1436,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
 							borderRadius: 6,
-							padding: `9px 28px ${9 + thumbnailsHeight}px 9px`,
+							padding: 9,
 						}}
 					/>
 					<DynamicTextArea
@@ -1484,6 +1484,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontFamily: "var(--vscode-font-family)",
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
+							textAlign: "center",
+							alignContent: "center",
 							resize: "none",
 							overflowX: "hidden",
 							overflowY: "scroll",
@@ -1542,7 +1544,14 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 								className={cn(
 									"input-icon-button",
 									"chat-send-button",
-									{ disabled: sendingDisabled && !isTaskRunning },
+									{
+										disabled: sendingDisabled && !isTaskRunning,
+										"has-content":
+											!isTaskRunning &&
+											(inputValue.trim().length > 0 ||
+												selectedImages.length > 0 ||
+												selectedFiles.length > 0),
+									},
 									"codicon",
 									isTaskRunning ? "codicon-debug-stop" : "codicon-arrow-up",
 									"text-sm",

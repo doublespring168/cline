@@ -102,7 +102,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 	const opacity = canInteract || isStreaming ? 1 : 0.5
 
 	return (
-		<div className="flex px-3.5" style={{ opacity }}>
+		<div className="flex pt-2 pl-2 pr-2" style={{ opacity }}>
 			{primaryText && primaryAction && (
 				<VSCodeButton
 					appearance="primary"
