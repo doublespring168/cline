@@ -28,6 +28,7 @@ import {
 	useScrollBehavior,
 	WelcomeSection,
 } from "./chat-view"
+import { getButtonConfig } from "./chat-view/shared/buttonConfig"
 
 interface ChatViewProps {
 	isHidden: boolean
@@ -60,6 +61,10 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 
 	//const task = messages.length > 0 ? (messages[0].say === "task" ? messages[0] : undefined) : undefined) : undefined
 	const task = useMemo(() => messages.at(0), [messages]) // leaving this less safe version here since if the first message is not a task, then the extension is in a bad state and needs to be debugged (see Cline.abort)
+	const isTaskRunning = useMemo(() => {
+		const lastMessage = messages.at(-1)
+		return lastMessage ? getButtonConfig(lastMessage, mode).secondaryAction === "cancel" : false
+	}, [messages, mode])
 	const modifiedMessages = useMemo(() => {
 		const slicedMessages = messages.slice(1)
 		// Only combine hook sequences if hooks are enabled
@@ -331,7 +336,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 
 	return (
 		<ChatLayout chatFontSize={chatFontSize} isHidden={isHidden}>
-			<div className="flex flex-col flex-1 overflow-hidden">
+			<div className="flex flex-col flex-1 overflow-hidden bg-white">
 				{showNavbar && <Navbar />}
 				{task ? (
 					<TaskSection
@@ -378,6 +383,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 				/>
 				<InputSection
 					chatState={chatState}
+					isTaskRunning={isTaskRunning}
 					messageHandlers={messageHandlers}
 					placeholderText={placeholderText}
 					scrollBehavior={scrollBehavior}

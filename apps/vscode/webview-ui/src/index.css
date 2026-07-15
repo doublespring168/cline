@@ -59,7 +59,7 @@
 	margin-right: 0;
 	margin-left: 0;
 	padding-right: 4.5rem;
-	border: 1px solid color-mix(in srgb, var(--borderColor-default) 50%, transparent);
+	border: 0;
 	background-color: color-mix(in srgb, var(--bgColor-muted) 40%, transparent);
 }
 
@@ -70,6 +70,23 @@
 
 .markdown-body table {
 	width: 100%;
+}
+
+/* File previews keep their surface while leaving the code block itself borderless. */
+.code-preview {
+	--code-preview-background: color-mix(
+		in srgb,
+		var(--vscode-textCodeBlock-background, var(--vscode-editor-background, var(--vscode-sideBar-background, rgb(30 30 30))))
+			24%,
+		transparent
+	);
+	background-color: var(--code-preview-background);
+	border: 0;
+}
+
+.code-preview > button {
+	background-color: transparent;
+	border-bottom: 0;
 }
 
 /**

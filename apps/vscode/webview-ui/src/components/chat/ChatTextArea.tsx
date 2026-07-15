@@ -78,6 +78,8 @@ interface ChatTextAreaProps {
 	setSelectedImages: React.Dispatch<React.SetStateAction<string[]>>
 	setSelectedFiles: React.Dispatch<React.SetStateAction<string[]>>
 	onSend: () => void
+	onCancel: () => void
+	isTaskRunning: boolean
 	onSelectFilesAndImages: () => void
 	shouldDisableFilesAndImages: boolean
 	onHeightChange?: (height: number) => void
@@ -205,6 +207,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			setSelectedImages,
 			setSelectedFiles,
 			onSend,
+			onCancel,
+			isTaskRunning,
 			onSelectFilesAndImages,
 			shouldDisableFilesAndImages,
 			onHeightChange,
@@ -1419,10 +1423,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						</div>
 					)}
 					<div
-						className={cn(
-							"absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-[6px] overflow-hidden bg-input-background",
-							isTextAreaFocused ? "left-3.5 right-3.5" : "left-3.5 right-3.5 border border-input-border",
-						)}
+						className="absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-[6px] overflow-hidden border border-input-border bg-input-background left-3.5 right-3.5"
 						ref={highlightLayerRef}
 						style={{
 							position: "absolute",
@@ -1435,10 +1436,6 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
 							borderRadius: 6,
-							borderLeft: isTextAreaFocused ? 0 : undefined,
-							borderRight: isTextAreaFocused ? 0 : undefined,
-							borderTop: isTextAreaFocused ? 0 : undefined,
-							borderBottom: isTextAreaFocused ? 0 : undefined,
 							padding: `9px 28px ${9 + thumbnailsHeight}px 9px`,
 						}}
 					/>
@@ -1509,9 +1506,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							outline:
 								isDraggingOver && !showUnsupportedFileError // Only show drag outline if not showing error
 									? "2px dashed var(--vscode-focusBorder)"
-									: isTextAreaFocused
-										? `1px solid ${mode === "plan" ? PLAN_MODE_COLOR : "var(--vscode-focusBorder)"}`
-										: "none",
+									: "none",
 							outlineOffset: isDraggingOver && !showUnsupportedFileError ? "1px" : "0px", // Add offset for drag-over outline
 						}}
 						value={inputValue}
@@ -1543,14 +1538,26 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 						style={{ height: textAreaBaseHeight }}>
 						<div className="flex flex-row items-center">
 							<div
-								className={cn("input-icon-button", { disabled: sendingDisabled }, "codicon codicon-send text-sm")}
+								aria-label={isTaskRunning ? "Stop task" : "Send message"}
+								className={cn(
+									"input-icon-button",
+									"chat-send-button",
+									{ disabled: sendingDisabled && !isTaskRunning },
+									"codicon",
+									isTaskRunning ? "codicon-debug-stop" : "codicon-send",
+									"text-sm",
+								)}
 								data-testid="send-button"
 								onClick={() => {
-									if (!sendingDisabled) {
+									if (isTaskRunning) {
+										onCancel()
+									} else if (!sendingDisabled) {
 										setIsTextAreaFocused(false)
 										onSend()
 									}
 								}}
+								role="button"
+								tabIndex={isTaskRunning || !sendingDisabled ? 0 : -1}
 							/>
 						</div>
 					</div>

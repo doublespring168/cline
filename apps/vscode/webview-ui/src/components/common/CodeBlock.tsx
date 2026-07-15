@@ -26,9 +26,10 @@ minWidth: "max-content",
 interface CodeBlockProps {
 	source?: string
 	forceWrap?: boolean
+	transparentSurface?: boolean
 }
 
-const StyledMarkdown = styled.div<{ forceWrap: boolean }>`
+const StyledMarkdown = styled.div<{ forceWrap: boolean; $transparentSurface: boolean }>`
 	${({ forceWrap }) =>
 		forceWrap &&
 		`
@@ -40,12 +41,8 @@ const StyledMarkdown = styled.div<{ forceWrap: boolean }>`
   `}
 
 	pre {
-		background-color: ${CODE_BLOCK_BG_COLOR};
-		border: 1px solid color-mix(
-			in srgb,
-			var(--vscode-panel-border, var(--vscode-editorGroup-border, rgba(127, 127, 127, 0.35))) 50%,
-			transparent
-		);
+		background-color: ${({ $transparentSurface }) => ($transparentSurface ? "transparent" : CODE_BLOCK_BG_COLOR)};
+		border: 0;
 		border-radius: 5px;
 		margin: 0;
 		min-width: ${({ forceWrap }) => (forceWrap ? "auto" : "max-content")};
@@ -71,7 +68,7 @@ const StyledMarkdown = styled.div<{ forceWrap: boolean }>`
 		}
 		word-wrap: break-word;
 		border-radius: 5px;
-		background-color: ${CODE_BLOCK_BG_COLOR};
+		background-color: ${({ $transparentSurface }) => ($transparentSurface ? "transparent" : CODE_BLOCK_BG_COLOR)};
 		font-size: var(--vscode-editor-font-size, var(--vscode-font-size, 12px));
 		font-family: var(--vscode-editor-font-family);
 	}
@@ -123,7 +120,7 @@ const StyledPre = styled.pre<{ theme: any }>`
 			.join("")}
 `
 
-const CodeBlock = memo(({ source, forceWrap = false }: CodeBlockProps) => {
+const CodeBlock = memo(({ source, forceWrap = false, transparentSurface = false }: CodeBlockProps) => {
 	const [reactContent, setMarkdownSource] = useRemark({
 		remarkPlugins: [
 			() => {
@@ -161,9 +158,9 @@ const CodeBlock = memo(({ source, forceWrap = false }: CodeBlockProps) => {
 			style={{
 				overflowY: forceWrap ? "visible" : "auto",
 				maxHeight: forceWrap ? "none" : "100%",
-				backgroundColor: CODE_BLOCK_BG_COLOR,
+				backgroundColor: transparentSurface ? "transparent" : CODE_BLOCK_BG_COLOR,
 			}}>
-			<StyledMarkdown className="ph-no-capture markdown" forceWrap={forceWrap}>
+			<StyledMarkdown $transparentSurface={transparentSurface} className="ph-no-capture markdown" forceWrap={forceWrap}>
 				{reactContent}
 			</StyledMarkdown>
 		</div>

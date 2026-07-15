@@ -15,7 +15,7 @@ interface ActionButtonsProps {
 }
 
 /**
- * Task action buttons area including approve/reject/cancel controls
+ * Task action buttons area for approval and recovery actions
  */
 export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, chatState, mode, messageHandlers }) => {
 	const { inputValue, selectedImages, selectedFiles, setSendingDisabled } = chatState
@@ -88,8 +88,12 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 	const hasButtons = primaryText || secondaryText
 	const isStreaming = task.partial === true
 	const canInteract = enableButtons && !isProcessing
+	// Cancellation is exposed by the input send/stop button while a task is running.
+	// Keep approval/recovery actions in this area, but do not render a standalone Cancel button.
+	const showSecondaryButton = secondaryText && secondaryAction && secondaryAction !== "cancel"
+	const hasVisibleButtons = primaryText || showSecondaryButton
 
-	if (!hasButtons) {
+	if (!hasButtons || !hasVisibleButtons) {
 		return null
 	}
 
@@ -100,13 +104,13 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 			{primaryText && primaryAction && (
 				<VSCodeButton
 					appearance="primary"
-					className={secondaryText ? "flex-1 mr-[6px]" : "flex-2"}
+					className={showSecondaryButton ? "flex-1 mr-[6px]" : "flex-2"}
 					disabled={!canInteract}
 					onClick={() => handleActionClick(primaryAction, inputValue, selectedImages, selectedFiles)}>
 					{primaryText}
 				</VSCodeButton>
 			)}
-			{secondaryText && secondaryAction && (
+			{showSecondaryButton && (
 				<VSCodeButton
 					appearance="secondary"
 					className={primaryText ? "flex-1" : "flex-2"}

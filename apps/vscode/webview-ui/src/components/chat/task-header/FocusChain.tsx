@@ -190,7 +190,7 @@ export const FocusChain: React.FC<FocusChainProps> = memo(
 			return (
 				<div
 					aria-hidden={true}
-					className="relative rounded-sm bg-toolbar-hover/65 flex items-center gap-2 select-none overflow-hidden opacity-80 px-2.5 py-2">
+					className="relative rounded-sm bg-[rgba(0,0,0,0.1)] flex items-center gap-2 select-none overflow-hidden opacity-80 px-2.5 py-2">
 					<span className="rounded-lg px-2 py-0.25 inline-block shrink-0 bg-badge-foreground/20 text-foreground text-sm">
 						0/0
 					</span>
@@ -208,7 +208,7 @@ export const FocusChain: React.FC<FocusChainProps> = memo(
 		return (
 			<div
 				aria-label={isExpanded ? "Collapse focus chain" : "Expand focus chain"}
-				className="relative rounded-sm bg-toolbar-hover/65 flex flex-col gap-1.5 select-none hover:bg-toolbar-hover overflow-hidden opacity-80 hover:opacity-100 transition-[transform,box-shadow] duration-200 cursor-pointer"
+				className="relative rounded-sm bg-[rgba(0,0,0,0.1)] flex flex-col gap-1.5 select-none hover:bg-[rgba(0,0,0,0.1)] overflow-hidden opacity-80 hover:opacity-100 transition-[transform,box-shadow] duration-200 cursor-pointer"
 				onClick={handleToggle}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") {

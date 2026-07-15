@@ -157,6 +157,20 @@ vscode-dropdown::part(listbox) {
 	opacity: 0.4;
 }
 
+.chat-send-button {
+	background-color: rgba(0, 0, 0, 0.1);
+	padding: 8px;
+	border-radius: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Override Codicon's higher-specificity inline-block display so flex centering takes effect. */
+.chat-send-button.codicon[class*="codicon-"] {
+	display: flex;
+}
+
 /* Context mentions */
 
 /* Needs to match the highlightLayerRef in ChatTextArea for proper positioning */
