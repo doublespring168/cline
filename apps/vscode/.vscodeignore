@@ -84,3 +84,5 @@ test-results/
 *storybook.log
 storybook-static
 **/StorybookDecorator.tsx
+教程/**
+z_shell/**
