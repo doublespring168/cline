@@ -1,8 +1,20 @@
-import { VSCodeCheckbox, VSCodeLink } from "@vscode/webview-ui-toolkit/react"
+/*
+ * @Author: darcy.zhang , tech.darcy.zhang@outlook.com
+ * @Date: 2026-07-13 21:59:01
+ * @LastEditors: darcy.zhang , tech.darcy.zhang@outlook.com
+ * @LastEditTime: 2026-07-15 11:37:59
+ * @FilePath: /vscode/webview-ui/src/components/settings/sections/GeneralSettingsSection.tsx
+ * @Description:
+ *
+ * Copyright (c) 2026 by 【 tech.darcy.zhang@outlook.com 】, All Rights Reserved.
+ */
+import { DEFAULT_CHAT_FONT_SIZE, MAX_CHAT_FONT_SIZE, MIN_CHAT_FONT_SIZE } from "@shared/ChatSettings"
+import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import PreferredLanguageSetting from "../PreferredLanguageSetting"
 import Section from "../Section"
+import SettingsSlider from "../SettingsSlider"
 import { updateSetting } from "../utils/settingsHandlers"
 
 interface GeneralSettingsSectionProps {
@@ -10,12 +22,28 @@ interface GeneralSettingsSectionProps {
 }
 
 const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionProps) => {
-	const { telemetrySetting, remoteConfigSettings } = useExtensionState()
+	const { telemetrySetting, remoteConfigSettings, chatFontSize } = useExtensionState()
 
 	return (
 		<div>
 			{renderSectionHeader("general")}
 			<Section>
+				<div>
+					<div className="text-xs font-medium text-foreground/80 uppercase tracking-wider mb-3">Appearance</div>
+					<div className="relative p-3 my-3 rounded-md border border-editor-widget-border/50" id="appearance-settings">
+						<SettingsSlider
+							description="Controls the font size of the main chat areas, including messages, controls, and the message input."
+							label="Chat interface font size (px)"
+							max={MAX_CHAT_FONT_SIZE}
+							min={MIN_CHAT_FONT_SIZE}
+							onChange={(value) => updateSetting("chatFontSize", value)}
+							step={1}
+							value={chatFontSize ?? DEFAULT_CHAT_FONT_SIZE}
+							valueWidth="w-8"
+						/>
+					</div>
+				</div>
+
 				<PreferredLanguageSetting />
 
 				<div className="mb-[5px]">
@@ -40,25 +68,6 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 							</div>
 						</TooltipTrigger>
 					</Tooltip>
-
-					<p className="text-sm mt-[5px] text-description">
-						Help improve Cline by sending usage data and error reports. No code, prompts, or personal information are
-						ever sent. See our{" "}
-						<VSCodeLink
-							className="text-inherit"
-							href="https://docs.cline.bot/more-info/telemetry"
-							style={{ fontSize: "inherit", textDecoration: "underline" }}>
-							telemetry overview
-						</VSCodeLink>{" "}
-						and{" "}
-						<VSCodeLink
-							className="text-inherit"
-							href="https://cline.bot/privacy"
-							style={{ fontSize: "inherit", textDecoration: "underline" }}>
-							privacy policy
-						</VSCodeLink>{" "}
-						for more details.
-					</p>
 				</div>
 			</Section>
 		</div>

@@ -1,4 +1,5 @@
 import { buildApiHandler } from "@core/api"
+import { normalizeChatFontSize } from "@shared/ChatSettings"
 import { Empty } from "@shared/proto/cline/common"
 import { PlanActMode, McpDisplayMode as ProtoMcpDisplayMode, UpdateSettingsRequest } from "@shared/proto/cline/state"
 import { convertProtoToApiProvider } from "@shared/proto-conversions/models/api-configuration-conversion"
@@ -104,6 +105,10 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 
 		if (request.preferredLanguage !== undefined) {
 			controller.stateManager.setGlobalState("preferredLanguage", request.preferredLanguage)
+		}
+
+		if (request.chatFontSize !== undefined) {
+			controller.stateManager.setGlobalState("chatFontSize", normalizeChatFontSize(request.chatFontSize))
 		}
 
 		// Update terminal timeout setting

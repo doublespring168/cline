@@ -858,6 +858,7 @@ export class Controller {
 		const browserSettings = this.stateManager.getGlobalSettingsKey("browserSettings")
 		const focusChainSettings = this.stateManager.getGlobalSettingsKey("focusChainSettings") ?? DEFAULT_FOCUS_CHAIN_SETTINGS
 		const preferredLanguage = this.stateManager.getGlobalSettingsKey("preferredLanguage")
+		const chatFontSize = this.stateManager.getGlobalSettingsKey("chatFontSize")
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
 		const strictPlanModeEnabled = this.stateManager.getGlobalSettingsKey("strictPlanModeEnabled")
 		const yoloModeToggled = this.stateManager.getGlobalSettingsKey("yoloModeToggled")
@@ -937,6 +938,7 @@ export class Controller {
 			browserSettings,
 			focusChainSettings,
 			preferredLanguage,
+			chatFontSize,
 			mode,
 			strictPlanModeEnabled,
 			yoloModeToggled,

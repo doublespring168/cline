@@ -54,6 +54,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 		currentFocusChainChecklist,
 		focusChainSettings,
 		hooksEnabled,
+		chatFontSize,
 	} = useExtensionState()
 	const isProdHostedApp = userInfo?.apiBaseUrl === "https://app.cline.bot"
 	const shouldShowQuickWins = isProdHostedApp && (!taskHistory || taskHistory.length < QUICK_WINS_HISTORY_THRESHOLD)
@@ -330,7 +331,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 	}, [task])
 
 	return (
-		<ChatLayout isHidden={isHidden}>
+		<ChatLayout chatFontSize={chatFontSize} isHidden={isHidden}>
 			<div className="flex flex-col flex-1 overflow-hidden">
 				{showNavbar && <Navbar />}
 				{task ? (

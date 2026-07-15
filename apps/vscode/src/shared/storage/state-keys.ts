@@ -8,6 +8,7 @@ import {
 	OpenAiCompatibleModelInfo,
 } from "@shared/api"
 import { BrowserSettings, DEFAULT_BROWSER_SETTINGS } from "@shared/BrowserSettings"
+import { DEFAULT_CHAT_FONT_SIZE, normalizeChatFontSize } from "@shared/ChatSettings"
 import { ClineRulesToggles } from "@shared/cline-rules"
 import { DEFAULT_FOCUS_CHAIN_SETTINGS, FocusChainSettings } from "@shared/FocusChainSettings"
 import { HistoryItem } from "@shared/HistoryItem"
@@ -276,6 +277,7 @@ const USER_SETTINGS_FIELDS = {
 	clineWebToolsEnabled: { default: true as boolean },
 	worktreesEnabled: { default: false as boolean },
 	preferredLanguage: { default: "English" as string },
+	chatFontSize: { default: DEFAULT_CHAT_FONT_SIZE as number, transform: normalizeChatFontSize },
 	mode: { default: "act" as Mode },
 	focusChainSettings: { default: DEFAULT_FOCUS_CHAIN_SETTINGS as FocusChainSettings },
 	customPrompt: { default: undefined as "compact" | undefined },

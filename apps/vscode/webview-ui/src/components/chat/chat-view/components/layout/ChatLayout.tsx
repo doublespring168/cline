@@ -3,6 +3,7 @@ import styled from "styled-components"
 
 interface ChatLayoutProps {
 	isHidden: boolean
+	chatFontSize: number
 	children: React.ReactNode
 }
 
@@ -10,18 +11,21 @@ interface ChatLayoutProps {
  * Main layout container for the chat view
  * Provides the fixed positioning and flex layout structure
  */
-export const ChatLayout: React.FC<ChatLayoutProps> = ({ isHidden, children }) => {
+export const ChatLayout: React.FC<ChatLayoutProps> = ({ isHidden, chatFontSize, children }) => {
 	return (
-		<ChatLayoutContainer isHidden={isHidden}>
+		<ChatLayoutContainer chatFontSize={chatFontSize} isHidden={isHidden}>
 			<MainContent>{children}</MainContent>
 		</ChatLayoutContainer>
 	)
 }
 
 const ChatLayoutContainer = styled.div.withConfig({
-	shouldForwardProp: (prop) => !["isHidden"].includes(prop),
-})<{ isHidden: boolean }>`
+	shouldForwardProp: (prop) => !["chatFontSize", "isHidden"].includes(prop),
+})<{ isHidden: boolean; chatFontSize: number }>`
 	display: ${(props) => (props.isHidden ? "none" : "grid")};
+	--vscode-font-size: ${(props) => `${props.chatFontSize}px`};
+	--vscode-editor-font-size: ${(props) => `${props.chatFontSize}px`};
+	font-size: var(--vscode-font-size);
 	grid-template-rows: 1fr auto;
 	overflow: hidden;
 	padding: 0;

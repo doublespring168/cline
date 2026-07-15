@@ -45,6 +45,7 @@ export interface ExtensionState {
 	browserSettings: BrowserSettings
 	remoteBrowserHost?: string
 	preferredLanguage?: string
+	chatFontSize: number
 	mode: Mode
 	checkpointManagerErrorMessage?: string
 	clineMessages: ClineMessage[]

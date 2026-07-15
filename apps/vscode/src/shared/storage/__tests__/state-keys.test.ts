@@ -290,6 +290,7 @@ describe("State Keys Type Safety", () => {
 				{ key: "browserSettings", expectedType: "object" },
 				{ key: "shellIntegrationTimeout", expectedType: "number" },
 				{ key: "preferredLanguage", expectedType: "string" },
+				{ key: "chatFontSize", expectedType: "number" },
 				{ key: "yoloModeToggled", expectedType: "boolean" },
 				{ key: "autoApproveAllToggled", expectedType: "boolean" },
 			]

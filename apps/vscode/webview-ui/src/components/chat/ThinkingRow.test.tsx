@@ -18,6 +18,15 @@ describe("ThinkingRow", () => {
 		const title = screen.getByText("Thinking...")
 		expect(title).toBeInTheDocument()
 		expect(title).toHaveClass("animate-shimmer")
+		expect(screen.getByTestId("thinking-row")).toHaveClass("rounded-[6px]", "border", "border-dashed")
+		expect(screen.getByTestId("thinking-row")).toHaveStyle({
+			borderColor: "color-mix(in srgb, var(--vscode-descriptionForeground) 50%, transparent)",
+		})
+		expect(screen.getByTestId("thinking-content")).toHaveClass("overflow-visible")
+		expect(screen.getByTestId("thinking-content").closest("button")).toHaveClass(
+			"overflow-visible",
+			"h-auto",
+		)
 		expect(screen.getByText("Inspecting files...")).toBeInTheDocument()
 	})
 
