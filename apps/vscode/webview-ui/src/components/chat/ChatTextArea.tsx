@@ -1373,7 +1373,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			.replace(/.$/, (match) => match.toUpperCase())
 
 		return (
-			<div>
+			<div className="w-[99%] mx-auto">
 				<div
 					className="relative flex transition-colors ease-in-out duration-100 px-3.5 py-2.5"
 					onDragEnter={handleDragEnter}
@@ -1544,7 +1544,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 									"chat-send-button",
 									{ disabled: sendingDisabled && !isTaskRunning },
 									"codicon",
-									isTaskRunning ? "codicon-debug-stop" : "codicon-send",
+									isTaskRunning ? "codicon-debug-stop" : "codicon-arrow-up",
 									"text-sm",
 								)}
 								data-testid="send-button"

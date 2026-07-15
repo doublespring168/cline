@@ -373,7 +373,7 @@ const ChatView = ({ isHidden, showAnnouncement, hideAnnouncement, showHistoryVie
 					/>
 				)}
 			</div>
-			<footer className="bg-(--vscode-sidebar-background)" style={{ gridRow: "2" }}>
+			<footer className="bg-[rgba(255,255,255,0.6)]" style={{ gridRow: "2" }}>
 				<ActionButtons
 					chatState={chatState}
 					messageHandlers={messageHandlers}
