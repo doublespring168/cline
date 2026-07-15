@@ -1,0 +1,7 @@
+{
+	"recommendations": [
+		"connor4312.esbuild-problem-matchers",
+		"bradlc.vscode-tailwindcss",
+		"biomejs.biome"
+	]
+}

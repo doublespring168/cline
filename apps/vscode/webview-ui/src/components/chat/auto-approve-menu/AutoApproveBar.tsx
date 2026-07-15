@@ -73,7 +73,7 @@ const AutoApproveBar = ({ style }: AutoApproveBarProps) => {
 				className="mx-3.5 select-none break-words relative"
 				style={{
 					borderTop: `0.5px solid ${borderColor}`,
-					borderRadius: "4px 4px 0 0",
+					borderRadius: 6,
 					background: bgGradient,
 					opacity: 0.5,
 					...style,
@@ -118,7 +118,7 @@ const AutoApproveBar = ({ style }: AutoApproveBarProps) => {
 			className="mx-3.5 select-none break-words relative"
 			style={{
 				borderTop: `0.5px solid ${borderColor}`,
-				borderRadius: "4px 4px 0 0",
+				borderRadius: 6,
 				background: bgGradient,
 				...style,
 			}}>

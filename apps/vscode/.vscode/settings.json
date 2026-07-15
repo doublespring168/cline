@@ -1,0 +1,4 @@
+{
+	"typescript.tsc.autoDetect": "off",
+	"remote.autoForwardPorts": false
+}

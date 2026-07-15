@@ -1377,12 +1377,12 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					onDragOver={onDragOver}
 					onDrop={onDrop}>
 					{showDimensionError && (
-						<div className="absolute inset-2.5 bg-[rgba(var(--vscode-errorForeground-rgb),0.1)] border-2 border-error rounded-xs flex items-center justify-center z-10 pointer-events-none">
+						<div className="absolute inset-2.5 bg-[rgba(var(--vscode-errorForeground-rgb),0.1)] border-2 border-error rounded-[6px] flex items-center justify-center z-10 pointer-events-none">
 							<span className="text-error font-bold text-xs text-center">Image dimensions exceed 7500px</span>
 						</div>
 					)}
 					{showUnsupportedFileError && (
-						<div className="absolute inset-2.5 bg-[rgba(var(--vscode-errorForeground-rgb),0.1)] border-2 border-error rounded-xs flex items-center justify-center z-10 pointer-events-none">
+						<div className="absolute inset-2.5 bg-[rgba(var(--vscode-errorForeground-rgb),0.1)] border-2 border-error rounded-[6px] flex items-center justify-center z-10 pointer-events-none">
 							<span className="text-error font-bold text-xs">Files other than images are currently disabled</span>
 						</div>
 					)}
@@ -1420,7 +1420,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					)}
 					<div
 						className={cn(
-							"absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-xs overflow-hidden bg-input-background",
+							"absolute bottom-2.5 top-2.5 whitespace-pre-wrap break-words rounded-[6px] overflow-hidden bg-input-background",
 							isTextAreaFocused ? "left-3.5 right-3.5" : "left-3.5 right-3.5 border border-input-border",
 						)}
 						ref={highlightLayerRef}
@@ -1434,7 +1434,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontFamily: "var(--vscode-font-family)",
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
-							borderRadius: 2,
+							borderRadius: 6,
 							borderLeft: isTextAreaFocused ? 0 : undefined,
 							borderRight: isTextAreaFocused ? 0 : undefined,
 							borderTop: isTextAreaFocused ? 0 : undefined,
@@ -1483,7 +1483,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							backgroundColor: "transparent",
 							color: "var(--vscode-input-foreground)",
 							//border: "1px solid var(--vscode-input-border)",
-							borderRadius: 2,
+							borderRadius: 6,
 							fontFamily: "var(--vscode-font-family)",
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",

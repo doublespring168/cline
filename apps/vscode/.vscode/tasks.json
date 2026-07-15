@@ -1,0 +1,170 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "watch",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"prepare:dev",
+				"watch:services"
+			],
+			"problemMatcher": [],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "prepare:dev",
+			"dependsOrder": "sequence",
+			"dependsOn": [
+				"npm: protos",
+				"npm: build:webview"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "watch:services",
+			"dependsOrder": "parallel",
+			"dependsOn": [
+				"npm: dev:webview",
+				"npm: watch:tsc",
+				"npm: watch:esbuild"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "npm: protos",
+			"type": "shell",
+			"command": "npm run protos",
+			"isBackground": false,
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"IS_DEV": "true"
+				}
+			},
+			"presentation": {
+				"group": "watch",
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "npm: build:webview",
+			"type": "shell",
+			"command": "npm run build:webview",
+			"isBackground": false,
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"IS_DEV": "true"
+				}
+			},
+			"presentation": {
+				"group": "watch",
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "npm: dev:webview",
+			"type": "shell",
+			"command": "npm run dev:webview",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": [
+					{
+						"regexp": ".",
+						"file": 1,
+						"location": 2,
+						"message": 3
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": ".",
+					"endsPattern": "Local:.*http://localhost:[0-9]+"
+				}
+			},
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"IS_DEV": "true"
+				}
+			},
+			"presentation": {
+				"group": "watch",
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "npm: watch:tsc",
+			"type": "shell",
+			"command": "npm run watch:tsc",
+			"isBackground": true,
+			"problemMatcher": "$tsc-watch",
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"presentation": {
+				"group": "watch",
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "npm: watch:esbuild",
+			"type": "shell",
+			"command": "npm run watch:esbuild",
+			"isBackground": true,
+			"problemMatcher": {
+				"pattern": [
+					{
+						"regexp": "^✘ \\[ERROR\\] (.*)$",
+						"message": 1
+					},
+					{
+						"regexp": "^\\s+(.*):(\\d+):(\\d+):$",
+						"file": 1,
+						"line": 2,
+						"column": 3
+					}
+				],
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^\\[watch\\] build started$",
+					"endsPattern": "^\\[watch\\] build finished$"
+				}
+			},
+			"options": {
+				"cwd": "${workspaceFolder}",
+				"env": {
+					"IS_DEV": "true"
+				}
+			},
+			"presentation": {
+				"group": "watch",
+				"reveal": "always"
+			}
+		},
+		{
+			"label": "clean-tmp-user",
+			"type": "process",
+			"command": "node",
+			"args": [
+				"-e",
+				"const fs=require('node:fs'); fs.rmSync('dist/tmp/user',{recursive:true,force:true}); fs.mkdirSync('dist/tmp/user',{recursive:true})"
+			],
+			"dependsOn": [
+				"watch"
+			],
+			"problemMatcher": [],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			}
+		}
+	]
+}
