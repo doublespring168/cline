@@ -132,12 +132,16 @@ describe("Filesystem Utilities", () => {
 		await fs.writeFile(path.join(complexDir, "dir1", "file1.txt"), "content")
 
 		// Create second branch with nested structure
-		await fs.mkdir(path.join(complexDir, "dir2", "subdir1"), { recursive: true })
+		await fs.mkdir(path.join(complexDir, "dir2", "subdir1"), {
+			recursive: true,
+		})
 		await fs.writeFile(path.join(complexDir, "dir2", "file2.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir2", "subdir1", "file3.txt"), "content")
 
 		// Create third branch with deep nesting
-		await fs.mkdir(path.join(complexDir, "dir3", "subdir2", "deepdir"), { recursive: true })
+		await fs.mkdir(path.join(complexDir, "dir3", "subdir2", "deepdir"), {
+			recursive: true,
+		})
 		await fs.writeFile(path.join(complexDir, "dir3", "file4.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir3", "subdir2", "file5.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir3", "subdir2", "deepdir", "file6.txt"), "content")
@@ -173,12 +177,16 @@ describe("Filesystem Utilities", () => {
 		await fs.writeFile(path.join(complexDir, "dir1", "file1.txt"), "content")
 
 		// Create second branch with nested structure
-		await fs.mkdir(path.join(complexDir, "dir2", "subdir1"), { recursive: true })
+		await fs.mkdir(path.join(complexDir, "dir2", "subdir1"), {
+			recursive: true,
+		})
 		await fs.writeFile(path.join(complexDir, "dir2", "file2.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir2", "subdir1", "file3.txt"), "content")
 
 		// Create third branch with deep nesting
-		await fs.mkdir(path.join(complexDir, "dir3", "subdir2", "deepdir"), { recursive: true })
+		await fs.mkdir(path.join(complexDir, "dir3", "subdir2", "deepdir"), {
+			recursive: true,
+		})
 		await fs.writeFile(path.join(complexDir, "dir3", "file4.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir3", "subdir2", "file5.txt"), "content")
 		await fs.writeFile(path.join(complexDir, "dir3", "subdir2", "deepdir", "file6.txt"), "content")

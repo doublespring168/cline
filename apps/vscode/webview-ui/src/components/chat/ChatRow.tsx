@@ -46,19 +46,17 @@ import McpToolRow from "@/components/mcp/configuration/tabs/installed/server-row
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { cn } from "@/lib/utils"
 import { FileServiceClient, UiServiceClient } from "@/services/grpc-client"
-import { findMatchingResourceOrTemplate, getMcpServerDisplayName } from "@/utils/mcp"
+import { findMatchingResourceOrTemplate } from "@/utils/mcp"
 import CodeAccordian, { cleanPathPrefix } from "../common/CodeAccordian"
 import { CommandOutputContent, CommandOutputRow } from "./CommandOutputRow"
 import { CompletionOutputRow } from "./CompletionOutputRow"
 import { DiffEditRow } from "./DiffEditRow"
 import ErrorRow from "./ErrorRow"
-import { FeatureTip } from "./FeatureTip"
 import HookMessage from "./HookMessage"
 import { MarkdownRow } from "./MarkdownRow"
 import NewTaskPreview from "./NewTaskPreview"
 import PlanCompletionOutputRow from "./PlanCompletionOutputRow"
 import QuoteButton from "./QuoteButton"
-import ReportBugPreview from "./ReportBugPreview"
 import { RequestStartRow } from "./RequestStartRow"
 import SearchResultsDisplay from "./SearchResultsDisplay"
 import SubagentStatusRow from "./SubagentStatusRow"
@@ -145,14 +143,7 @@ export const ChatRowContent = memo(
 		reasoningContent,
 		responseStarted,
 	}: ChatRowContentProps) => {
-		const {
-			backgroundEditEnabled,
-			mcpServers,
-			mcpMarketplaceCatalog,
-			onRelinquishControl,
-			clineMessages,
-			showFeatureTips,
-		} = useExtensionState()
+		const { backgroundEditEnabled, mcpServers, onRelinquishControl, clineMessages } = useExtensionState()
 		const [seeNewChangesDisabled, setSeeNewChangesDisabled] = useState(false)
 		const [explainChangesDisabled, setExplainChangesDisabled] = useState(false)
 		const [quoteButtonState, setQuoteButtonState] = useState<QuoteButtonState>({
@@ -240,7 +231,12 @@ export const ChatRowContent = memo(
 		const handleQuoteClick = useCallback(() => {
 			onSetQuote(quoteButtonState.selectedText)
 			window.getSelection()?.removeAllRanges() // Clear the browser selection
-			setQuoteButtonState({ visible: false, top: 0, left: 0, selectedText: "" })
+			setQuoteButtonState({
+				visible: false,
+				top: 0,
+				left: 0,
+				selectedText: "",
+			})
 		}, [onSetQuote, quoteButtonState.selectedText]) // <-- Use onSetQuote from props
 
 		const handleMouseUp = useCallback((event: MouseEvent<HTMLDivElement>) => {
@@ -300,7 +296,12 @@ export const ChatRowContent = memo(
 					})
 				} else if (!isClickOnButton) {
 					// Scenario B: No valid selection AND click was NOT on button -> Hide button
-					setQuoteButtonState({ visible: false, top: 0, left: 0, selectedText: "" })
+					setQuoteButtonState({
+						visible: false,
+						top: 0,
+						left: 0,
+						selectedText: "",
+					})
 				}
 				// Scenario C (Click WAS on button): Do nothing here, handleQuoteClick takes over.
 			}, 0) // Delay of 0ms pushes execution after current event cycle
@@ -334,7 +335,7 @@ export const ChatRowContent = memo(
 						<span className="ph-no-capture font-bold text-foreground break-words">
 							Cline wants to {mcpServerUse.type === "use_mcp_tool" ? "use a tool" : "access a resource"} on the{" "}
 							<code className="break-all">
-								{getMcpServerDisplayName(mcpServerUse.serverName, mcpMarketplaceCatalog)}
+								{mcpServerUse.serverName}
 							</code>{" "}
 							MCP server:
 						</span>,
@@ -382,7 +383,10 @@ export const ChatRowContent = memo(
 					return null
 				}
 				return parsed as {
-					rules: Array<{ name: string; matchedConditions: Record<string, string[]> }>
+					rules: Array<{
+						name: string
+						matchedConditions: Record<string, string[]>
+					}>
 				}
 			} catch {
 				return null
@@ -890,8 +894,6 @@ export const ChatRowContent = memo(
 					case "reasoning": {
 						const isReasoningStreaming = message.partial === true
 						const hasReasoningText = !!message.text?.trim()
-						// Show feature tips throughout the entire thinking/reasoning phase
-						const showFeatureTip = isReasoningStreaming
 						return (
 							<div>
 								<ThinkingRow
@@ -904,7 +906,6 @@ export const ChatRowContent = memo(
 									showTitle={true}
 									title={isReasoningStreaming ? "Thinking..." : "Thinking"}
 								/>
-								{isReasoningStreaming && showFeatureTips !== false && <FeatureTip />}
 							</div>
 						)
 					}
@@ -1111,9 +1112,10 @@ export const ChatRowContent = memo(
 									<LightbulbIcon className="mr-1.5 size-2 text-link" />
 									<span className="font-medium text-foreground">Shell integration issues</span>
 								</div>
-							<div className="text-foreground opacity-90 mb-2">
-								Shell integration is unavailable or unstable. Commands will continue to run in the VS Code terminal.
-							</div>
+								<div className="text-foreground opacity-90 mb-2">
+									Shell integration is unavailable or unstable. Commands will continue to run in the VS Code
+									terminal.
+								</div>
 							</div>
 						)
 					case "task_progress":
@@ -1228,16 +1230,6 @@ export const ChatRowContent = memo(
 									<span className="text-foreground font-bold">Cline wants to condense your conversation:</span>
 								</div>
 								<NewTaskPreview context={message.text || ""} />
-							</div>
-						)
-					case "report_bug":
-						return (
-							<div>
-								<div className={HEADER_CLASSNAMES}>
-									<FilePlus2Icon className="size-2" />
-									<span className="text-foreground font-bold">Cline wants to create a Github issue:</span>
-								</div>
-								<ReportBugPreview data={message.text || ""} />
 							</div>
 						)
 					case "plan_mode_respond": {

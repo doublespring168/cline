@@ -335,7 +335,10 @@ describe("Tool Executor Hooks", () => {
 						parameters: {
 							server_name: "github",
 							tool_name: "create_issue",
-							arguments: JSON.stringify({ title: "Bug report", body: "Found an issue..." }),
+							arguments: JSON.stringify({
+								title: "Bug report",
+								body: "Found an issue...",
+							}),
 						},
 					},
 				},

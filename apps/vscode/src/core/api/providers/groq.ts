@@ -42,31 +42,56 @@ const MODEL_FAMILIES: Record<string, GroqModelFamily> = {
 	// Moonshort 4 Family - Latest generation with vision support
 	"kimi-k2": {
 		name: "kimi-k2",
-		supportedFeatures: { streaming: true, temperature: true, vision: true, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: true,
+			tools: true,
+		},
 		maxTokensOverride: 8192,
 	},
 	// Llama 4 Family - Latest generation with vision support
 	llama4: {
 		name: "Llama 4",
-		supportedFeatures: { streaming: true, temperature: true, vision: true, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: true,
+			tools: true,
+		},
 		maxTokensOverride: 8192,
 	},
 	// Llama 3.3 Family - Balanced performance
 	"llama3.3": {
 		name: "Llama 3.3",
-		supportedFeatures: { streaming: true, temperature: true, vision: false, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: false,
+			tools: true,
+		},
 		maxTokensOverride: 32768,
 	},
 	// Llama 3.1 Family - Fast inference
 	"llama3.1": {
 		name: "Llama 3.1",
-		supportedFeatures: { streaming: true, temperature: true, vision: false, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: false,
+			tools: true,
+		},
 		maxTokensOverride: 131072,
 	},
 	// DeepSeek Family - Reasoning-optimized
 	deepseek: {
 		name: "DeepSeek",
-		supportedFeatures: { streaming: true, temperature: true, vision: false, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: false,
+			tools: true,
+		},
 		maxTokensOverride: 8192,
 		specialParams: {
 			top_p: 0.95,
@@ -76,13 +101,23 @@ const MODEL_FAMILIES: Record<string, GroqModelFamily> = {
 	// Qwen Family - Enhanced for Q&A
 	qwen: {
 		name: "Qwen",
-		supportedFeatures: { streaming: true, temperature: true, vision: false, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: false,
+			tools: true,
+		},
 		maxTokensOverride: 32768,
 	},
 	// Compound Models - Hybrid architectures
 	compound: {
 		name: "Compound",
-		supportedFeatures: { streaming: true, temperature: true, vision: false, tools: true },
+		supportedFeatures: {
+			streaming: true,
+			temperature: true,
+			vision: false,
+			tools: true,
+		},
 		maxTokensOverride: 8192,
 	},
 }

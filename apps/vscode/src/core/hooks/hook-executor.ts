@@ -100,7 +100,9 @@ export async function executeHook<Name extends keyof Hooks>(options: HookExecuti
 			...(options.toolName && { toolName: options.toolName }),
 			status: "running",
 			scriptPaths: hookInfo.scriptPaths,
-			...(options.pendingToolInfo && { pendingToolInfo: options.pendingToolInfo }),
+			...(options.pendingToolInfo && {
+				pendingToolInfo: options.pendingToolInfo,
+			}),
 		}
 		hookMessageTs = await say("hook_status", JSON.stringify(hookMetadata))
 

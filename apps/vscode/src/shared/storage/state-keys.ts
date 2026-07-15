@@ -14,7 +14,6 @@ import { DEFAULT_FOCUS_CHAIN_SETTINGS, FocusChainSettings } from "@shared/FocusC
 import { HistoryItem } from "@shared/HistoryItem"
 import { DEFAULT_MCP_DISPLAY_MODE, McpDisplayMode } from "@shared/McpDisplayMode"
 import { WorkspaceRoot } from "@shared/multi-root/types"
-import { GlobalInstructionsFile } from "@shared/remote-config/schema"
 import { Mode } from "@shared/storage/types"
 import { LanguageModelChatSelector } from "vscode"
 
@@ -45,24 +44,10 @@ type FieldDefinition<T> = {
 
 type FieldDefinitions = Record<string, FieldDefinition<any>>
 
-export type ConfiguredAPIKeys = Partial<Record<ApiProvider, boolean>>
-const REMOTE_CONFIG_EXTRA_FIELDS = {
-	remoteConfiguredProviders: { default: [] as ApiProvider[] },
-	allowedMCPServers: { default: [] as Array<{ id: string }> },
-	remoteMCPServers: { default: undefined as Array<{ name: string; url: string; alwaysEnabled?: boolean }> | undefined },
-	previousRemoteMCPServers: { default: undefined as Array<{ name: string; url: string }> | undefined },
-	remoteGlobalRules: { default: undefined as GlobalInstructionsFile[] | undefined },
-	remoteGlobalWorkflows: { default: undefined as GlobalInstructionsFile[] | undefined },
-	remoteGlobalSkills: { default: undefined as GlobalInstructionsFile[] | undefined },
-	blockPersonalRemoteMCPServers: { default: false as boolean },
-	configuredApiKeys: { default: {} as ConfiguredAPIKeys | undefined },
-} satisfies FieldDefinitions
-
 const GLOBAL_STATE_FIELDS = {
 	"cline.generatedMachineId": { default: undefined as string | undefined }, // Note, distinctId reads/writes this directly from/to StorageContext before StateManager is initialized.
 	taskHistory: { default: [] as HistoryItem[], isAsync: true },
 	favoritedModelIds: { default: [] as string[] },
-	mcpMarketplaceEnabled: { default: true as boolean },
 	mcpResponsesCollapsed: { default: false as boolean },
 	terminalReuseEnabled: { default: true as boolean },
 	isNewUser: { default: true as boolean },
@@ -72,9 +57,6 @@ const GLOBAL_STATE_FIELDS = {
 	primaryRootIndex: { default: 0 as number },
 	multiRootEnabled: { default: true as boolean },
 	nativeToolCallEnabled: { default: true as boolean },
-	remoteRulesToggles: { default: {} as ClineRulesToggles },
-	remoteWorkflowToggles: { default: {} as ClineRulesToggles },
-	remoteSkillsToggles: { default: {} as ClineRulesToggles },
 	// Path to worktree that should auto-open Cline sidebar when launched
 	worktreeAutoOpenPath: { default: undefined as string | undefined },
 } satisfies FieldDefinitions
@@ -105,7 +87,9 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	lmStudioMaxTokens: { default: undefined as string | undefined },
 	geminiBaseUrl: { default: undefined as string | undefined },
 	requestyBaseUrl: { default: undefined as string | undefined },
-	fireworksModelMaxCompletionTokens: { default: undefined as number | undefined },
+	fireworksModelMaxCompletionTokens: {
+		default: undefined as number | undefined,
+	},
 	fireworksModelMaxTokens: { default: undefined as number | undefined },
 	qwenCodeOauthPath: { default: undefined as string | undefined },
 	azureApiVersion: { default: undefined as string | undefined },
@@ -133,21 +117,35 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	geminiPlanModeThinkingLevel: { default: undefined as string | undefined },
 	planModeReasoningEffort: { default: undefined as string | undefined },
 	planModeVerbosity: { default: undefined as string | undefined },
-	planModeVsCodeLmModelSelector: { default: undefined as LanguageModelChatSelector | undefined },
-	planModeAwsBedrockCustomSelected: { default: undefined as boolean | undefined },
-	planModeAwsBedrockCustomModelBaseId: { default: undefined as string | undefined },
-	planModeVertexCustomModelSelected: { default: undefined as boolean | undefined },
-	planModeVertexCustomModelInfo: { default: undefined as ModelInfo | undefined },
+	planModeVsCodeLmModelSelector: {
+		default: undefined as LanguageModelChatSelector | undefined,
+	},
+	planModeAwsBedrockCustomSelected: {
+		default: undefined as boolean | undefined,
+	},
+	planModeAwsBedrockCustomModelBaseId: {
+		default: undefined as string | undefined,
+	},
+	planModeVertexCustomModelSelected: {
+		default: undefined as boolean | undefined,
+	},
+	planModeVertexCustomModelInfo: {
+		default: undefined as ModelInfo | undefined,
+	},
 	planModeOpenRouterModelId: { default: undefined as string | undefined },
 	planModeOpenRouterModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeClineModelId: { default: undefined as string | undefined },
 	planModeClineModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeOpenAiModelId: { default: undefined as string | undefined },
-	planModeOpenAiModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	planModeOpenAiModelInfo: {
+		default: undefined as OpenAiCompatibleModelInfo | undefined,
+	},
 	planModeOllamaModelId: { default: undefined as string | undefined },
 	planModeLmStudioModelId: { default: undefined as string | undefined },
 	planModeLiteLlmModelId: { default: undefined as string | undefined },
-	planModeLiteLlmModelInfo: { default: undefined as LiteLLMModelInfo | undefined },
+	planModeLiteLlmModelInfo: {
+		default: undefined as LiteLLMModelInfo | undefined,
+	},
 	planModeRequestyModelId: { default: undefined as string | undefined },
 	planModeRequestyModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeTogetherModelId: { default: undefined as string | undefined },
@@ -161,17 +159,23 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	planModeHuggingFaceModelId: { default: undefined as string | undefined },
 	planModeHuggingFaceModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeHuaweiCloudMaasModelId: { default: undefined as string | undefined },
-	planModeHuaweiCloudMaasModelInfo: { default: undefined as ModelInfo | undefined },
+	planModeHuaweiCloudMaasModelInfo: {
+		default: undefined as ModelInfo | undefined,
+	},
 	planModeOcaModelId: { default: undefined as string | undefined },
 	planModeOcaModelInfo: { default: undefined as OcaModelInfo | undefined },
 	planModeOcaReasoningEffort: { default: undefined as string | undefined },
 	planModeAihubmixModelId: { default: undefined as string | undefined },
-	planModeAihubmixModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	planModeAihubmixModelInfo: {
+		default: undefined as OpenAiCompatibleModelInfo | undefined,
+	},
 	planModeHicapModelId: { default: undefined as string | undefined },
 	planModeHicapModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeNousResearchModelId: { default: undefined as string | undefined },
 	planModeVercelAiGatewayModelId: { default: undefined as string | undefined },
-	planModeVercelAiGatewayModelInfo: { default: undefined as ModelInfo | undefined },
+	planModeVercelAiGatewayModelInfo: {
+		default: undefined as ModelInfo | undefined,
+	},
 
 	// Act mode configurations
 	actModeApiModelId: { default: undefined as string | undefined },
@@ -179,21 +183,33 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	geminiActModeThinkingLevel: { default: undefined as string | undefined },
 	actModeReasoningEffort: { default: undefined as string | undefined },
 	actModeVerbosity: { default: undefined as string | undefined },
-	actModeVsCodeLmModelSelector: { default: undefined as LanguageModelChatSelector | undefined },
-	actModeAwsBedrockCustomSelected: { default: undefined as boolean | undefined },
-	actModeAwsBedrockCustomModelBaseId: { default: undefined as string | undefined },
-	actModeVertexCustomModelSelected: { default: undefined as boolean | undefined },
+	actModeVsCodeLmModelSelector: {
+		default: undefined as LanguageModelChatSelector | undefined,
+	},
+	actModeAwsBedrockCustomSelected: {
+		default: undefined as boolean | undefined,
+	},
+	actModeAwsBedrockCustomModelBaseId: {
+		default: undefined as string | undefined,
+	},
+	actModeVertexCustomModelSelected: {
+		default: undefined as boolean | undefined,
+	},
 	actModeVertexCustomModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeOpenRouterModelId: { default: undefined as string | undefined },
 	actModeOpenRouterModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeClineModelId: { default: undefined as string | undefined },
 	actModeClineModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeOpenAiModelId: { default: undefined as string | undefined },
-	actModeOpenAiModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	actModeOpenAiModelInfo: {
+		default: undefined as OpenAiCompatibleModelInfo | undefined,
+	},
 	actModeOllamaModelId: { default: undefined as string | undefined },
 	actModeLmStudioModelId: { default: undefined as string | undefined },
 	actModeLiteLlmModelId: { default: undefined as string | undefined },
-	actModeLiteLlmModelInfo: { default: undefined as LiteLLMModelInfo | undefined },
+	actModeLiteLlmModelInfo: {
+		default: undefined as LiteLLMModelInfo | undefined,
+	},
 	actModeRequestyModelId: { default: undefined as string | undefined },
 	actModeRequestyModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeTogetherModelId: { default: undefined as string | undefined },
@@ -207,17 +223,23 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	actModeHuggingFaceModelId: { default: undefined as string | undefined },
 	actModeHuggingFaceModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeHuaweiCloudMaasModelId: { default: undefined as string | undefined },
-	actModeHuaweiCloudMaasModelInfo: { default: undefined as ModelInfo | undefined },
+	actModeHuaweiCloudMaasModelInfo: {
+		default: undefined as ModelInfo | undefined,
+	},
 	actModeOcaModelId: { default: undefined as string | undefined },
 	actModeOcaModelInfo: { default: undefined as OcaModelInfo | undefined },
 	actModeOcaReasoningEffort: { default: undefined as string | undefined },
 	actModeAihubmixModelId: { default: undefined as string | undefined },
-	actModeAihubmixModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
+	actModeAihubmixModelInfo: {
+		default: undefined as OpenAiCompatibleModelInfo | undefined,
+	},
 	actModeHicapModelId: { default: undefined as string | undefined },
 	actModeHicapModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeNousResearchModelId: { default: undefined as string | undefined },
 	actModeVercelAiGatewayModelId: { default: undefined as string | undefined },
-	actModeVercelAiGatewayModelInfo: { default: undefined as ModelInfo | undefined },
+	actModeVercelAiGatewayModelInfo: {
+		default: undefined as ModelInfo | undefined,
+	},
 
 	// Model-specific settings
 	planModeApiProvider: { default: DEFAULT_API_PROVIDER as ApiProvider },
@@ -252,21 +274,29 @@ const USER_SETTINGS_FIELDS = {
 	autoApproveAllToggled: { default: false as boolean },
 	useAutoCondense: { default: false as boolean },
 	subagentsEnabled: { default: false as boolean },
-	clineWebToolsEnabled: { default: true as boolean },
 	worktreesEnabled: { default: false as boolean },
 	preferredLanguage: { default: "English" as string },
-	chatFontSize: { default: DEFAULT_CHAT_FONT_SIZE as number, transform: normalizeChatFontSize },
+	chatFontSize: {
+		default: DEFAULT_CHAT_FONT_SIZE as number,
+		transform: normalizeChatFontSize,
+	},
 	mode: { default: "act" as Mode },
-	focusChainSettings: { default: DEFAULT_FOCUS_CHAIN_SETTINGS as FocusChainSettings },
+	focusChainSettings: {
+		default: DEFAULT_FOCUS_CHAIN_SETTINGS as FocusChainSettings,
+	},
 	customPrompt: { default: undefined as "compact" | undefined },
 	backgroundEditEnabled: { default: false as boolean },
 	doubleCheckCompletionEnabled: { default: false as boolean },
-	lazyTeammateModeEnabled: { default: false as boolean },
-	showFeatureTips: { default: true as boolean },
 } satisfies FieldDefinitions
 
-const SETTINGS_FIELDS = { ...API_HANDLER_SETTINGS_FIELDS, ...USER_SETTINGS_FIELDS }
-const GLOBAL_STATE_AND_SETTINGS_FIELDS = { ...GLOBAL_STATE_FIELDS, ...SETTINGS_FIELDS }
+const SETTINGS_FIELDS = {
+	...API_HANDLER_SETTINGS_FIELDS,
+	...USER_SETTINGS_FIELDS,
+}
+const GLOBAL_STATE_AND_SETTINGS_FIELDS = {
+	...GLOBAL_STATE_FIELDS,
+	...SETTINGS_FIELDS,
+}
 
 // ============================================================================
 // SECRET KEYS AND LOCAL STATE - Static definitions
@@ -337,22 +367,26 @@ export const LocalStateKeys = [
 // ============================================================================
 
 type ExtractDefault<T> = T extends { default: infer U } ? U : never
-type BuildInterface<T extends Record<string, { default: any }>> = { [K in keyof T]: ExtractDefault<T[K]> }
+type BuildInterface<T extends Record<string, { default: any }>> = {
+	[K in keyof T]: ExtractDefault<T[K]>
+}
 
 export type GlobalState = BuildInterface<typeof GLOBAL_STATE_FIELDS>
 export type Settings = BuildInterface<typeof SETTINGS_FIELDS>
-type RemoteConfigExtra = BuildInterface<typeof REMOTE_CONFIG_EXTRA_FIELDS>
 export type ApiHandlerOptionSettings = BuildInterface<typeof API_HANDLER_SETTINGS_FIELDS>
 export type ApiHandlerSettings = ApiHandlerOptionSettings & Secrets
 export type GlobalStateAndSettings = GlobalState & Settings
-export type RemoteConfigFields = GlobalStateAndSettings & RemoteConfigExtra
 
 // ============================================================================
 // TYPE ALIASES
 // ============================================================================
 
-export type Secrets = { [K in (typeof SecretKeys)[number]]: string | undefined }
-export type LocalState = { [K in (typeof LocalStateKeys)[number]]: ClineRulesToggles }
+export type Secrets = {
+	[K in (typeof SecretKeys)[number]]: string | undefined
+}
+export type LocalState = {
+	[K in (typeof LocalStateKeys)[number]]: ClineRulesToggles
+}
 export type SecretKey = (typeof SecretKeys)[number]
 export type GlobalStateKey = keyof GlobalState
 export type LocalStateKey = keyof LocalState

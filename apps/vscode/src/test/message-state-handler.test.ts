@@ -211,9 +211,21 @@ describe("MessageStateHandler Mutex Protection", () => {
 
 		// Perform concurrent additions
 		await Promise.all([
-			handler.addToApiConversationHistory({ role: "user", content: "msg1", ts: Date.now() }),
-			handler.addToApiConversationHistory({ role: "assistant", content: "response1", ts: Date.now() }),
-			handler.addToApiConversationHistory({ role: "user", content: "msg2", ts: Date.now() }),
+			handler.addToApiConversationHistory({
+				role: "user",
+				content: "msg1",
+				ts: Date.now(),
+			}),
+			handler.addToApiConversationHistory({
+				role: "assistant",
+				content: "response1",
+				ts: Date.now(),
+			}),
+			handler.addToApiConversationHistory({
+				role: "user",
+				content: "msg2",
+				ts: Date.now(),
+			}),
 		])
 
 		const history = handler.getApiConversationHistory()

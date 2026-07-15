@@ -64,7 +64,11 @@ describe("File Search", () => {
 
 			// Instead of stubbing path functions, we'll stub the executeRipgrepForFiles function
 			// to return a predictable result for this test
-			const expectedResult: { path: string; type: "file" | "folder"; label?: string }[] = [
+			const expectedResult: {
+				path: string
+				type: "file" | "folder"
+				label?: string
+			}[] = [
 				{ path: "file1.txt", type: "file", label: "file1.txt" },
 				{ path: "folder1/file2.js", type: "file", label: "file2.js" },
 				{ path: "folder1/subfolder/file3.py", type: "file", label: "file3.py" },
@@ -209,7 +213,11 @@ describe("File Search", () => {
 
 	describe("searchWorkspaceFiles", () => {
 		it("should return top N results for empty query", async () => {
-			const mockItems: { path: string; type: "file" | "folder"; label?: string }[] = [
+			const mockItems: {
+				path: string
+				type: "file" | "folder"
+				label?: string
+			}[] = [
 				{ path: "file1.txt", type: "file", label: "file1.txt" },
 				{ path: "folder1", type: "folder", label: "folder1" },
 				{ path: "file2.js", type: "file", label: "file2.js" },
@@ -235,8 +243,16 @@ describe("File Search", () => {
 			// picker showed `src` twice.
 			const hostResponse = SearchWorkspaceItemsResponse.create({
 				items: [
-					{ path: "src", type: SearchWorkspaceItemsRequest_SearchItemType.FOLDER, label: "src" },
-					{ path: "src/main.ts", type: SearchWorkspaceItemsRequest_SearchItemType.FILE, label: "main.ts" },
+					{
+						path: "src",
+						type: SearchWorkspaceItemsRequest_SearchItemType.FOLDER,
+						label: "src",
+					},
+					{
+						path: "src/main.ts",
+						type: SearchWorkspaceItemsRequest_SearchItemType.FILE,
+						label: "main.ts",
+					},
 				],
 			})
 			const searchItemsStub = sandbox.stub(HostProvider.workspace, "searchWorkspaceItems").resolves(hostResponse)
@@ -288,7 +304,11 @@ describe("File Search", () => {
 		})
 
 		it("should apply fuzzy matching for non-empty query", async () => {
-			const mockItems: { path: string; type: "file" | "folder"; label?: string }[] = [
+			const mockItems: {
+				path: string
+				type: "file" | "folder"
+				label?: string
+			}[] = [
 				{ path: "file1.txt", type: "file", label: "file1.txt" },
 				{ path: "folder1/important.js", type: "file", label: "important.js" },
 				{ path: "file2.js", type: "file", label: "file2.js" },
@@ -328,8 +348,20 @@ describe("File Search", () => {
 
 	describe("OrderbyMatchScore", () => {
 		it("should prioritize results with fewer gaps between matched characters", () => {
-			const mockItemA: FzfResultItem<any> = { item: {}, positions: new Set([0, 1, 2, 5]), start: 0, end: 5, score: 0 }
-			const mockItemB: FzfResultItem<any> = { item: {}, positions: new Set([0, 2, 4, 6]), start: 0, end: 6, score: 0 }
+			const mockItemA: FzfResultItem<any> = {
+				item: {},
+				positions: new Set([0, 1, 2, 5]),
+				start: 0,
+				end: 5,
+				score: 0,
+			}
+			const mockItemB: FzfResultItem<any> = {
+				item: {},
+				positions: new Set([0, 2, 4, 6]),
+				start: 0,
+				end: 6,
+				score: 0,
+			}
 
 			const result = fileSearch.OrderbyMatchScore(mockItemA, mockItemB)
 

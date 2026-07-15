@@ -211,10 +211,16 @@ export class AIhubmixHandler implements ApiHandler {
 				.filter((c: any) => c != null)
 				.map((c: any) => {
 					if (c.type === "image" || c.type === "input_image" || c.type === "image_url") {
-						return { type: "input_image", image_url: c.image_url || c.url || c.source?.url }
+						return {
+							type: "input_image",
+							image_url: c.image_url || c.url || c.source?.url,
+						}
 					}
 					const text = c.text ?? (typeof c === "string" ? c : "")
-					return { type: role === "assistant" ? "output_text" : "input_text", text }
+					return {
+						type: role === "assistant" ? "output_text" : "input_text",
+						text,
+					}
 				})
 			return { role, content }
 		})

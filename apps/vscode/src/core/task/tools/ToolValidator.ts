@@ -19,7 +19,10 @@ export class ToolValidator {
 			// params are stored under block.params using their tag name
 			const val = (block as any)?.params?.[p]
 			if (val === undefined || val === null || String(val).trim() === "") {
-				return { ok: false, error: `Missing required parameter '${p}' for tool '${block.name}'.` }
+				return {
+					ok: false,
+					error: `Missing required parameter '${p}' for tool '${block.name}'.`,
+				}
 			}
 		}
 		return { ok: true }

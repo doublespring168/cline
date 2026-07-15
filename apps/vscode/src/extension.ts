@@ -9,10 +9,7 @@ import { sendChatButtonClickedEvent } from "./core/controller/ui/subscribeToChat
 import { sendHistoryButtonClickedEvent } from "./core/controller/ui/subscribeToHistoryButtonClicked"
 import { sendMcpButtonClickedEvent } from "./core/controller/ui/subscribeToMcpButtonClicked"
 import { sendSettingsButtonClickedEvent } from "./core/controller/ui/subscribeToSettingsButtonClicked"
-import { sendWorktreesButtonClickedEvent } from "./core/controller/ui/subscribeToWorktreesButtonClicked"
 import { WebviewProvider } from "./core/webview"
-import { createClineAPI } from "./exports"
-import { initializeTestMode } from "./services/test/TestMode"
 import "./utils/path" // necessary to have access to String.prototype.toPosix
 import path from "node:path"
 import type { ExtensionContext } from "vscode"
@@ -29,7 +26,6 @@ import { sendAddToInputEvent } from "./core/controller/ui/subscribeToAddToInput"
 import { sendShowWebviewEvent } from "./core/controller/ui/subscribeToShowWebview"
 import { HookDiscoveryCache } from "./core/hooks/HookDiscoveryCache"
 import {
-	cleanupMcpMarketplaceCatalogFromGlobalState,
 	cleanupOldApiKey,
 	migrateCustomInstructionsToGlobalRules,
 	migrateTaskHistoryToFile,
@@ -49,8 +45,7 @@ import { VscodeDiffViewProvider } from "./hosts/vscode/VscodeDiffViewProvider"
 import { VscodeWebviewProvider } from "./hosts/vscode/VscodeWebviewProvider"
 import { exportVSCodeStorageToSharedFiles } from "./hosts/vscode/vscode-to-file-migration"
 import { ExtensionRegistryInfo } from "./registry"
-import { telemetryService } from "./services/telemetry"
-import { LG_TASK_URI_PATH, SharedUriHandler, TASK_URI_PATH } from "./services/uri/SharedUriHandler"
+import { SharedUriHandler } from "./services/uri/SharedUriHandler"
 import { ShowMessageType } from "./shared/proto/host/window"
 import { fileExistsAtPath } from "./utils/fs"
 
@@ -80,9 +75,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	const webview = (await initialize(storageContext)) as VscodeWebviewProvider
 
 	// 5. Register services and commands specific to VS Code
-	// Initialize test mode and add disposables to context
-	const testModeWatchers = await initializeTestMode(webview)
-	context.subscriptions.push(...testModeWatchers)
 
 	// Initialize hook discovery cache for performance optimization
 	HookDiscoveryCache.getInstance().initialize(
@@ -132,7 +124,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(commands.McpButton, () => sendMcpButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.SettingsButton, () => sendSettingsButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.HistoryButton, () => sendHistoryButtonClickedEvent()))
-	context.subscriptions.push(vscode.commands.registerCommand(commands.WorktreesButton, () => sendWorktreesButtonClickedEvent()))
 
 	/*
 	We use the text document content provider API to show the left side for diff view by creating a
@@ -156,20 +147,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	const handleUri = async (uri: vscode.Uri) => {
 		const url = decodeURIComponent(uri.toString())
-		const uriPath = getUriPath(url)
-		const isTaskUri = uriPath === TASK_URI_PATH || uriPath === LG_TASK_URI_PATH
-
-		if (isTaskUri) {
-			await openClineSidebarForTaskUri()
-		}
-
-		let success = await SharedUriHandler.handleUri(url)
-
-		// Task deeplinks can race with first-time sidebar initialization.
-		if (!success && isTaskUri) {
-			await openClineSidebarForTaskUri()
-			success = await SharedUriHandler.handleUri(url)
-		}
+		const success = await SharedUriHandler.handleUri(url)
 
 		if (!success) {
 			Logger.warn("Extension URI handler: Failed to process URI:", uri.toString())
@@ -388,7 +366,6 @@ export async function activate(context: vscode.ExtensionContext) {
 
 			// Send show webview event with preserveEditorFocus flag
 			sendShowWebviewEvent(preserveEditorFocus)
-			telemetryService.captureButtonClick("command_focusChatInput", webview.controller?.task?.ulid)
 		}),
 	)
 
@@ -493,20 +470,11 @@ ${ctx.cellJson || "{}"}
 		),
 	)
 
-	// Register the openWalkthrough command handler
-	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.Walkthrough, async () => {
-			await vscode.commands.executeCommand("workbench.action.openWalkthrough", `${context.extension.id}#ClineWalkthrough`)
-			telemetryService.captureButtonClick("command_openWalkthrough")
-		}),
-	)
-
 	// Register the reconstructTaskHistory command handler
 	context.subscriptions.push(
 		vscode.commands.registerCommand(commands.ReconstructTaskHistory, async () => {
 			const { reconstructTaskHistory } = await import("./core/commands/reconstructTaskHistory")
 			await reconstructTaskHistory()
-			telemetryService.captureButtonClick("command_reconstructTaskHistory")
 		}),
 	)
 
@@ -522,7 +490,7 @@ ${ctx.cellJson || "{}"}
 
 	Logger.log(`[Cline] extension activated in ${performance.now() - activationStartTime} ms`)
 
-	return createClineAPI(webview.controller)
+	return undefined
 }
 
 async function showJupyterPromptInput(title: string, placeholder: string): Promise<string | undefined> {
@@ -609,30 +577,6 @@ function setupHostProvider(context: ExtensionContext) {
 	)
 }
 
-function getUriPath(url: string): string | undefined {
-	try {
-		return new URL(url).pathname
-	} catch {
-		return undefined
-	}
-}
-
-async function openClineSidebarForTaskUri(): Promise<void> {
-	const sidebarWaitTimeoutMs = 3000
-	const sidebarWaitIntervalMs = 50
-
-	await vscode.commands.executeCommand(`${ExtensionRegistryInfo.views.Sidebar}.focus`)
-
-	const startedAt = Date.now()
-	while (Date.now() - startedAt < sidebarWaitTimeoutMs) {
-		if (WebviewProvider.getVisibleInstance()) {
-			return
-		}
-		await new Promise((resolve) => setTimeout(resolve, sidebarWaitIntervalMs))
-	}
-
-	Logger.warn("Task URI handling timed out waiting for Cline sidebar visibility")
-}
 
 async function getBinaryLocation(name: string): Promise<string> {
 	// The only binary currently supported is the rg binary from the VSCode installation.
@@ -720,9 +664,6 @@ async function cleanupLegacyVSCodeStorage(context: ExtensionContext): Promise<vo
 
 		// Ensure taskHistory.json exists and migrate legacy state (runs once)
 		await migrateTaskHistoryToFile(context)
-
-		// Clean up MCP marketplace catalog from global state (moved to disk cache)
-		await cleanupMcpMarketplaceCatalogFromGlobalState(context)
 
 		await context.globalState.update(migrationKey, true)
 

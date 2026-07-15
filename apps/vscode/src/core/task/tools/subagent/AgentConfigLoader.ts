@@ -119,7 +119,9 @@ export async function readAgentConfigsFromDisk(homeDir = os.homedir()): Promise<
 	const configs = new Map<string, AgentBaseConfig>()
 
 	try {
-		const entries = await fs.readdir(agentsDirectoryPath, { withFileTypes: true })
+		const entries = await fs.readdir(agentsDirectoryPath, {
+			withFileTypes: true,
+		})
 		const yamlFiles = entries
 			.filter((entry) => entry.isFile())
 			.map((entry) => entry.name)
@@ -217,7 +219,10 @@ export class AgentConfigLoader {
 		return new Map(this.cachedConfigs)
 	}
 
-	public getAllCachedConfigsWithToolNames(): Array<{ toolName: string; config: AgentBaseConfig }> {
+	public getAllCachedConfigsWithToolNames(): Array<{
+		toolName: string
+		config: AgentBaseConfig
+	}> {
 		const result: Array<{ toolName: string; config: AgentBaseConfig }> = []
 		for (const [normalizedName, config] of this.cachedConfigs.entries()) {
 			const toolName = this.cachedAgentToolNames.get(normalizedName)

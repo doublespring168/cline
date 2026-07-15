@@ -123,7 +123,6 @@ const baseContext: SystemPromptContext = {
 	cwd: "/test/project",
 	ide: "TestIde",
 	supportsBrowserUse: true,
-	clineWebToolsEnabled: true,
 	subagentsEnabled: true,
 	mcpHub: {
 		getServers: () => [
@@ -132,7 +131,13 @@ const baseContext: SystemPromptContext = {
 				name: "test-server",
 				status: "connected",
 				config: '{"command": "test"}',
-				tools: [{ name: "test_tool", description: "A test tool", inputSchema: { type: "object", properties: {} } }],
+				tools: [
+					{
+						name: "test_tool",
+						description: "A test tool",
+						inputSchema: { type: "object", properties: {} },
+					},
+				],
 				resources: [],
 				resourceTemplates: [],
 			},
@@ -177,11 +182,22 @@ async function runPromptTest(
 // Test Data
 // ============================================================================
 
-const contextVariations: Array<{ name: string; override: Partial<SystemPromptContext> }> = [
+const contextVariations: Array<{
+	name: string
+	override: Partial<SystemPromptContext>
+}> = [
 	{ name: "basic", override: {} },
 	{ name: "no-browser", override: { supportsBrowserUse: false } },
-	{ name: "no-mcp", override: { mcpHub: { getServers: () => [] } as unknown as McpHub } },
-	{ name: "no-focus-chain", override: { focusChainSettings: { enabled: false, remindClineInterval: 0 } } },
+	{
+		name: "no-mcp",
+		override: { mcpHub: { getServers: () => [] } as unknown as McpHub },
+	},
+	{
+		name: "no-focus-chain",
+		override: {
+			focusChainSettings: { enabled: false, remindClineInterval: 0 },
+		},
+	},
 ]
 
 const modelTestCases = [
@@ -189,14 +205,34 @@ const modelTestCases = [
 	{ family: ModelFamily.GLM, modelId: "glm-4.6", providerId: "zai" },
 	{ family: ModelFamily.HERMES, modelId: "hermes-4", providerId: "test" },
 	{ family: ModelFamily.DEVSTRAL, modelId: "devstral", providerId: "cline" },
-	{ family: ModelFamily.NEXT_GEN, modelId: "claude-sonnet-4", providerId: "anthropic" },
+	{
+		family: ModelFamily.NEXT_GEN,
+		modelId: "claude-sonnet-4",
+		providerId: "anthropic",
+	},
 	{ family: ModelFamily.XS, modelId: "qwen3_coder", providerId: "lmstudio" },
-	{ family: ModelFamily.NATIVE_NEXT_GEN, modelId: "claude-4-5-sonnet", providerId: "cline" },
+	{
+		family: ModelFamily.NATIVE_NEXT_GEN,
+		modelId: "claude-4-5-sonnet",
+		providerId: "cline",
+	},
 	{ family: ModelFamily.GPT_5, modelId: "gpt-5", providerId: "openai" },
-	{ family: ModelFamily.NATIVE_GPT_5, modelId: "gpt-5-codex", providerId: "openai" },
-	{ family: ModelFamily.NATIVE_GPT_5_1, modelId: "gpt-5-1", providerId: "openai" },
+	{
+		family: ModelFamily.NATIVE_GPT_5,
+		modelId: "gpt-5-codex",
+		providerId: "openai",
+	},
+	{
+		family: ModelFamily.NATIVE_GPT_5_1,
+		modelId: "gpt-5-1",
+		providerId: "openai",
+	},
 	{ family: ModelFamily.GEMINI_3, modelId: "gemini-3", providerId: "vertex" },
-	{ family: ModelFamily.TRINITY, modelId: "arcee-ai/trinity-large-preview", providerId: "openrouter" },
+	{
+		family: ModelFamily.TRINITY,
+		modelId: "arcee-ai/trinity-large-preview",
+		providerId: "openrouter",
+	},
 ]
 const gemini3ModelTestCases = modelTestCases.filter(({ family }) => family === ModelFamily.GEMINI_3)
 
@@ -301,10 +337,26 @@ describe("Prompt System Integration Tests", () => {
 
 	describe("Context-Specific Features", () => {
 		const featureTests = [
-			{ name: "browser-specific content when browser is enabled", context: { supportsBrowserUse: true }, check: "browser" },
-			{ name: "MCP content when MCP servers are present", context: {}, check: "MCP" },
-			{ name: "TODO content when focus chain is enabled", context: {}, check: "TODO" },
-			{ name: "user instructions when provided", context: {}, check: "USER'S CUSTOM INSTRUCTIONS" },
+			{
+				name: "browser-specific content when browser is enabled",
+				context: { supportsBrowserUse: true },
+				check: "browser",
+			},
+			{
+				name: "MCP content when MCP servers are present",
+				context: {},
+				check: "MCP",
+			},
+			{
+				name: "TODO content when focus chain is enabled",
+				context: {},
+				check: "TODO",
+			},
+			{
+				name: "user instructions when provided",
+				context: {},
+				check: "USER'S CUSTOM INSTRUCTIONS",
+			},
 		]
 
 		for (const { name, context, check } of featureTests) {

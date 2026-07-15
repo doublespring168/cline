@@ -203,6 +203,9 @@ export class MinimaxHandler implements ApiHandler {
 			const id = modelId as MinimaxModelId
 			return { id, info: minimaxModels[id] }
 		}
-		return { id: minimaxDefaultModelId, info: minimaxModels[minimaxDefaultModelId] }
+		return {
+			id: minimaxDefaultModelId,
+			info: minimaxModels[minimaxDefaultModelId],
+		}
 	}
 }

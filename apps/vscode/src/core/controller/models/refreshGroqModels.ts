@@ -5,7 +5,6 @@ import axios from "axios"
 import fs from "fs/promises"
 import path from "path"
 import { StateManager } from "@/core/storage/StateManager"
-import { telemetryService } from "@/services/telemetry"
 import { getAxiosSettings } from "@/shared/net"
 import { Logger } from "@/shared/services/Logger"
 import { groqModels } from "../../../shared/api"
@@ -139,14 +138,6 @@ async function fetchAndCacheModels(controller: Controller): Promise<Record<strin
 		} else if (error instanceof Error) {
 			errorMessage = error.message
 		}
-
-		telemetryService.captureProviderApiError({
-			ulid: controller.task?.ulid || "",
-			errorMessage,
-			errorStatus: error.status,
-			model: "groq",
-		})
-
 		// If we failed to fetch models, try to read cached models first
 		const cachedModels = await readGroqModels()
 		if (cachedModels && Object.keys(cachedModels).length > 0) {

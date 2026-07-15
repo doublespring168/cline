@@ -4,18 +4,12 @@ import { expect } from "chai"
 import * as path from "path"
 import sinon from "sinon"
 import { HostProvider } from "@/hosts/host-provider"
-import * as telemetry from "@/services/telemetry"
 import * as pathUtils from "@/utils/path"
 import { setupWorkspaceManager } from "../setup"
 import { WorkspaceRootManager } from "../WorkspaceRootManager"
 
 describe("setupWorkspaceManager", () => {
 	const sandbox = sinon.createSandbox()
-	let fakeTelemetry: {
-		captureWorkspaceInitialized: sinon.SinonStub
-		captureWorkspaceInitError: sinon.SinonStub
-	}
-
 	const cwd = "/Users/test/project"
 	const defaultRoots: WorkspaceRoot[] = [
 		{ path: "/ws/root1", name: "root1", vcs: VcsType.Git, commitHash: "abc" },
@@ -78,17 +72,19 @@ describe("setupWorkspaceManager", () => {
 			getWorkspacePaths: sandbox.stub().resolves({ paths: ["/ws/root1", "/ws/root2"] }),
 		} as any)
 
-		// Telemetry stubs by replacing the exported proxy with a test double
-		fakeTelemetry = {
-			captureWorkspaceInitialized: sandbox.stub().resolves(),
-			captureWorkspaceInitError: sandbox.stub().resolves(),
-		}
-		sandbox.stub(telemetry, "telemetryService").value(fakeTelemetry)
-
 		// Stub WorkspaceRootManager.fromLegacyCwd to be deterministic
 		sandbox.stub(WorkspaceRootManager, "fromLegacyCwd").callsFake(async (legacyCwd: string) => {
 			// emulate single-root manager with cwd as only root
-			return new WorkspaceRootManager([{ path: legacyCwd, name: path.basename(legacyCwd), vcs: VcsType.None }], 0)
+			return new WorkspaceRootManager(
+				[
+					{
+						path: legacyCwd,
+						name: path.basename(legacyCwd),
+						vcs: VcsType.None,
+					},
+				],
+				0,
+			)
 		})
 	})
 
@@ -118,16 +114,15 @@ describe("setupWorkspaceManager", () => {
 		expect(stateManager._state.roots).to.have.length(2)
 		expect(stateManager._state.primaryIndex).to.equal(0)
 
-		// telemetry captured (skipped assertion in unit tests)
-		expect(fakeTelemetry.captureWorkspaceInitialized.calledOnce).to.equal(true)
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[0]).to.equal(2)
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[1]).to.deep.equal(["git", "none"])
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[3]).to.equal(true)
 	})
 
 	it("uses single-root cwd when history restore is disabled (historyItem present)", async () => {
 		const savedRoots: WorkspaceRoot[] = [{ path: "/saved/root", name: "saved", vcs: VcsType.None }]
-		const stateManager = makeStateManager({ multiRootEnabled: false, savedRoots, savedPrimaryIndex: 0 })
+		const stateManager = makeStateManager({
+			multiRootEnabled: false,
+			savedRoots,
+			savedPrimaryIndex: 0,
+		})
 		const detectRoots = sandbox.stub().resolves(defaultRoots) // not used
 
 		const manager = await setupWorkspaceManager({
@@ -163,11 +158,6 @@ describe("setupWorkspaceManager", () => {
 		expect(manager.getRoots()[0].path).to.equal(cwd)
 		// persisted
 		expect(stateManager._state.roots?.[0].path).to.equal(cwd)
-		// telemetry called (skipped assertion in unit tests)
-		expect(fakeTelemetry.captureWorkspaceInitialized.calledOnce).to.equal(true)
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[0]).to.equal(1)
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[1]).to.deep.equal(["none"])
-		expect(fakeTelemetry.captureWorkspaceInitialized.firstCall.args[3]).to.equal(false)
 	})
 
 	it("gracefully handles errors and falls back to fromLegacyCwd while warning user", async () => {
@@ -187,10 +177,6 @@ describe("setupWorkspaceManager", () => {
 		expect(manager.getRoots()).to.have.length(1)
 		expect(manager.getRoots()[0].path).to.equal(cwd)
 
-		expect(fakeTelemetry.captureWorkspaceInitError.calledOnce).to.equal(true)
-		expect(fakeTelemetry.captureWorkspaceInitError.firstCall.args[0]).to.be.instanceOf(Error)
-		expect(fakeTelemetry.captureWorkspaceInitError.firstCall.args[1]).to.equal(true)
-		expect(fakeTelemetry.captureWorkspaceInitError.firstCall.args[2]).to.equal(2)
 
 		// persisted fallback state
 		expect(stateManager._state.roots?.[0].path).to.equal(cwd)

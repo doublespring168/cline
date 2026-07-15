@@ -165,7 +165,9 @@ export class HookProcess extends EventEmitter {
 				}
 
 				if (this.abortSignal) {
-					this.abortSignal.addEventListener("abort", abortHandler, { once: true })
+					this.abortSignal.addEventListener("abort", abortHandler, {
+						once: true,
+					})
 				}
 
 				// Windows executes hooks with PowerShell directly.

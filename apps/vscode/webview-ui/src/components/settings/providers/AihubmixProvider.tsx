@@ -99,15 +99,24 @@ export const AIhubmixProvider = ({ showModelOptions, isPopup, currentMode }: AIh
 							if (newModelInfo) {
 								handleModeFieldsChange(
 									{
-										id: { plan: "planModeAihubmixModelId", act: "actModeAihubmixModelId" },
-										info: { plan: "planModeAihubmixModelInfo", act: "actModeAihubmixModelInfo" },
+										id: {
+											plan: "planModeAihubmixModelId",
+											act: "actModeAihubmixModelId",
+										},
+										info: {
+											plan: "planModeAihubmixModelInfo",
+											act: "actModeAihubmixModelInfo",
+										},
 									},
 									{ id: newModelId, info: newModelInfo },
 									currentMode,
 								)
 							} else {
 								handleModeFieldChange(
-									{ plan: "planModeAihubmixModelId", act: "actModeAihubmixModelId" },
+									{
+										plan: "planModeAihubmixModelId",
+										act: "actModeAihubmixModelId",
+									},
 									newModelId,
 									currentMode,
 								)

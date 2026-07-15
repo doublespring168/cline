@@ -115,7 +115,9 @@ export function useScrollBehavior(
 			checkScrolledPastUserMessage()
 		}
 
-		scrollableElement.addEventListener("scroll", handleScroll, { passive: true })
+		scrollableElement.addEventListener("scroll", handleScroll, {
+			passive: true,
+		})
 
 		// Also check on mount and when dependencies change
 		checkScrolledPastUserMessage()

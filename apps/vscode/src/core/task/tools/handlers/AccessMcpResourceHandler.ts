@@ -1,7 +1,6 @@
 import type { ToolUse } from "@core/assistant-message"
 import { formatResponse } from "@core/prompts/responses"
 import { ClineAsk, ClineAskUseMcpServer } from "@shared/ExtensionMessage"
-import { telemetryService } from "@/services/telemetry"
 import { truncateContent } from "@/shared/content-limits"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
@@ -46,7 +45,7 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 		const server_name: string | undefined = block.params.server_name
 		const uri: string | undefined = block.params.uri
 
-		// Extract provider using the proven pattern from ReportBugHandler
+		// Read the active provider for local tool context.
 		const apiConfig = config.services.stateManager.getApiConfiguration()
 		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
 		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
@@ -81,16 +80,6 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 			await config.callbacks.say("use_mcp_server", completeMessage, undefined, undefined, false)
 
 			// Capture telemetry
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				undefined,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			const notificationMessage = `Cline wants to access ${uri || "unknown resource"} on ${server_name || "unknown server"}`
@@ -102,28 +91,8 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("use_mcp_server", completeMessage, config)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					undefined,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			} else {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					true,
-					undefined,
-					block.isNativeToolCall,
-				)
 			}
 		}
 

@@ -222,7 +222,10 @@ export class CerebrasHandler implements ApiHandler {
 		let apiModelId = originalModelId
 		if (originalModelId === "qwen-3-coder-480b-free") {
 			apiModelId = "qwen-3-coder-480b"
-			return { id: apiModelId, info: cerebrasModels[originalModelId as CerebrasModelId] }
+			return {
+				id: apiModelId,
+				info: cerebrasModels[originalModelId as CerebrasModelId],
+			}
 		}
 
 		if (originalModelId && originalModelId in cerebrasModels) {
@@ -244,7 +247,10 @@ export class CerebrasHandler implements ApiHandler {
 	 *
 	 * @returns Rate limit configuration for the model
 	 */
-	private getRateLimits(): { requestsPerMinute: number; tokensPerMinute: number } {
+	private getRateLimits(): {
+		requestsPerMinute: number
+		tokensPerMinute: number
+	} {
 		const modelId = this.getModel().id
 
 		switch (modelId) {

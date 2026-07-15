@@ -9,7 +9,10 @@ function simulateToolCall(state: TaskState, toolName: string, params: Record<str
 	const result = checkRepeatedToolCall(state, toolName, sig)
 
 	if (result.softWarning) {
-		state.userMessageContent.push({ type: "text", text: `[WARNING] loop detected for ${toolName}` })
+		state.userMessageContent.push({
+			type: "text",
+			text: `[WARNING] loop detected for ${toolName}`,
+		})
 	}
 	if (result.hardEscalation) {
 		state.consecutiveMistakeCount = maxMistakes

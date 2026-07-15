@@ -123,7 +123,14 @@ describe("ClineHandler", () => {
 		})
 
 		const tools = [
-			{ type: "function", function: { name: "read_file", description: "", parameters: { type: "object" } } },
+			{
+				type: "function",
+				function: {
+					name: "read_file",
+					description: "",
+					parameters: { type: "object" },
+				},
+			},
 		] as any
 		for await (const _chunk of handler.createMessage("system", [{ role: "user", content: "hi" }], tools)) {
 			// drain stream
@@ -156,8 +163,11 @@ describe("ClineHandler", () => {
 		handler.getModel().id.should.equal("qwen/qwen3.7-max")
 		const payload = createStub.firstCall.args[0]
 		payload.model.should.equal("qwen/qwen3.7-max")
-		payload.messages[0].content[0].cache_control.should.deepEqual({ type: "ephemeral" })
-		payload.messages[1].content[0].cache_control.should.deepEqual({ type: "ephemeral" })
+		payload.messages[0].content[0].cache_control.should.deepEqual({
+			type: "ephemeral",
+		})
+		payload.messages[1].content[0].cache_control.should.deepEqual({
+			type: "ephemeral",
+		})
 	})
-
 })

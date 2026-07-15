@@ -146,7 +146,10 @@ Otherwise, if you have not completed the task and do not need additional informa
 		}
 
 		if (fileString) {
-			const fileBlock: Anthropic.TextBlockParam = { type: "text", text: fileString }
+			const fileBlock: Anthropic.TextBlockParam = {
+				type: "text",
+				text: fileString,
+			}
 			toolResultOutput.push(fileBlock)
 		}
 

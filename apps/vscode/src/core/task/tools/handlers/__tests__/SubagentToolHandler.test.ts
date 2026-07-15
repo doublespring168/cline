@@ -143,7 +143,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("streams partial use_subagents approval as ask when not auto-approved", async () => {
-		const { config, callbacks } = createConfig({ autoApproveSafe: false, autoApproveAll: false })
+		const { config, callbacks } = createConfig({
+			autoApproveSafe: false,
+			autoApproveAll: false,
+		})
 		const handler = new UseSubagentsToolHandler()
 		const uiHelpers = createUIHelpers(config)
 
@@ -171,7 +174,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("streams partial use_subagents approval as say when auto-approved", async () => {
-		const { config, callbacks } = createConfig({ autoApproveSafe: true, autoApproveAll: false })
+		const { config, callbacks } = createConfig({
+			autoApproveSafe: true,
+			autoApproveAll: false,
+		})
 		const handler = new UseSubagentsToolHandler()
 		const uiHelpers = createUIHelpers(config)
 
@@ -199,7 +205,9 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("uses one approval for the full batch and stops on denial", async () => {
-		const { config, callbacks, taskState } = createConfig({ taskAskResponse: "noButtonClicked" })
+		const { config, callbacks, taskState } = createConfig({
+			taskAskResponse: "noButtonClicked",
+		})
 		const runStub = sinon.stub(SubagentRunner.prototype, "run")
 		const handler = new UseSubagentsToolHandler()
 
@@ -221,7 +229,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("uses read-file auto-approve level (safe only) for approval bypass", async () => {
-		const { config, callbacks } = createConfig({ autoApproveSafe: true, autoApproveAll: false })
+		const { config, callbacks } = createConfig({
+			autoApproveSafe: true,
+			autoApproveAll: false,
+		})
 		sinon.stub(SubagentRunner.prototype, "run").resolves({
 			status: "completed",
 			result: "done",
@@ -254,7 +265,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("fans out prompts in parallel and emits aggregated status", async () => {
-		const { config, callbacks } = createConfig({ autoApproveSafe: true, autoApproveAll: true })
+		const { config, callbacks } = createConfig({
+			autoApproveSafe: true,
+			autoApproveAll: true,
+		})
 		let activeRuns = 0
 		let maxActiveRuns = 0
 
@@ -327,7 +341,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("continues after per-subagent failures and reports both outcomes", async () => {
-		const { config } = createConfig({ autoApproveSafe: true, autoApproveAll: true })
+		const { config } = createConfig({
+			autoApproveSafe: true,
+			autoApproveAll: true,
+		})
 
 		sinon.stub(SubagentRunner.prototype, "run").callsFake(async (prompt: string) => {
 			if (prompt.includes("fail")) {
@@ -382,7 +399,10 @@ describe("SubagentToolHandler", () => {
 	})
 
 	it("runs configured subagent tools using the prompt parameter", async () => {
-		const { config } = createConfig({ autoApproveSafe: true, autoApproveAll: true })
+		const { config } = createConfig({
+			autoApproveSafe: true,
+			autoApproveAll: true,
+		})
 		const handler = new UseSubagentsToolHandler()
 		const dynamicToolName = "use_subagent_code_reviewer"
 		sinon.stub(AgentConfigLoader, "getInstance").returns({

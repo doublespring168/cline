@@ -44,11 +44,17 @@ export function resetHookCache(): void {
 
 export async function withPlatform<T>(platform: NodeJS.Platform, fn: () => Promise<T> | T): Promise<T> {
 	const originalPlatform = process.platform
-	Object.defineProperty(process, "platform", { value: platform, configurable: true })
+	Object.defineProperty(process, "platform", {
+		value: platform,
+		configurable: true,
+	})
 	try {
 		return await fn()
 	} finally {
-		Object.defineProperty(process, "platform", { value: originalPlatform, configurable: true })
+		Object.defineProperty(process, "platform", {
+			value: originalPlatform,
+			configurable: true,
+		})
 	}
 }
 
@@ -428,7 +434,10 @@ export class MockHookRunner<Name extends HookName> {
 		contextModification: "",
 		errorMessage: "",
 	}
-	public executionLog: Array<{ input: NamedHookInput<Name>; timestamp: number }> = []
+	public executionLog: Array<{
+		input: NamedHookInput<Name>
+		timestamp: number
+	}> = []
 	public readonly hookName: Name
 
 	constructor(hookName: Name) {

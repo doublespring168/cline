@@ -91,6 +91,9 @@ export class NebiusHandler implements ApiHandler {
 		if (modelId !== undefined && modelId in nebiusModels) {
 			return { id: modelId, info: nebiusModels[modelId as NebiusModelId] }
 		}
-		return { id: nebiusDefaultModelId, info: nebiusModels[nebiusDefaultModelId] }
+		return {
+			id: nebiusDefaultModelId,
+			info: nebiusModels[nebiusDefaultModelId],
+		}
 	}
 }

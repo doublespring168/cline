@@ -51,7 +51,12 @@ export const DifyProvider = ({ showModelOptions, isPopup, currentMode }: DifyPro
 					providerName="Dify"
 				/>
 
-				<div style={{ fontSize: "12px", color: "var(--vscode-descriptionForeground)", marginTop: "5px" }}>
+				<div
+					style={{
+						fontSize: "12px",
+						color: "var(--vscode-descriptionForeground)",
+						marginTop: "5px",
+					}}>
 					<p>
 						Dify is a platform that provides access to various AI models through a unified API. Configure your Dify
 						instance URL and API key to get started.

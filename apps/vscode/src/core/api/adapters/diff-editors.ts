@@ -19,7 +19,10 @@ export function convertApplyPatchToolCalls(messages: Array<ClineStorageMessage>)
 			if (block.type === "tool_use" && block.name === "apply_patch") {
 				const converted = convertApplyPatchToToolCalls(block.input)
 				// Store the conversion with original input for matching tool_result
-				toolUseIdMap.set(block.id, { ...converted, originalInput: block.input })
+				toolUseIdMap.set(block.id, {
+					...converted,
+					originalInput: block.input,
+				})
 
 				return {
 					...block,

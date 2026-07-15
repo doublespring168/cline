@@ -44,7 +44,16 @@ describe("slash-commands", () => {
 
 		it("should format image content", () => {
 			const response: McpPromptResponse = {
-				messages: [{ role: "user", content: { type: "image", data: "base64data", mimeType: "image/png" } }],
+				messages: [
+					{
+						role: "user",
+						content: {
+							type: "image",
+							data: "base64data",
+							mimeType: "image/png",
+						},
+					},
+				],
 			}
 			const result = formatMcpPromptResponse(response)
 			expect(result).to.equal("[User]\n[Image: image/png]")
@@ -52,7 +61,16 @@ describe("slash-commands", () => {
 
 		it("should format audio content", () => {
 			const response: McpPromptResponse = {
-				messages: [{ role: "user", content: { type: "audio", data: "base64data", mimeType: "audio/mp3" } }],
+				messages: [
+					{
+						role: "user",
+						content: {
+							type: "audio",
+							data: "base64data",
+							mimeType: "audio/mp3",
+						},
+					},
+				],
 			}
 			const result = formatMcpPromptResponse(response)
 			expect(result).to.equal("[User]\n[Audio: audio/mp3]")
@@ -97,7 +115,12 @@ describe("slash-commands", () => {
 			if (serverName === "test-server" && promptName === "greet") {
 				return {
 					description: "A greeting prompt",
-					messages: [{ role: "user", content: { type: "text", text: "Hello from MCP!" } }],
+					messages: [
+						{
+							role: "user",
+							content: { type: "text", text: "Hello from MCP!" },
+						},
+					],
 				}
 			}
 			return null

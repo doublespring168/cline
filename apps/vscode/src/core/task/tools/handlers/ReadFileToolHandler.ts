@@ -4,7 +4,6 @@ import { formatResponse } from "@core/prompts/responses"
 import { getWorkspaceBasename, resolveWorkspacePath } from "@core/workspace"
 import { extractFileContent, type FileContentResult } from "@integrations/misc/extract-file-content"
 import { arePathsEqual, getReadablePath, isLocatedInWorkspace } from "@utils/path"
-import { telemetryService } from "@/services/telemetry"
 import { ClineSayTool } from "@/shared/ExtensionMessage"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
@@ -102,7 +101,10 @@ export function formatFileContentWithLineNumbers(content: string, startLine?: nu
 	return labeled + suffix
 }
 
-function parseRequestedLineRange(block: ToolUse): { startLine?: number; endLine?: number } {
+function parseRequestedLineRange(block: ToolUse): {
+	startLine?: number
+	endLine?: number
+} {
 	const startLine = block.params.start_line ? Number.parseInt(block.params.start_line, 10) : undefined
 	const endLine = block.params.end_line ? Number.parseInt(block.params.end_line, 10) : undefined
 
@@ -233,16 +235,6 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 			}
 
 			// Capture telemetry
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			const notificationMessage = `Cline wants to read ${getWorkspaceBasename(absolutePath, "ReadFileToolHandler.notification")}`
@@ -254,28 +246,8 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("tool", completeMessage, config)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			}
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				false,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		}
 
 		// Run PreToolUse hook after approval but before execution

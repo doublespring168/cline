@@ -16,6 +16,8 @@ enum ClineMessageType {
 
 // Enum for ClineAsk types
 enum ClineAsk {
+  reserved 14;
+  reserved "REPORT_BUG";
   FOLLOWUP = 0;
   PLAN_MODE_RESPOND = 1;
   COMMAND = 2;
@@ -30,7 +32,6 @@ enum ClineAsk {
   USE_MCP_SERVER = 11;
   NEW_TASK = 12;
   CONDENSE = 13;
-  REPORT_BUG = 14;
   SUMMARIZE_TASK = 15;
   ACT_MODE_RESPOND = 16;
   USE_SUBAGENTS = 17;
@@ -79,6 +80,8 @@ enum ClineSay {
 
 // Enum for ClineSayTool tool types
 enum ClineSayToolType {
+  reserved 7;
+  reserved "WEB_FETCH";
   EDITED_EXISTING_FILE = 0;
   NEW_FILE_CREATED = 1;
   READ_FILE = 2;
@@ -86,7 +89,6 @@ enum ClineSayToolType {
   LIST_FILES_RECURSIVE = 4;
   LIST_CODE_DEFINITION_NAMES = 5;
   SEARCH_FILES = 6;
-  WEB_FETCH = 7;
   FILE_DELETED = 8;
 }
 
@@ -269,7 +271,4 @@ service UiService {
 
   // Opens a URL in the default browser
   rpc openUrl(StringRequest) returns (Empty);
-
-  // Opens the Cline walkthrough
-  rpc openWalkthrough(EmptyRequest) returns (Empty);
 }

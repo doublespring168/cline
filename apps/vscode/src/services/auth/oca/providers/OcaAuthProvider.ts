@@ -80,7 +80,10 @@ export class OcaAuthProvider {
 	public async getExistingAuthState(controller: Controller): Promise<OcaAuthState | null> {
 		const accessToken = controller.stateManager.getSecretKey("ocaApiKey")
 		if (accessToken && !(await this.shouldRefreshAccessToken(accessToken))) {
-			return { user: await this.getUserAccountInfo(accessToken), apiKey: accessToken }
+			return {
+				user: await this.getUserAccountInfo(accessToken),
+				apiKey: accessToken,
+			}
 		}
 		return null
 	}
@@ -156,7 +159,12 @@ export class OcaAuthProvider {
 				OcaAuthProvider.pkceStateMap.delete(key)
 			}
 		}
-		OcaAuthProvider.pkceStateMap.set(state, { code_verifier, nonce, createdAt: Date.now(), redirect_uri: callbackUrl })
+		OcaAuthProvider.pkceStateMap.set(state, {
+			code_verifier,
+			nonce,
+			createdAt: Date.now(),
+			redirect_uri: callbackUrl,
+		})
 		const base = idcs_url.replace(/\/$/, "") + "/oauth2/v1/authorize"
 		const url = new URL(base)
 		url.searchParams.set("client_id", client_id)

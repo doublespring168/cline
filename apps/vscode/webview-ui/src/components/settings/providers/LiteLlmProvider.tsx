@@ -9,7 +9,6 @@ import { ModelsServiceClient } from "@/services/grpc-client"
 import { DebouncedTextField } from "../common/DebouncedTextField"
 import { ModelAutocomplete } from "../common/ModelAutocomplete"
 import { ModelInfoView } from "../common/ModelInfoView"
-import { LockIcon, RemotelyConfiguredInputWrapper } from "../common/RemotelyConfiguredInputWrapper"
 import ThinkingBudgetSlider from "../ThinkingBudgetSlider"
 import { normalizeApiConfiguration } from "../utils/providerUtils"
 import { useApiConfigurationHandlers } from "../utils/useApiConfigurationHandlers"
@@ -24,7 +23,7 @@ interface LiteLlmProviderProps {
 }
 
 export const LiteLlmProvider = ({ showModelOptions, isPopup, currentMode }: LiteLlmProviderProps) => {
-	const { apiConfiguration, remoteConfigSettings, liteLlmModels, refreshLiteLlmModels } = useExtensionState()
+	const { apiConfiguration, liteLlmModels, refreshLiteLlmModels } = useExtensionState()
 	const { handleModeFieldsChange } = useApiConfigurationHandlers()
 
 	const [isLoading, setIsLoading] = useState(false)
@@ -35,8 +34,14 @@ export const LiteLlmProvider = ({ showModelOptions, isPopup, currentMode }: Lite
 	const handleModelChange = (newModelId: string, modelInfo: ModelInfo | undefined) => {
 		handleModeFieldsChange(
 			{
-				liteLlmModelId: { plan: "planModeLiteLlmModelId", act: "actModeLiteLlmModelId" },
-				liteLlmModelInfo: { plan: "planModeLiteLlmModelInfo", act: "actModeLiteLlmModelInfo" },
+				liteLlmModelId: {
+					plan: "planModeLiteLlmModelId",
+					act: "actModeLiteLlmModelId",
+				},
+				liteLlmModelInfo: {
+					plan: "planModeLiteLlmModelInfo",
+					act: "actModeLiteLlmModelInfo",
+				},
 			},
 			{
 				liteLlmModelId: newModelId,
@@ -57,9 +62,7 @@ export const LiteLlmProvider = ({ showModelOptions, isPopup, currentMode }: Lite
 
 	return (
 		<div>
-			<RemotelyConfiguredInputWrapper hidden={remoteConfigSettings?.liteLlmBaseUrl === undefined}>
-				<DebouncedTextField
-					disabled={remoteConfigSettings?.liteLlmBaseUrl !== undefined}
+			<DebouncedTextField
 					initialValue={apiConfiguration?.liteLlmBaseUrl || ""}
 					onChange={async (value) => {
 						await ModelsServiceClient.updateApiConfiguration(
@@ -78,13 +81,9 @@ export const LiteLlmProvider = ({ showModelOptions, isPopup, currentMode }: Lite
 					type="text">
 					<div className="flex items-center gap-2 mb-1">
 						<span style={{ fontWeight: 500 }}>Base URL (optional)</span>
-						{remoteConfigSettings?.liteLlmBaseUrl !== undefined && <LockIcon />}
 					</div>
-				</DebouncedTextField>
-			</RemotelyConfiguredInputWrapper>
-			<RemotelyConfiguredInputWrapper hidden={!remoteConfigSettings?.configuredApiKeys?.litellm}>
-				<DebouncedTextField
-					disabled={remoteConfigSettings?.configuredApiKeys?.litellm}
+			</DebouncedTextField>
+			<DebouncedTextField
 					initialValue={apiConfiguration?.liteLlmApiKey || ""}
 					onChange={async (value) => {
 						await ModelsServiceClient.updateApiConfiguration(
@@ -103,10 +102,8 @@ export const LiteLlmProvider = ({ showModelOptions, isPopup, currentMode }: Lite
 					type="password">
 					<div className="flex items-center gap-2 mb-1">
 						<span style={{ fontWeight: 500 }}>API Key</span>
-						{remoteConfigSettings?.configuredApiKeys?.litellm && <LockIcon />}
 					</div>
-				</DebouncedTextField>
-			</RemotelyConfiguredInputWrapper>
+			</DebouncedTextField>
 			{showModelOptions && (
 				<>
 					<ModelAutocomplete

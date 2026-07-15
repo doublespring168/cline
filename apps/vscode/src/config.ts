@@ -13,7 +13,6 @@ export { Environment, type EnvironmentConfig }
 interface EndpointsFileSchema {
 	appBaseUrl: string
 	apiBaseUrl: string
-	mcpBaseUrl: string
 }
 
 /**
@@ -222,7 +221,7 @@ class ClineEndpoint {
 		}
 
 		const obj = data as Record<string, unknown>
-		const requiredFields = ["appBaseUrl", "apiBaseUrl", "mcpBaseUrl"] as const
+		const requiredFields = ["appBaseUrl", "apiBaseUrl"] as const
 		const result: Partial<EndpointsFileSchema> = {}
 
 		for (const field of requiredFields) {
@@ -301,7 +300,6 @@ class ClineEndpoint {
 				environment: Environment.selfHosted,
 				appBaseUrl: this.onPremiseConfig.appBaseUrl,
 				apiBaseUrl: this.onPremiseConfig.apiBaseUrl,
-				mcpBaseUrl: this.onPremiseConfig.mcpBaseUrl,
 			}
 		}
 
@@ -312,21 +310,18 @@ class ClineEndpoint {
 					environment: Environment.staging,
 					appBaseUrl: "https://staging-app.cline.bot",
 					apiBaseUrl: "https://core-api.staging.int.cline.bot",
-					mcpBaseUrl: "https://core-api.staging.int.cline.bot/v1/mcp",
 				}
 			case Environment.local:
 				return {
 					environment: Environment.local,
 					appBaseUrl: "http://localhost:3000",
 					apiBaseUrl: "http://localhost:7777",
-					mcpBaseUrl: "https://api.cline.bot/v1/mcp",
 				}
 			default:
 				return {
 					environment: Environment.production,
 					appBaseUrl: "https://app.cline.bot",
 					apiBaseUrl: "https://api.cline.bot",
-					mcpBaseUrl: "https://api.cline.bot/v1/mcp",
 				}
 		}
 	}

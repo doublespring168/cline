@@ -12,7 +12,6 @@ import * as path from "path"
 import type { LoggerMessage, ScreenshotOptions } from "puppeteer-core"
 import { Browser, connect, launch, Page, TimeoutError } from "puppeteer-core"
 import { StateManager } from "@/core/storage/StateManager"
-import { telemetryService } from "@/services/telemetry"
 import { Logger } from "@/shared/services/Logger"
 import { discoverChromeInstances, isPortOpen, testBrowserConnection } from "./BrowserDiscovery"
 import { ensureChromiumExists } from "./utils"
@@ -45,9 +44,6 @@ export class BrowserSession {
 	private useWebp: boolean
 
 	// Telemetry tracking properties
-	private sessionStartTime: number = 0
-	private browserActions: string[] = []
-	private ulid?: string
 	private stateManager: StateManager
 
 	constructor(stateManager: StateManager, useWebp: boolean = true) {
@@ -144,22 +140,10 @@ export class BrowserSession {
 		}
 	}
 
-	/**
-	 * Set the ULID for telemetry tracking
-	 * @param ulid The task ID to associate with browser actions
-	 */
-	setUlid(ulid: string) {
-		this.ulid = ulid
-	}
-
 	async launchBrowser() {
 		if (this.browser) {
 			await this.closeBrowser() // this may happen when the model launches a browser again after having used it already before
 		}
-
-		// Reset tracking properties
-		this.sessionStartTime = Date.now()
-		this.browserActions = []
 
 		// Reset remote connection status
 		this.isConnectedToRemote = false
@@ -172,27 +156,9 @@ export class BrowserSession {
 				await this.launchRemoteBrowser()
 				// Don't create a new page here, as we'll create it in launchRemoteBrowser
 
-				// Send telemetry for browser tool start
-				if (this.ulid) {
-					telemetryService.captureBrowserToolStart(this.ulid, browserSettings)
-				}
-
 				return
 			} catch (error) {
 				Logger.error("Failed to launch remote browser, falling back to local mode:", error)
-
-				// Capture error telemetry
-				if (this.ulid) {
-					telemetryService.captureBrowserError(
-						this.ulid,
-						"remote_browser_launch_error",
-						error instanceof Error ? error.message : String(error),
-						{
-							isRemote: true,
-							remoteBrowserHost: browserSettings.remoteBrowserHost,
-						},
-					)
-				}
 
 				await this.launchLocalBrowser()
 			}
@@ -203,10 +169,6 @@ export class BrowserSession {
 
 		this.page = await this.browser?.newPage()
 
-		// Send telemetry for browser tool start
-		if (this.ulid) {
-			telemetryService.captureBrowserToolStart(this.ulid, browserSettings)
-		}
 	}
 
 	async launchLocalBrowser() {
@@ -264,19 +226,6 @@ export class BrowserSession {
 			} catch (error) {
 				Logger.log(`Failed to connect using cached endpoint: ${error}`)
 
-				// Capture error telemetry
-				if (this.ulid) {
-					telemetryService.captureBrowserError(
-						this.ulid,
-						"cached_endpoint_connection_error",
-						error instanceof Error ? error.message : String(error),
-						{
-							isRemote: true,
-							endpoint: browserWSEndpoint,
-						},
-					)
-				}
-
 				// Clear the cached endpoint since it's no longer valid
 				this.cachedWebSocketEndpoint = undefined
 				// User wants to give up after one reconnection attempt
@@ -316,18 +265,6 @@ export class BrowserSession {
 			} catch (error) {
 				Logger.log(`Failed to connect to remote browser: ${error}`)
 
-				// Capture error telemetry
-				if (this.ulid) {
-					telemetryService.captureBrowserError(
-						this.ulid,
-						"remote_host_connection_error",
-						error instanceof Error ? error.message : String(error),
-						{
-							isRemote: true,
-							remoteBrowserHost,
-						},
-					)
-				}
 			}
 		}
 
@@ -339,16 +276,6 @@ export class BrowserSession {
 
 	async closeBrowser(): Promise<BrowserActionResult> {
 		if (this.browser || this.page) {
-			// Send telemetry for browser tool end if we have a task ID and session was started
-			if (this.ulid && this.sessionStartTime > 0) {
-				const sessionDuration = Date.now() - this.sessionStartTime
-				telemetryService.captureBrowserToolEnd(this.ulid, {
-					actionCount: this.browserActions.length,
-					duration: sessionDuration,
-					actions: this.browserActions,
-				})
-			}
-
 			if (this.isConnectedToRemote && this.browser) {
 				// Close the page/tab first if it exists
 				if (this.page) {
@@ -369,8 +296,6 @@ export class BrowserSession {
 			this.isConnectedToRemote = false
 
 			// Reset tracking properties
-			this.sessionStartTime = 0
-			this.browserActions = []
 		}
 		return {}
 	}
@@ -411,13 +336,6 @@ export class BrowserSession {
 			if (!(err instanceof TimeoutError)) {
 				logs.push(`[Error] ${errorMessage}`)
 
-				// Capture error telemetry
-				if (this.ulid) {
-					telemetryService.captureBrowserError(this.ulid, "browser_action_error", errorMessage, {
-						isRemote: this.isConnectedToRemote,
-						action: this.browserActions[this.browserActions.length - 1],
-					})
-				}
 			}
 		}
 
@@ -456,13 +374,6 @@ export class BrowserSession {
 		}
 
 		if (!screenshotBase64) {
-			// Capture error telemetry
-			if (this.ulid) {
-				telemetryService.captureBrowserError(this.ulid, "screenshot_error", "Failed to take screenshot", {
-					isRemote: this.isConnectedToRemote,
-					action: this.browserActions[this.browserActions.length - 1],
-				})
-			}
 			throw new Error("Failed to take screenshot.")
 		}
 
@@ -479,7 +390,6 @@ export class BrowserSession {
 	}
 
 	async navigateToUrl(url: string): Promise<BrowserActionResult> {
-		this.browserActions.push(`navigate: url`)
 
 		return this.doAction(async (page) => {
 			// networkidle2 isn't good enough since page may take some time to load. we can assume locally running dev sites will reach networkidle0 in a reasonable amount of time
@@ -526,7 +436,6 @@ export class BrowserSession {
 	}
 
 	async click(coordinate: string): Promise<BrowserActionResult> {
-		this.browserActions.push(`click: coordinate`)
 
 		const [x, y] = coordinate.split(",").map(Number)
 		return this.doAction(async (page) => {
@@ -561,7 +470,6 @@ export class BrowserSession {
 	}
 
 	async type(text: string): Promise<BrowserActionResult> {
-		this.browserActions.push(`type:${text.length} chars`)
 
 		return this.doAction(async (page) => {
 			await page.keyboard.type(text)
@@ -569,7 +477,6 @@ export class BrowserSession {
 	}
 
 	async scrollDown(): Promise<BrowserActionResult> {
-		this.browserActions.push("scrollDown")
 
 		return this.doAction(async (page) => {
 			await page.evaluate(() => {
@@ -583,7 +490,6 @@ export class BrowserSession {
 	}
 
 	async scrollUp(): Promise<BrowserActionResult> {
-		this.browserActions.push("scrollUp")
 
 		return this.doAction(async (page) => {
 			await page.evaluate(() => {

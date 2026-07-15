@@ -88,6 +88,9 @@ export class NousResearchHandler implements ApiHandler {
 			const id = modelId as NousResearchModelId
 			return { id, info: nousResearchModels[id] }
 		}
-		return { id: nousResearchDefaultModelId, info: nousResearchModels[nousResearchDefaultModelId] }
+		return {
+			id: nousResearchDefaultModelId,
+			info: nousResearchModels[nousResearchDefaultModelId],
+		}
 	}
 }

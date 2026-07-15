@@ -13,8 +13,6 @@ interface SlashCommandMenuProps {
 	query: string
 	localWorkflowToggles?: Record<string, boolean>
 	globalWorkflowToggles?: Record<string, boolean>
-	remoteWorkflowToggles?: Record<string, boolean>
-	remoteWorkflows?: any[]
 	mcpServers?: McpServer[]
 }
 
@@ -26,8 +24,6 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 	query,
 	localWorkflowToggles = {},
 	globalWorkflowToggles = {},
-	remoteWorkflowToggles,
-	remoteWorkflows,
 	mcpServers = [],
 }) => {
 	const menuRef = useRef<HTMLDivElement>(null)
@@ -37,8 +33,6 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 		query,
 		localWorkflowToggles,
 		globalWorkflowToggles,
-		remoteWorkflowToggles,
-		remoteWorkflows,
 		mcpServers,
 	)
 	const defaultCommands = filteredCommands.filter((cmd) => cmd.section === "default" || !cmd.section)
@@ -135,17 +129,15 @@ const SlashCommandMenu: React.FC<SlashCommandMenuProps> = ({
 				className="bg-(--vscode-dropdown-background) border border-(--vscode-editorGroup-border) rounded-[3px] shadow-[0_4px_10px_rgba(0,0,0,0.25)] flex flex-col overflow-y-auto"
 				ref={menuRef}
 				role="listbox"
-				style={{ maxHeight: "min(200px, calc(50vh))", overscrollBehavior: "contain" }}>
+				style={{
+					maxHeight: "min(200px, calc(50vh))",
+					overscrollBehavior: "contain",
+				}}>
 				{filteredCommands.length > 0 ? (
 					<>
 						{renderCommandSection(defaultCommands, "Default Commands", 0, true)}
 						{renderCommandSection(workflowCommands, "Workflow Commands", defaultCommands.length, false)}
-						{renderCommandSection(
-							mcpCommands,
-							"MCP Prompts",
-							defaultCommands.length + workflowCommands.length,
-							true,
-						)}
+						{renderCommandSection(mcpCommands, "MCP Prompts", defaultCommands.length + workflowCommands.length, true)}
 					</>
 				) : (
 					<div aria-selected="false" className="py-2 px-3 cursor-default flex flex-col" role="option">

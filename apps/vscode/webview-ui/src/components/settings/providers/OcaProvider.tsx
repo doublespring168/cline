@@ -435,41 +435,6 @@ export const OcaProvider = ({ isPopup, currentMode }: OcaProviderProps) => {
 								Have an idea for Oracle Code Assist?
 							</div>
 						</div>
-						<div
-							style={{
-								width: "100%",
-								display: "flex",
-								justifyContent: "center",
-								marginTop: 8,
-							}}>
-							<a
-								href={
-									ocaMode === "internal"
-										? "https://apexsurveys.oracle.com/ords/surveys/t/oca-nps/survey?k=oracle-code-assist-internal-link-share&sc=SMM1BNSNUI"
-										: "https://customersurveys.oracle.com/ords/surveys/t/aicode/survey?k=oracle-code-assist&sc=SUDN1ZXYQ5"
-								}
-								rel="noopener noreferrer"
-								style={{
-									fontSize: 14,
-									fontWeight: 500,
-									textDecoration: "none",
-									background: "var(--vscode-button-background)",
-									color: "var(--vscode-button-foreground)",
-									padding: "8px 14px",
-									minHeight: 28,
-									border: "1px solid var(--vscode-button-border, transparent)",
-									borderRadius: 0,
-									display: "inline-flex",
-									alignItems: "center",
-									justifyContent: "center",
-									minWidth: 0,
-									boxSizing: "border-box",
-									cursor: "pointer",
-								}}
-								target="_blank">
-								Provide feedback
-							</a>
-						</div>
 					</InfoCard>
 				</div>
 			)}

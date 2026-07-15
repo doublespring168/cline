@@ -232,7 +232,17 @@ describe("ContextManager", () => {
 		it("detects duplicate file reads with native tool calling format (tool_result blocks)", () => {
 			const messages: Anthropic.Messages.MessageParam[] = [
 				{ role: "user", content: "Initial task" },
-				{ role: "assistant", content: [{ type: "tool_use", id: "toolu_001", name: "plan_mode_respond", input: {} }] },
+				{
+					role: "assistant",
+					content: [
+						{
+							type: "tool_use",
+							id: "toolu_001",
+							name: "plan_mode_respond",
+							input: {},
+						},
+					],
+				},
 				{
 					role: "user",
 					content: [
@@ -248,7 +258,17 @@ describe("ContextManager", () => {
 						},
 					],
 				},
-				{ role: "assistant", content: [{ type: "tool_use", id: "toolu_002", name: "write_to_file", input: {} }] },
+				{
+					role: "assistant",
+					content: [
+						{
+							type: "tool_use",
+							id: "toolu_002",
+							name: "write_to_file",
+							input: {},
+						},
+					],
+				},
 				{
 					role: "user",
 					content: [
@@ -262,10 +282,16 @@ describe("ContextManager", () => {
 								},
 							],
 						},
-						{ type: "text", text: "<environment_details>\n# Current Mode\nACT MODE\n</environment_details>" },
+						{
+							type: "text",
+							text: "<environment_details>\n# Current Mode\nACT MODE\n</environment_details>",
+						},
 					],
 				},
-				{ role: "assistant", content: [{ type: "tool_use", id: "toolu_003", name: "text", input: {} }] },
+				{
+					role: "assistant",
+					content: [{ type: "tool_use", id: "toolu_003", name: "text", input: {} }],
+				},
 				{
 					role: "user",
 					content: [
@@ -273,10 +299,23 @@ describe("ContextManager", () => {
 							type: "text",
 							text: "[TASK RESUMPTION] This task was interrupted just now. The conversation may have been incomplete.",
 						},
-						{ type: "text", text: "New message to respond to with plan_mode_respond tool" },
+						{
+							type: "text",
+							text: "New message to respond to with plan_mode_respond tool",
+						},
 					],
 				},
-				{ role: "assistant", content: [{ type: "tool_use", id: "toolu_004", name: "replace_in_file", input: {} }] },
+				{
+					role: "assistant",
+					content: [
+						{
+							type: "tool_use",
+							id: "toolu_004",
+							name: "replace_in_file",
+							input: {},
+						},
+					],
+				},
 				{
 					role: "user",
 					content: [
@@ -290,7 +329,10 @@ describe("ContextManager", () => {
 								},
 							],
 						},
-						{ type: "text", text: "<environment_details>\n# Current Mode\nACT MODE\n</environment_details>" },
+						{
+							type: "text",
+							text: "<environment_details>\n# Current Mode\nACT MODE\n</environment_details>",
+						},
 					],
 				},
 			]
@@ -370,14 +412,23 @@ describe("ContextManager", () => {
 					role: "assistant",
 					content: [
 						{ type: "text", text: "Using a tool" },
-						{ type: "tool_use", id: "tool_123", name: "read_file", input: { path: "test.ts" } },
+						{
+							type: "tool_use",
+							id: "tool_123",
+							name: "read_file",
+							input: { path: "test.ts" },
+						},
 					],
 				},
 				// User message with tool_result - should have tool_result removed after truncation
 				{
 					role: "user",
 					content: [
-						{ type: "tool_result", tool_use_id: "tool_123", content: "file content here" },
+						{
+							type: "tool_result",
+							tool_use_id: "tool_123",
+							content: "file content here",
+						},
 						{ type: "text", text: "Additional user text" },
 					],
 				},
@@ -468,7 +519,12 @@ describe("ContextManager", () => {
 			const api = createMockApi(200_000)
 			// Low direct tokens but high cache reads push total over threshold
 			const clineMessages: ClineMessage[] = [
-				createApiReqMessage({ tokensIn: 5_000, tokensOut: 500, cacheWrites: 0, cacheReads: 150_000 }),
+				createApiReqMessage({
+					tokensIn: 5_000,
+					tokensOut: 500,
+					cacheWrites: 0,
+					cacheReads: 150_000,
+				}),
 			]
 
 			const result = contextManager.shouldCompactContextWindow(clineMessages, api, 0, 0.75)

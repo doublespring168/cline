@@ -6,7 +6,7 @@
 
 ## 1. 先给出结论
 
-1. **Cline 是标准的 VS Code Extension Host 扩展。** `apps/vscode/package.json` 声明扩展身份、激活条件、Activity Bar、Webview View、命令、菜单、快捷键和 Walkthrough；`apps/vscode/src/extension.ts` 导出 `activate()` / `deactivate()`；esbuild 最终生成 `dist/extension.js`。
+1. **Cline 是标准的 VS Code Extension Host 扩展。** `apps/vscode/package.json` 声明扩展身份、激活条件、Activity Bar、Webview View、命令、菜单和快捷键；`apps/vscode/src/extension.ts` 导出 `activate()` / `deactivate()`；esbuild 最终生成 `dist/extension.js`。
 2. **聊天框不是 VS Code Chat Participant。** 它是注册在 Activity Bar 中的 `WebviewView`，前端是 React 应用，通过 `webview.postMessage()` / `onDidReceiveMessage()` 传输 Proto 风格的请求和响应。当前源码没有注册 `vscode.chat.createChatParticipant()`、`vscode.lm.registerTool()` 或自定义编辑器 Provider。
 3. **核心代码并不都直接依赖 `vscode`。** `HostProvider` 注入 VS Code 版本的 Webview、Diff、Comment、Terminal 和 HostBridge，使公共业务代码通过 `HostProvider.workspace/window/env/diff` 使用宿主能力。
 4. **HostBridge 在 VS Code 扩展内不是网络 RPC。** Proto 定义提供类型和服务边界，VS Code 端使用生成的服务表在同一 Extension Host 进程内分发，不监听网络端口。
@@ -22,8 +22,7 @@
 apps/vscode/package.json
   ├─ activationEvents / main
   ├─ Activity Bar + Webview View
-  ├─ commands / menus / keybindings
-  └─ walkthroughs
+  └─ commands / menus / keybindings
           │
           ▼
 apps/vscode/src/extension.ts::activate(context)
@@ -106,7 +105,7 @@ vscode.window.registerWebviewViewProvider(
 
 | 场景 | 命令/菜单 | 用途 |
 | --- | --- | --- |
-| Webview 标题栏 | New Task、MCP、History、Account、Settings | 切换 Cline 内部页面或清空当前任务 |
+| Webview 标题栏 | New Task、MCP、History、Settings | 切换 Cline 内部页面或清空当前任务 |
 | 编辑器右键 | `cline.addToChat` | 把选择代码加入聊天输入 |
 | 编辑器 Code Action | Add、Explain、Improve、Fix with Cline | 从选择范围和诊断生成聊天上下文或新任务 |
 | 终端右键 | `cline.addTerminalOutputToChat` | 把终端当前选择加入聊天 |
@@ -114,7 +113,7 @@ vscode.window.registerWebviewViewProvider(
 | Notebook 工具栏 | Generate Cell | 创建 Notebook 单元任务 |
 | Notebook Cell 标题栏 | Explain/Improve Cell | 解释或改进当前单元 |
 | Comment Thread | Reply、Add to Cline Chat | 继续行级 AI Review 对话 |
-| Command Palette | Walkthrough、Reconstruct Task History 等 | 打开引导或执行维护命令 |
+| Command Palette | Reconstruct Task History 等 | 执行维护命令 |
 
 快捷键 `Cmd+'` / `Ctrl+'` 根据上下文分流：有编辑器选择时执行 Add to Chat；没有选择时聚焦聊天输入。评论编辑器中 Enter 会提交 Cline Review Reply。
 
@@ -137,11 +136,11 @@ VS Code 加载 dist/extension.js
       → StateManager.initialize()
       → 创建 VscodeWebviewProvider + Controller
       → 初始化本地日志、MCP、Workspace、Hooks 等公共服务
-  → 初始化测试模式和 HookDiscoveryCache
+  → 初始化 HookDiscoveryCache
   → registerWebviewViewProvider()
   → 注册命令、虚拟文档 Provider、URI Handler、Code Action
-  → 注册 Notebook、Walkthrough、历史重建、Git Commit 命令
-  → return createClineAPI(controller)
+  → 注册 Notebook、历史重建、Git Commit 命令
+  → return undefined
 ```
 
 所有 `Disposable` 尽量压入 `context.subscriptions`，由 VS Code 在扩展停用时统一释放。`deactivate()` 还会调用 `apps/vscode/src/common.ts` 的 `tearDown()`，并显式销毁 Comment Review Controller。
@@ -243,8 +242,7 @@ React Webview 调用生成的 Service Client
 
 - `apps/vscode/src/hosts/vscode/VscodeWebviewProvider.ts`：VS Code Message 通道；
 - `apps/vscode/src/core/controller/grpc-handler.ts`：Webview 请求路由、流式响应和取消；
-- `apps/vscode/src/core/controller/grpc-request-registry.ts`：活动请求与清理函数；
-- `apps/vscode/src/core/controller/grpc-recorder/`：记录请求与响应，便于诊断/评测。
+- `apps/vscode/src/core/controller/grpc-request-registry.ts`：活动请求与清理函数。
 
 这里同样是“Proto 风格消息总线”，不是 Webview 到后端的 HTTP/2 gRPC。实际传输载体就是 VS Code Webview Message API。
 
@@ -652,7 +650,7 @@ vscode.Uri → vscode.env.asExternalUri() → 可从浏览器访问的 HTTPS 回
 
 `getIdeRedirectUri()` 在 Desktop 返回 VS Code Scheme，在 Web 环境返回空值，让 HTTP 回调留在当前浏览器。当前该函数仍硬编码 `saoudrizwan.claude-dev`，而 `setupHostProvider().getCallbackUrl()` 使用 `context.extension.id`；独立改名时必须同时检查这处差异。
 
-Walkthrough 也存在相似差异：`extension.ts` 使用 `context.extension.id` 打开引导，而 `apps/vscode/src/core/controller/ui/openWalkthrough.ts` 使用固定 Publisher `saoudrizwan` 加动态扩展名。独立插件修改 Publisher 时必须同步修正。
+Walkthrough 贡献、命令和控制器已删除；独立插件改名时无需处理该入口。
 
 ## 16. 通知、对话框、剪贴板、设置和日志
 
@@ -667,7 +665,6 @@ HostBridge 把常用 VS Code UI 统一成公共服务：
 | 剪贴板 | `env.clipboard.readText/writeText` | `apps/vscode/src/hosts/vscode/hostbridge/env/` |
 | 外部浏览器 | `env.openExternal()` | `apps/vscode/src/hosts/vscode/hostbridge/env/openExternal.ts` |
 | Output Channel | `window.createOutputChannel("Cline")` | `apps/vscode/src/hosts/vscode/hostbridge/env/debugLog.ts` |
-| Walkthrough | `workbench.action.openWalkthrough` | `extension.ts`、`apps/vscode/src/core/controller/ui/openWalkthrough.ts` |
 
 ## 17. 存储、ExtensionContext 和多窗口同步
 
@@ -702,18 +699,9 @@ HostBridge 把常用 VS Code UI 统一成公共服务：
 
 通用 Cline Account 的跨窗口登录/登出监听已删除。模型 API Key 仍写入共享 `secrets.json`，其他窗口在重新读取状态或重载扩展后可看到相同凭据；OCA、OpenAI Codex、OpenRouter、Requesty、HiCap 和 MCP 的专属授权流程各自管理 Token/回调，不经过 Cline Account。
 
-## 18. 对其他 VS Code 扩展暴露的 API
+## 18. 对其他 VS Code 扩展的边界
 
-`activate()` 最后返回 `apps/vscode/src/exports/index.ts` 创建的 `ClineAPI`。其他 VS Code 扩展可以通过 `vscode.extensions.getExtension("saoudrizwan.claude-dev")` 激活并取得该对象，调用：
-
-| API | 作用 |
-| --- | --- |
-| `startNewTask(task, images)` | 清理旧 Task、切到聊天页并创建新 Task |
-| `sendMessage(message, images)` | 向当前 Task 回答一条用户消息 |
-| `pressPrimaryButton()` | 模拟当前 Ask 的主按钮，例如批准/继续 |
-| `pressSecondaryButton()` | 模拟当前 Ask 的次按钮，例如拒绝 |
-
-类型定义位于 `apps/vscode/src/exports/cline.d.ts`，示例位于 `apps/vscode/src/exports/README.md`。这是一条扩展间 JavaScript API，不是命令、Webview 消息或网络服务；若没有活动 Task，发送消息和按钮调用只会记录错误。
+`activate()` 当前返回 `undefined`，原 `src/exports`、`ClineAPI` 和对应测试已经删除。其他扩展若需联动，只能使用当前明确贡献的 VS Code Commands；项目不再承诺扩展间 JavaScript API。
 
 ## 19. 智能体工具/功能与 VS Code 能力对照
 
@@ -806,7 +794,7 @@ VS Code 在这条链路中负责 Webview 容器和消息通道；智能体循环
 | 旧存储迁移 | `apps/vscode/src/core/storage/state-migrations.ts`、`apps/vscode/src/hosts/vscode/vscode-to-file-migration.ts` | 读取旧 ExtensionContext 状态和 Secrets |
 | 少量公共类型/兼容 | `apps/vscode/src/shared/vsCodeSelectorUtils.ts`、`apps/vscode/src/shared/storage/state-keys.ts`、`apps/vscode/src/utils/shell.ts` | VS Code 类型或终端配置兼容 |
 
-新的宿主相关功能应优先放在 `hosts/vscode` 并通过 HostProvider/Proto 暴露。即使当前只保留 VS Code，也不要让 `vscode` 依赖扩散到整个 Core；VS Code LM、Walkthrough 和遗留存储迁移属于有明确平台原因的例外。
+新的宿主相关功能应优先放在 `hosts/vscode` 并通过 HostProvider/Proto 暴露。即使当前只保留 VS Code，也不要让 `vscode` 依赖扩散到整个 Core；VS Code LM 和遗留存储迁移属于有明确平台原因的例外。
 
 ## 22. 构建、打包和集成测试
 
@@ -818,7 +806,7 @@ VS Code 在这条链路中负责 Webview 容器和消息通道；智能体循环
 - 输出是 `dist/extension.js`；
 - `platform: "node"`、`format: "cjs"`；
 - `vscode` 被标记为 external，由 Extension Host 运行时提供；
-- 复制 Tree-sitter WASM；
+- 代码定义查询在运行时复用 VS Code Document Symbol Provider，不复制 Tree-sitter/WASM；
 - 生产构建压缩，开发构建生成 Source Map；
 
 `apps/vscode/package.json` 中：
@@ -852,7 +840,7 @@ VSIX 由 `@vscode/vsce` 打包，安装后 VS Code 根据 `package.json.main` �
 7. **Notebook 修改的是 JSON，同时又依赖 Jupyter 扩展渲染。** 文本 Diff、Cell Diff 和最终 `openWith` 是三个不同阶段。
 8. **Comments Controller 会更新全局 `comments.openView`。** 若不希望插件改变用户设置，需要重构这段策略。
 9. **Storage 已迁移但没有完全统一。** 普通配置在 `~/.cline/data`，Task/Checkpoint 仍可能在 VS Code Global Storage；迁移或改扩展 ID 时必须同时考虑两处。
-10. **回调 URI 和 Walkthrough 仍有硬编码 Publisher/扩展 ID。** 独立插件改名时不能只修改 `package.json`。
+10. **部分模型 OAuth 回调仍可能包含 Publisher/扩展 ID。** 独立插件改名时不能只修改 `package.json`。
 11. **最低 Engine 和实际可选 API 不相同。** Shell Integration 与 LM API 都采用运行时能力检测/类型补充，必须在目标 VS Code、Cursor 或 Web 环境实测。
 12. **资源必须经过 Webview URI 和 CSP。** 直接把本地绝对路径写进 HTML 不会正常加载，也会破坏安全边界。
 
@@ -864,7 +852,6 @@ VSIX 由 `@vscode/vsce` 打包，安装后 VS Code 根据 `package.json.main` �
 | 扩展入口 | `apps/vscode/src/extension.ts` |
 | 公共初始化/销毁 | `apps/vscode/src/common.ts` |
 | ID Registry | `apps/vscode/src/registry.ts` |
-| 对外 Cline API | `apps/vscode/src/exports/index.ts`、`apps/vscode/src/exports/cline.d.ts` |
 | Host 依赖注入 | `apps/vscode/src/hosts/host-provider.ts`、`apps/vscode/src/hosts/host-provider-types.ts` |
 | HostBridge Proto | `apps/vscode/proto/host/` |
 | HostBridge VS Code 实现 | `apps/vscode/src/hosts/vscode/hostbridge/` |
@@ -899,7 +886,7 @@ Cline 与 VS Code 的关系可以概括为：**VS Code 提供宿主外壳和 IDE
 
 VS Code 具体承担了：
 
-- 扩展激活、命令、菜单、快捷键和 Walkthrough；
+- 扩展激活、命令、菜单和快捷键；
 - Activity Bar 中的 React Webview 容器及消息通道；
 - 编辑器选择、Code Action、文件 Tab、可编辑 Diff 和 Decorations；
 - Terminal 与 Shell Integration；

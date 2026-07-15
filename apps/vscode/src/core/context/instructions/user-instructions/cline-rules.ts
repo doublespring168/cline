@@ -1,6 +1,5 @@
 import {
 	ActivatedConditionalRule,
-	getRemoteRulesTotalContentWithMetadata,
 	getRuleFilesTotalContentWithMetadata,
 	RULE_SOURCE_PREFIX,
 	RuleLoadResultWithInstructions,
@@ -8,7 +7,6 @@ import {
 } from "@core/context/instructions/user-instructions/rule-helpers"
 import { formatResponse } from "@core/prompts/responses"
 import { ensureRulesDirectoryExists, GlobalFileNames } from "@core/storage/disk"
-import { StateManager } from "@core/storage/StateManager"
 import { ClineRulesToggles } from "@shared/cline-rules"
 import { fileExistsAtPath, isDirectory, readDirectory } from "@utils/fs"
 import fs from "fs/promises"
@@ -53,21 +51,7 @@ export const getGlobalClineRules = async (
 		}
 	}
 
-	// 2. Append remote config rules
-	const stateManager = StateManager.get()
-	const remoteConfigSettings = stateManager.getRemoteConfigSettings()
-	const remoteRules = remoteConfigSettings.remoteGlobalRules || []
-	const remoteToggles = stateManager.getGlobalStateKey("remoteRulesToggles") || {}
-	const remoteResult = getRemoteRulesTotalContentWithMetadata(remoteRules, remoteToggles, {
-		evaluationContext: opts?.evaluationContext,
-	})
-	if (remoteResult.content) {
-		if (combinedContent) combinedContent += "\n\n"
-		combinedContent += remoteResult.content
-		activatedConditionalRules.push(...remoteResult.activatedConditionalRules)
-	}
-
-	// 3. Return formatted instructions
+	// 2. Return formatted instructions
 	if (!combinedContent) {
 		return { instructions: undefined, activatedConditionalRules: [] }
 	}

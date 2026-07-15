@@ -9,8 +9,6 @@ import { ClineSayTool } from "@shared/ExtensionMessage"
 import { getLastApiReqTotalTokens } from "@shared/getApiMetrics"
 import { fileExistsAtPath } from "@utils/fs"
 import { arePathsEqual, getReadablePath, isLocatedInWorkspace } from "@utils/path"
-import { applyPatch } from "diff"
-import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
 import { showNotificationForApproval } from "../../utils"
@@ -18,7 +16,6 @@ import type { IFullyManagedTool } from "../ToolExecutorCoordinator"
 import type { ToolValidator } from "../ToolValidator"
 import type { TaskConfig } from "../types/TaskConfig"
 import type { StronglyTypedUIHelpers } from "../types/UIHelpers"
-import { captureAccepted, captureRejected, getModelInfo } from "../utils/AiOutputTelemetry"
 import { applyModelContentFixes } from "../utils/ModelContentProcessor"
 import { ToolDisplayUtils } from "../utils/ToolDisplayUtils"
 import { ToolResultUtils } from "../utils/ToolResultUtils"
@@ -82,7 +79,9 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 			// CRITICAL: Open editor and stream content in real-time (from original code)
 			if (!config.services.diffViewProvider.isEditing) {
 				// Open the editor and prepare to stream content in
-				await config.services.diffViewProvider.open(absolutePath, { displayPath: relPath })
+				await config.services.diffViewProvider.open(absolutePath, {
+					displayPath: relPath,
+				})
 			}
 			// Editor is open, stream content in real-time (false = don't finalize yet)
 			await config.services.diffViewProvider.update(newContent, false)
@@ -98,9 +97,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 		const rawRelPath = block.params.path || block.params.absolutePath
 		const rawContent = block.params.content // for write_to_file
 		const rawDiff = block.params.diff // for replace_in_file
-
-		// Extract provider information for telemetry
-		const { providerId, modelId } = getModelInfo(config)
 
 		// Validate required parameters based on tool type
 		if (!rawRelPath) {
@@ -183,7 +179,9 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				// show gui message before showing edit animation
 				const partialMessage = JSON.stringify(sharedMessageProps)
 				await config.callbacks.ask("tool", partialMessage, true).catch(() => {}) // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
-				await config.services.diffViewProvider.open(absolutePath, { displayPath: relPath })
+				await config.services.diffViewProvider.open(absolutePath, {
+					displayPath: relPath,
+				})
 			}
 			await config.services.diffViewProvider.update(newContent, true)
 			await setTimeoutPromise(300) // wait for diff view to update
@@ -206,30 +204,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				// Auto-approval flow
 				await config.callbacks.removeLastPartialMessageIfExistsWithType("ask", "tool")
 				await config.callbacks.say("tool", completeMessage, undefined, undefined, false)
-
-				// Capture telemetry
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					modelId,
-					providerId,
-					true,
-					true,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
-
-				// Capture AI output accepted telemetry with line diff stats
-				captureAccepted({
-					ulid: config.ulid,
-					tool: block.name,
-					source: "agent",
-					beforeContent: config.services.diffViewProvider.originalContent || "",
-					afterContent: newContent,
-					providerId,
-					modelId,
-					filesCreated: fileExists ? 0 : 1,
-				})
 
 				// we need an artificial delay to let the diagnostics catch up to the changes
 				await setTimeoutPromise(3_500)
@@ -274,29 +248,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 					// await config.services.diffViewProvider.reset()
 
 					config.taskState.didRejectTool = true
-					telemetryService.captureToolUsage(
-						config.ulid,
-						block.name,
-						modelId,
-						providerId,
-						false,
-						false,
-						workspaceContext,
-						block.isNativeToolCall,
-					)
-
-					// Capture AI output rejected telemetry with line diff stats
-					captureRejected({
-						ulid: config.ulid,
-						tool: block.name,
-						source: "agent",
-						beforeContent: config.services.diffViewProvider.originalContent || "",
-						afterContent: newContent,
-						providerId,
-						modelId,
-						filesCreated: fileExists ? 0 : 1,
-					})
-
 					await config.services.diffViewProvider.revertChanges()
 					return `The user denied this operation. ${fileDeniedNote}`
 				}
@@ -316,29 +267,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 					)
 					await config.callbacks.say("user_feedback", text, images, files)
 				}
-
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					modelId,
-					providerId,
-					false,
-					true,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
-
-				// Capture AI output accepted telemetry with line diff stats (manual approval)
-				captureAccepted({
-					ulid: config.ulid,
-					tool: block.name,
-					source: "agent",
-					beforeContent: config.services.diffViewProvider.originalContent || "",
-					afterContent: newContent,
-					providerId,
-					modelId,
-					filesCreated: fileExists ? 0 : 1,
-				})
 			}
 
 			// Run PreToolUse hook after approval but before execution
@@ -388,19 +316,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 					}),
 				)
 
-				// Capture human edit telemetry: diff between agent's proposed content and user's pre-save edits
-				// Use applyPatch to reconstruct pre-save content from userEdits, excluding auto-formatting noise
-				const preSaveContent = applyPatch(newContent, userEdits)
-				captureAccepted({
-					ulid: config.ulid,
-					tool: block.name,
-					source: "human",
-					beforeContent: newContent,
-					afterContent: preSaveContent || finalContent || "",
-					providerId,
-					modelId,
-				})
-
 				return formatResponse.fileEditWithUserChanges(
 					relPath,
 					userEdits,
@@ -439,7 +354,10 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 		const { absolutePath, resolvedPath } =
 			typeof pathResult === "string"
 				? { absolutePath: pathResult, resolvedPath: relPath }
-				: { absolutePath: pathResult.absolutePath, resolvedPath: pathResult.resolvedPath }
+				: {
+						absolutePath: pathResult.absolutePath,
+						resolvedPath: pathResult.resolvedPath,
+					}
 
 		// Determine workspace context for telemetry
 		const fallbackAbsolutePath = path.resolve(config.cwd, relPath)
@@ -495,7 +413,9 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 			// open the editor if not done already.  This is to fix diff error when model provides correct search-replace text but Cline throws error
 			// because file is not open.
 			if (!config.services.diffViewProvider.isEditing) {
-				await config.services.diffViewProvider.open(absolutePath, { displayPath: relPath })
+				await config.services.diffViewProvider.open(absolutePath, {
+					displayPath: relPath,
+				})
 			}
 
 			try {
@@ -518,19 +438,6 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				// Removes any existing diff_error messages to avoid duplicates.
 				await config.callbacks.removeLastPartialMessageIfExistsWithType("say", "diff_error")
 				await config.callbacks.say("diff_error", relPath, undefined, undefined, true)
-
-				// Extract provider information for telemetry
-				const { providerId, modelId } = getModelInfo(config)
-
-				// Extract error type from error message if possible
-				const errorType =
-					error instanceof Error && error.message.includes("does not match anything")
-						? "search_not_found"
-						: "other_diff_error"
-
-				// Add telemetry for diff edit failure
-				const isNativeToolCall = block.isNativeToolCall === true
-				telemetryService.captureDiffEditFailure(config.ulid, modelId, providerId, errorType, isNativeToolCall)
 
 				// Push tool result with detailed error using existing utilities
 				const errorResponse = formatResponse.toolError(
@@ -576,6 +483,15 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 			return
 		}
 
-		return { relPath, absolutePath, fileExists, diff, content, newContent, workspaceContext, matchIndices }
+		return {
+			relPath,
+			absolutePath,
+			fileExists,
+			diff,
+			content,
+			newContent,
+			workspaceContext,
+			matchIndices,
+		}
 	}
 }

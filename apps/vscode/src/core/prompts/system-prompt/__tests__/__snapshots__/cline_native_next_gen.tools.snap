@@ -272,69 +272,6 @@
   {
     "type": "function",
     "function": {
-      "name": "web_fetch",
-      "description": "Fetches and analyzes content from a specified URL. IMPORTANT: If an MCP-provided web fetch tool is available, prefer using that tool instead of this one, as it may have fewer restrictions.",
-      "strict": false,
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "url": {
-            "type": "string",
-            "description": "The URL to fetch content from"
-          },
-          "prompt": {
-            "type": "string",
-            "description": "Prompt for analyzing the webpage content"
-          },
-          "task_progress": {
-            "type": "string",
-            "description": "A checklist showing task progress after this tool use is completed. The task_progress parameter must be included as a separate parameter inside of the parent tool call, it must be separate from other parameters such as content, arguments, etc. (See 'UPDATING TASK PROGRESS' section for more details)"
-          }
-        },
-        "required": [
-          "url",
-          "prompt"
-        ],
-        "additionalProperties": false
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
-      "name": "web_search",
-      "description": "Performs a web search and returns relevant results with titles and URLs. IMPORTANT: If an MCP-provided web search tool is available, prefer using that tool instead of this one, as it may have fewer restrictions.",
-      "strict": false,
-      "parameters": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "The search query to use"
-          },
-          "allowed_domains": {
-            "type": "string",
-            "description": "JSON array of domains to restrict results to"
-          },
-          "blocked_domains": {
-            "type": "string",
-            "description": "JSON array of domains to exclude from results"
-          },
-          "task_progress": {
-            "type": "string",
-            "description": "A checklist showing task progress after this tool use is completed. The task_progress parameter must be included as a separate parameter inside of the parent tool call, it must be separate from other parameters such as content, arguments, etc. (See 'UPDATING TASK PROGRESS' section for more details)"
-          }
-        },
-        "required": [
-          "query"
-        ],
-        "additionalProperties": false
-      }
-    }
-  },
-  {
-    "type": "function",
-    "function": {
       "name": "access_mcp_resource",
       "description": "Request to access a resource provided by a connected MCP server. Resources represent data sources that can be used as context, such as files, API responses, or system information. You must only use this tool if you have been informed of the MCP server and the resource you are trying to access.",
       "strict": false,

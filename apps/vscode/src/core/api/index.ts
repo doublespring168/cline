@@ -1,8 +1,4 @@
-import {
-	ApiConfiguration,
-	ModelInfo,
-	QwenApiRegions,
-} from "@shared/api"
+import { ApiConfiguration, ModelInfo, QwenApiRegions } from "@shared/api"
 import { Mode } from "@shared/storage/types"
 import { ClineStorageMessage } from "@/shared/messages/content"
 import { Logger } from "@/shared/services/Logger"

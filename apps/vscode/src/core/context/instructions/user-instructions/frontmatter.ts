@@ -48,6 +48,11 @@ export function parseYamlFrontmatter(markdown: string): FrontmatterParseResult {
 		return { data, body, hadFrontmatter: true }
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error)
-		return { data: {}, body: markdown, hadFrontmatter: true, parseError: message }
+		return {
+			data: {},
+			body: markdown,
+			hadFrontmatter: true,
+			parseError: message,
+		}
 	}
 }

@@ -2,7 +2,6 @@ import type { ApiConfiguration, OcaModelInfo } from "@shared/api"
 import { Mode } from "@shared/storage/types"
 import { VSCodeButton, VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react"
 import React, { useMemo } from "react"
-import { VSC_BUTTON_BACKGROUND, VSC_BUTTON_FOREGROUND, VSC_DESCRIPTION_FOREGROUND, VSC_FOREGROUND } from "@/utils/vscStyles"
 import { ModelInfoView } from "../common/ModelInfoView"
 import ThinkingBudgetSlider from "../ThinkingBudgetSlider"
 import { normalizeApiConfiguration } from "../utils/providerUtils"
@@ -28,71 +27,52 @@ const OcaModelPicker: React.FC<OcaModelPickerProps> = ({
 	lastRefreshedAt,
 }: OcaModelPickerProps) => {
 	const { handleModeFieldsChange } = useApiConfigurationHandlers()
-	const [pendingModelId, setPendingModelId] = React.useState<string | null>(null)
-	const [showRestrictedPopup, setShowRestrictedPopup] = React.useState(false)
 
 	const handleModelChange = async (newModelId: string) => {
 		// could be setting invalid model id/undefined info but validation will catch it
 
 		if (ocaModels) {
-			const banner = ocaModels[newModelId]?.banner
-			if (banner) {
-				setPendingModelId(newModelId)
-				setShowRestrictedPopup(true)
-			} else {
-				await handleModeFieldsChange(
-					{
-						ocaModelId: { plan: "planModeOcaModelId", act: "actModeOcaModelId" },
-						ocaModelInfo: { plan: "planModeOcaModelInfo", act: "actModeOcaModelInfo" },
-						ocaReasoningEffort: { plan: "planModeOcaReasoningEffort", act: "actModeOcaReasoningEffort" },
+			await handleModeFieldsChange(
+				{
+					ocaModelId: {
+						plan: "planModeOcaModelId",
+						act: "actModeOcaModelId",
 					},
-					{
-						ocaModelId: newModelId,
-						ocaModelInfo: ocaModels[newModelId],
-						ocaReasoningEffort:
-							ocaModels[newModelId].reasoningEffortOptions.length > 0
-								? ocaModels[newModelId].reasoningEffortOptions[0]
-								: undefined,
+					ocaModelInfo: {
+						plan: "planModeOcaModelInfo",
+						act: "actModeOcaModelInfo",
 					},
-					currentMode,
-				)
-			}
+					ocaReasoningEffort: {
+						plan: "planModeOcaReasoningEffort",
+						act: "actModeOcaReasoningEffort",
+					},
+				},
+				{
+					ocaModelId: newModelId,
+					ocaModelInfo: ocaModels[newModelId],
+					ocaReasoningEffort:
+						ocaModels[newModelId].reasoningEffortOptions.length > 0
+							? ocaModels[newModelId].reasoningEffortOptions[0]
+							: undefined,
+				},
+				currentMode,
+			)
 		}
 	}
 
 	const handleReasoningEffortChange = async (newValue: string) => {
 		await handleModeFieldsChange(
 			{
-				ocaReasoningEffort: { plan: "planModeOcaReasoningEffort", act: "actModeOcaReasoningEffort" },
+				ocaReasoningEffort: {
+					plan: "planModeOcaReasoningEffort",
+					act: "actModeOcaReasoningEffort",
+				},
 			},
 			{
 				ocaReasoningEffort: newValue,
 			},
 			currentMode,
 		)
-	}
-
-	const onAcknowledge = async () => {
-		if (pendingModelId && ocaModels) {
-			await handleModeFieldsChange(
-				{
-					ocaModelId: { plan: "planModeOcaModelId", act: "actModeOcaModelId" },
-					ocaModelInfo: { plan: "planModeOcaModelInfo", act: "actModeOcaModelInfo" },
-					ocaReasoningEffort: { plan: "planModeOcaReasoningEffort", act: "actModeOcaReasoningEffort" },
-				},
-				{
-					ocaModelId: pendingModelId,
-					ocaModelInfo: ocaModels[pendingModelId],
-					ocaReasoningEffort:
-						ocaModels[pendingModelId].reasoningEffortOptions.length > 0
-							? ocaModels[pendingModelId].reasoningEffortOptions[0]
-							: undefined,
-				},
-				currentMode,
-			)
-			setPendingModelId(null)
-			setShowRestrictedPopup(false)
-		}
 	}
 
 	const handleRefreshToken = async () => {
@@ -129,12 +109,6 @@ const OcaModelPicker: React.FC<OcaModelPickerProps> = ({
 
 	return (
 		<div className="w-full">
-			{showRestrictedPopup && (
-				<OcaRestrictivePopup
-					bannerText={ocaModels && pendingModelId && ocaModels[pendingModelId]?.banner}
-					onAcknowledge={onAcknowledge}
-				/>
-			)}
 			<style>{`
 				#model-id::part(listbox){
 					max-height: 100px;
@@ -232,37 +206,3 @@ const OcaModelPicker: React.FC<OcaModelPickerProps> = ({
 }
 
 export default OcaModelPicker
-
-const OcaRestrictivePopup: React.FC<{
-	onAcknowledge: () => void
-	bannerText?: string | null
-}> = React.memo(({ onAcknowledge, bannerText }) => (
-	<div className="fixed top-0 left-0 w-screen h-screen z-2000 [background:rgba(0,0,0,0.25)] flex items-center justify-center">
-		<div
-			aria-labelledby="oca-popup-title"
-			aria-modal="true"
-			className={`p-6 max-w-[600px] w-[90%] rounded-[8px] [box-shadow:0_4px_24px_0_var(--vscode-widget-shadow,rgba(0,0,0,.4))] [border:1px_solid_var(--vscode-focusBorder,#007acc)] [background:var(--vscode-editor-background,#252526)] [color:var(${VSC_FOREGROUND},#cccccc)] [font-family:var(--vscode-font-family,sans-serif)] [font-size:var(--vscode-font-size,13px)] flex flex-col max-h-[80vh]`}
-			role="dialog">
-			<h2 className={`mt-0 [color:var(${VSC_FOREGROUND},#111)] font-bold`} id="oca-popup-title">
-				Acknowledgement Required
-			</h2>
-			<h4 className={`mb-2 [color:var(${VSC_DESCRIPTION_FOREGROUND},#b3b3b3)] font-semibold`}>
-				Disclaimer: Prohibited Data Submission
-			</h4>
-			<div className="overflow-y-auto flex-1 pr-2 mb-4 text-[13px] leading-normal text-(--vscode-foreground,#222) mask-[linear-gradient(to_bottom,black_96%,transparent_100%)]">
-				{bannerText && <div dangerouslySetInnerHTML={{ __html: bannerText }} />}
-			</div>
-			<div className="text-right">
-				<VSCodeButton
-					onClick={onAcknowledge}
-					style={{
-						background: `var(${VSC_BUTTON_BACKGROUND}, #0e639c)`,
-						color: `var(${VSC_BUTTON_FOREGROUND}, #fff)`,
-					}}
-					type="button">
-					I acknowledge and agree
-				</VSCodeButton>
-			</div>
-		</div>
-	</div>
-))

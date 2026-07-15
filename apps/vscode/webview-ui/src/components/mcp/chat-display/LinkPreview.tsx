@@ -185,7 +185,12 @@ class LinkPreview extends React.Component<LinkPreviewProps, LinkPreviewState> {
 						height: "128px",
 						maxWidth: "512px",
 					}}>
-					<div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							marginBottom: "8px",
+						}}>
 						<div
 							className="loading-spinner"
 							style={{
@@ -208,7 +213,11 @@ class LinkPreview extends React.Component<LinkPreviewProps, LinkPreviewState> {
 						Loading preview for {getSafeHostname(url)}...
 					</div>
 					{elapsedSeconds > 5 && (
-						<div style={{ fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
+						<div
+							style={{
+								fontSize: "11px",
+								color: "var(--vscode-descriptionForeground)",
+							}}>
 							{elapsedSeconds > 60
 								? `Waiting for ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s...`
 								: `Waiting for ${elapsedSeconds}s...`}
@@ -254,7 +263,12 @@ class LinkPreview extends React.Component<LinkPreviewProps, LinkPreviewState> {
 					<div style={{ fontWeight: "bold" }}>{errorDisplay}</div>
 					<div style={{ fontSize: "12px", marginTop: "4px" }}>{getSafeHostname(url)}</div>
 					{errorMessage && <div style={{ fontSize: "11px", marginTop: "4px", opacity: 0.8 }}>{errorMessage}</div>}
-					<div style={{ fontSize: "11px", marginTop: "8px", color: "var(--vscode-textLink-foreground)" }}>
+					<div
+						style={{
+							fontSize: "11px",
+							marginTop: "8px",
+							color: "var(--vscode-textLink-foreground)",
+						}}>
 						Click to open in browser
 					</div>
 				</div>

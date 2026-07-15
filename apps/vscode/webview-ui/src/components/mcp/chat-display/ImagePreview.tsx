@@ -170,7 +170,12 @@ class ImagePreview extends React.Component<
 						height: "128px",
 						maxWidth: "512px",
 					}}>
-					<div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
+					<div
+						style={{
+							display: "flex",
+							alignItems: "center",
+							marginBottom: "8px",
+						}}>
 						<div
 							className="loading-spinner"
 							style={{
@@ -193,7 +198,11 @@ class ImagePreview extends React.Component<
 						Loading image from {getSafeHostname(url)}...
 					</div>
 					{elapsedSeconds > 3 && (
-						<div style={{ fontSize: "11px", color: "var(--vscode-descriptionForeground)" }}>
+						<div
+							style={{
+								fontSize: "11px",
+								color: "var(--vscode-descriptionForeground)",
+							}}>
 							{elapsedSeconds > 60
 								? `Waiting for ${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s...`
 								: `Waiting for ${elapsedSeconds}s...`}
@@ -246,7 +255,12 @@ class ImagePreview extends React.Component<
 					}}>
 					<div style={{ fontWeight: "bold" }}>Failed to load image</div>
 					<div style={{ fontSize: "12px", marginTop: "4px" }}>{getSafeHostname(url)}</div>
-					<div style={{ fontSize: "11px", marginTop: "8px", color: "var(--vscode-textLink-foreground)" }}>
+					<div
+						style={{
+							fontSize: "11px",
+							marginTop: "8px",
+							color: "var(--vscode-textLink-foreground)",
+						}}>
 						Click to open in browser
 					</div>
 				</div>

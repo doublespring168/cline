@@ -7,7 +7,7 @@ import { DEFAULT_FOCUS_CHAIN_SETTINGS } from "@shared/FocusChainSettings"
 import { DEFAULT_MCP_DISPLAY_MODE } from "@shared/McpDisplayMode"
 import { EmptyRequest } from "@shared/proto/cline/common"
 import type { OpenRouterCompatibleModelInfo } from "@shared/proto/cline/models"
-import { OnboardingModelGroup, type TerminalProfile } from "@shared/proto/cline/state"
+import type { TerminalProfile } from "@shared/proto/cline/state"
 import { convertProtoToClineMessage } from "@shared/proto-conversions/cline-message"
 import { convertProtoMcpServersToMcpServers } from "@shared/proto-conversions/mcp/mcp-server-conversion"
 import { fromProtobufModels } from "@shared/proto-conversions/models/typeConversion"
@@ -26,13 +26,12 @@ import {
 	requestyDefaultModelInfo,
 } from "../../../src/shared/api"
 import { Environment } from "../../../src/shared/config-types"
-import type { McpMarketplaceCatalog, McpServer, McpViewTab } from "../../../src/shared/mcp"
+import type { McpServer, McpViewTab } from "../../../src/shared/mcp"
 import { McpServiceClient, ModelsServiceClient, StateServiceClient, UiServiceClient } from "../services/grpc-client"
 
 export interface ExtensionStateContextType extends ExtensionState {
 	didHydrateState: boolean
 	showWelcome: boolean
-	onboardingModels: OnboardingModelGroup | undefined
 	clineModels: Record<string, ModelInfo> | null
 	openRouterModels: Record<string, ModelInfo>
 	vercelAiGatewayModels: Record<string, ModelInfo>
@@ -44,7 +43,6 @@ export interface ExtensionStateContextType extends ExtensionState {
 	basetenModels: Record<string, ModelInfo>
 	huggingFaceModels: Record<string, ModelInfo>
 	mcpServers: McpServer[]
-	mcpMarketplaceCatalog: McpMarketplaceCatalog
 	totalTasksSize: number | null
 	availableTerminalProfiles: TerminalProfile[]
 
@@ -73,13 +71,9 @@ export interface ExtensionStateContextType extends ExtensionState {
 	setGlobalWorkflowToggles: (toggles: Record<string, boolean>) => void
 	setGlobalSkillsToggles: (toggles: Record<string, boolean>) => void
 	setLocalSkillsToggles: (toggles: Record<string, boolean>) => void
-	setRemoteRulesToggles: (toggles: Record<string, boolean>) => void
-	setRemoteWorkflowToggles: (toggles: Record<string, boolean>) => void
-	setMcpMarketplaceCatalog: (value: McpMarketplaceCatalog) => void
 	setTotalTasksSize: (value: number | null) => void
 	setExpandTaskHeader: (value: boolean) => void
 	setShowWelcome: (value: boolean) => void
-	setOnboardingModels: (value: OnboardingModelGroup | undefined) => void
 
 	// Refresh functions
 	refreshClineModels: () => void
@@ -227,21 +221,16 @@ export const ExtensionStateContextProvider: React.FC<{
 		defaultTerminalProfile: "default",
 		isNewUser: false,
 		welcomeViewCompleted: false,
-		onboardingModels: undefined,
 		mcpResponsesCollapsed: false, // Default value (expanded), will be overwritten by extension state
 		strictPlanModeEnabled: false,
 		yoloModeToggled: false,
 		customPrompt: undefined,
 		useAutoCondense: false,
 		subagentsEnabled: false,
-		clineWebToolsEnabled: { user: true },
 		worktreesEnabled: { user: true },
 		favoritedModelIds: [],
-		remoteConfigSettings: {},
 		backgroundEditEnabled: false,
 		doubleCheckCompletionEnabled: false,
-		lazyTeammateModeEnabled: false,
-		showFeatureTips: true,
 		globalSkillsToggles: {},
 		localSkillsToggles: {},
 
@@ -258,8 +247,6 @@ export const ExtensionStateContextProvider: React.FC<{
 	const [didHydrateState, setDidHydrateState] = useState(false)
 
 	const [showWelcome, setShowWelcome] = useState(false)
-	const [onboardingModels, setOnboardingModels] = useState<OnboardingModelGroup | undefined>(undefined)
-
 	const [clineModels, setClineModels] = useState<Record<string, ModelInfo> | null>(null)
 	const [openRouterModels, setOpenRouterModels] = useState<Record<string, ModelInfo>>({
 		[openRouterDefaultModelId]: openRouterDefaultModelInfo,
@@ -283,7 +270,6 @@ export const ExtensionStateContextProvider: React.FC<{
 	})
 	const [huggingFaceModels, setHuggingFaceModels] = useState<Record<string, ModelInfo>>({})
 	const [mcpServers, setMcpServers] = useState<McpServer[]>([])
-	const [mcpMarketplaceCatalog, setMcpMarketplaceCatalog] = useState<McpMarketplaceCatalog>({ items: [] })
 
 	// References to store subscription cancellation functions
 	const stateSubscriptionRef = useRef<(() => void) | null>(null)
@@ -294,7 +280,6 @@ export const ExtensionStateContextProvider: React.FC<{
 	const settingsButtonClickedSubscriptionRef = useRef<(() => void) | null>(null)
 	const worktreesButtonClickedSubscriptionRef = useRef<(() => void) | null>(null)
 	const partialMessageUnsubscribeRef = useRef<(() => void) | null>(null)
-	const mcpMarketplaceUnsubscribeRef = useRef<(() => void) | null>(null)
 	const openRouterModelsUnsubscribeRef = useRef<(() => void) | null>(null)
 	const liteLlmModelsUnsubscribeRef = useRef<(() => void) | null>(null)
 	const workspaceUpdatesUnsubscribeRef = useRef<(() => void) | null>(null)
@@ -342,10 +327,8 @@ export const ExtensionStateContextProvider: React.FC<{
 							// Update welcome screen state based on API configuration if welcome view not in progress
 							if (!newState.welcomeViewCompleted && !showWelcome) {
 								setShowWelcome(true)
-								setOnboardingModels(newState.onboardingModels)
 							} else if (newState.welcomeViewCompleted) {
 								setShowWelcome(false)
-								setOnboardingModels(undefined)
 							}
 
 							setDidHydrateState(true)
@@ -498,20 +481,6 @@ export const ExtensionStateContextProvider: React.FC<{
 			},
 		})
 
-		// Subscribe to MCP marketplace catalog updates
-		mcpMarketplaceUnsubscribeRef.current = McpServiceClient.subscribeToMcpMarketplaceCatalog(EmptyRequest.create({}), {
-			onResponse: (catalog) => {
-				console.log("[DEBUG] Received MCP marketplace catalog update from gRPC stream")
-				setMcpMarketplaceCatalog(catalog)
-			},
-			onError: (error) => {
-				console.error("Error in MCP marketplace catalog subscription:", error)
-			},
-			onComplete: () => {
-				console.log("MCP marketplace catalog subscription completed")
-			},
-		})
-
 		// Subscribe to OpenRouter models updates
 		openRouterModelsUnsubscribeRef.current = ModelsServiceClient.subscribeToOpenRouterModels(EmptyRequest.create({}), {
 			onResponse: (response: OpenRouterCompatibleModelInfo) => {
@@ -604,10 +573,6 @@ export const ExtensionStateContextProvider: React.FC<{
 			if (partialMessageUnsubscribeRef.current) {
 				partialMessageUnsubscribeRef.current()
 				partialMessageUnsubscribeRef.current = null
-			}
-			if (mcpMarketplaceUnsubscribeRef.current) {
-				mcpMarketplaceUnsubscribeRef.current()
-				mcpMarketplaceUnsubscribeRef.current = null
 			}
 			if (openRouterModelsUnsubscribeRef.current) {
 				openRouterModelsUnsubscribeRef.current()
@@ -731,7 +696,6 @@ export const ExtensionStateContextProvider: React.FC<{
 		...state,
 		didHydrateState,
 		showWelcome,
-		onboardingModels,
 		clineModels,
 		openRouterModels,
 		vercelAiGatewayModels,
@@ -743,7 +707,6 @@ export const ExtensionStateContextProvider: React.FC<{
 		basetenModels: basetenModelsState,
 		huggingFaceModels,
 		mcpServers,
-		mcpMarketplaceCatalog,
 		totalTasksSize,
 		availableTerminalProfiles,
 		showMcp,
@@ -760,8 +723,6 @@ export const ExtensionStateContextProvider: React.FC<{
 		localAgentsRulesToggles: state.localAgentsRulesToggles || {},
 		localWorkflowToggles: state.localWorkflowToggles || {},
 		globalWorkflowToggles: state.globalWorkflowToggles || {},
-		remoteRulesToggles: state.remoteRulesToggles || {},
-		remoteWorkflowToggles: state.remoteWorkflowToggles || {},
 		enableCheckpointsSetting: state.enableCheckpointsSetting,
 		currentFocusChainChecklist: state.currentFocusChainChecklist,
 
@@ -778,13 +739,11 @@ export const ExtensionStateContextProvider: React.FC<{
 		hideHistory,
 		hideWorktrees,
 		setShowWelcome,
-		setOnboardingModels,
 		setMcpServers,
 		setRequestyModels,
 		setGroqModels,
 		setBasetenModels,
 		setHuggingFaceModels,
-		setMcpMarketplaceCatalog,
 		setShowMcp,
 		closeMcpView,
 		setGlobalClineRulesToggles: (toggles) =>
@@ -831,16 +790,6 @@ export const ExtensionStateContextProvider: React.FC<{
 			setState((prevState) => ({
 				...prevState,
 				localSkillsToggles: toggles,
-			})),
-		setRemoteRulesToggles: (toggles) =>
-			setState((prevState) => ({
-				...prevState,
-				remoteRulesToggles: toggles,
-			})),
-		setRemoteWorkflowToggles: (toggles) =>
-			setState((prevState) => ({
-				...prevState,
-				remoteWorkflowToggles: toggles,
 			})),
 		setMcpTab,
 		setTotalTasksSize,

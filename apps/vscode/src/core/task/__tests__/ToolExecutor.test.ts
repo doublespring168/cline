@@ -22,7 +22,10 @@ describe("ToolExecutor Hook Integration", () => {
 			const contextModification: string | undefined = undefined
 			// The implementation checks for truthiness, which excludes undefined
 			if (contextModification) {
-				userMessageContent.push({ type: "text", text: "should not reach here" })
+				userMessageContent.push({
+					type: "text",
+					text: "should not reach here",
+				})
 			}
 
 			userMessageContent.length.should.equal(0)
@@ -35,7 +38,10 @@ describe("ToolExecutor Hook Integration", () => {
 			const contextModification: string | undefined = ""
 			// Empty string is falsy, so this block won't execute
 			if (contextModification) {
-				userMessageContent.push({ type: "text", text: "should not reach here" })
+				userMessageContent.push({
+					type: "text",
+					text: "should not reach here",
+				})
 			}
 
 			userMessageContent.length.should.equal(0)
@@ -49,7 +55,10 @@ describe("ToolExecutor Hook Integration", () => {
 			if (contextModification) {
 				const contextText = contextModification.trim()
 				if (contextText) {
-					userMessageContent.push({ type: "text", text: "should not reach here" })
+					userMessageContent.push({
+						type: "text",
+						text: "should not reach here",
+					})
 				}
 			}
 

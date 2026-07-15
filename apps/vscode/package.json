@@ -40,10 +40,8 @@
 		"llama"
 	],
 	"activationEvents": [
-		"onLanguage",
-		"onUri",
-		"onStartupFinished",
-		"workspaceContains:evals.env"
+		"onView:claude-dev.SidebarProvider",
+		"onUri"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
@@ -56,58 +54,6 @@
 				}
 			}
 		},
-		"walkthroughs": [
-			{
-				"id": "ClineWalkthrough",
-				"title": "Meet Cline, your new coding partner",
-				"description": "Cline codes like a developer because it thinks like one. Here are 5 ways to put it to work:",
-				"steps": [
-					{
-						"id": "welcome",
-						"title": "Start with a Goal, Not Just a Prompt",
-						"description": "Tell Cline what you want to achieve. It plans, asks, and then codes, like a true partner.",
-						"media": {
-							"markdown": "walkthrough/step1.md"
-						}
-					},
-					{
-						"id": "learn",
-						"title": "Let Cline Learn Your Codebase",
-						"description": "Point Cline to your project. It builds understanding to make smart, context-aware changes.",
-						"media": {
-							"markdown": "walkthrough/step2.md"
-						}
-					},
-					{
-						"id": "advanced-features",
-						"title": "Always Use the Best AI Models",
-						"description": "Cline empowers you with State-of-the-Art AI, connecting to top models (Anthropic, Gemini, OpenAI & more).",
-						"media": {
-							"markdown": "walkthrough/step3.md"
-						}
-					},
-					{
-						"id": "mcp",
-						"title": "Extend with Powerful Tools (MCP)",
-						"description": "Connect to databases, APIs, or discover new capabilities in the MCP Marketplace.",
-						"media": {
-							"markdown": "walkthrough/step4.md"
-						}
-					},
-					{
-						"id": "getting-started",
-						"title": "You're Always in Control",
-						"description": "Review Cline's plans and diffs. Approve changes before they happen. No surprises.",
-						"media": {
-							"markdown": "walkthrough/step5.md"
-						},
-						"content": {
-							"path": "walkthrough/step5.md"
-						}
-					}
-				]
-			}
-		],
 		"configurationDefaults": {
 			"workbench.colorCustomizations": {
 				"sideBar.background": "#FFFFFF"
@@ -152,18 +98,6 @@
 				"command": "cline.settingsButtonClicked",
 				"title": "Settings",
 				"icon": "$(settings-gear)"
-			},
-			{
-				"command": "cline.dev.createTestTasks",
-				"title": "Create Test Tasks",
-				"category": "Cline",
-				"when": "cline.isDevMode"
-			},
-			{
-				"command": "cline.dev.expireMcpOAuthTokens",
-				"title": "Expire MCP OAuth Tokens (for testing)",
-				"category": "Cline",
-				"when": "cline.isDevMode"
 			},
 			{
 				"command": "cline.addToChat",
@@ -219,11 +153,6 @@
 				"title": "Improve Jupyter Cell with Cline",
 				"category": "Cline",
 				"icon": "$(lightbulb)"
-			},
-			{
-				"command": "cline.openWalkthrough",
-				"title": "Open Walkthrough",
-				"category": "Cline"
 			},
 			{
 				"command": "cline.reconstructTaskHistory",
@@ -433,6 +362,7 @@
 		"@biomejs/biome": "^2.3.14",
 		"@bufbuild/buf": "^1.54.0",
 		"@microsoft/tui-test": "0.0.1",
+		"@playwright/test": "^1.55.1",
 		"@types/chai": "^5.0.1",
 		"@types/clone-deep": "^4.0.4",
 		"@types/get-folder-size": "^3.0.4",
@@ -487,13 +417,10 @@
 		"@grpc/grpc-js": "^1.9.15",
 		"@mistralai/mistralai": "^1.5.0",
 		"@modelcontextprotocol/sdk": "^1.25.1",
-		"@playwright/test": "^1.55.1",
 		"@sap-ai-sdk/ai-api": "^2.7.0",
 		"@sap-ai-sdk/orchestration": "^2.7.0",
 		"@sap-cloud-sdk/connectivity": "^4.6.0",
 		"@streamparser/json": "^0.0.22",
-		"@tailwindcss/vite": "^4.1.14",
-		"@types/uuid": "^10.0.0",
 		"@vscode/codicons": "^0.0.36",
 		"aws4fetch": "^1.0.20",
 		"axios": "1.16.1",
@@ -535,15 +462,12 @@
 		"shell-quote": "^1.8.3",
 		"simple-git": "3.36.0",
 		"strip-ansi": "^7.1.2",
-		"tailwindcss": "^4.1.14",
-		"tree-sitter-wasms": "^0.1.11",
 		"ts-morph": "^25.0.1",
 		"turndown": "^7.2.0",
 		"ulid": "^2.4.0",
 		"undici": "^7.26.0",
 		"uuid": "^11.1.0",
 		"vscode-uri": "^3.1.0",
-		"web-tree-sitter": "^0.22.6",
 		"zod": "^3.24.2"
 	},
 	"overrides": {

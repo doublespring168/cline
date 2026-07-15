@@ -88,7 +88,10 @@ describe("createOpenRouterStream", () => {
 
 		const payload = create.firstCall.args[0] as any
 		payload.should.have.property("model", "anthropic/claude-sonnet-5")
-		payload.provider.should.deepEqual({ order: ["anthropic", "google-vertex/global"], allow_fallbacks: false })
+		payload.provider.should.deepEqual({
+			order: ["anthropic", "google-vertex/global"],
+			allow_fallbacks: false,
+		})
 	})
 
 	it("adds cache_control blocks for Qwen models that require explicit OpenRouter caching", async () => {
@@ -101,8 +104,12 @@ describe("createOpenRouterStream", () => {
 			})
 
 			const payload = create.firstCall.args[0] as any
-			payload.messages[0].content[0].cache_control.should.deepEqual({ type: "ephemeral" })
-			payload.messages[1].content[0].cache_control.should.deepEqual({ type: "ephemeral" })
+			payload.messages[0].content[0].cache_control.should.deepEqual({
+				type: "ephemeral",
+			})
+			payload.messages[1].content[0].cache_control.should.deepEqual({
+				type: "ephemeral",
+			})
 		}
 	})
 
@@ -167,7 +174,10 @@ describe("createOpenRouterStream", () => {
 				[{ role: "user", content: "hello" }] as any,
 				{
 					id: modelId,
-					info: { ...createModelInfo(131_072), thinkingConfig: { maxBudget: 16_384 } },
+					info: {
+						...createModelInfo(131_072),
+						thinkingConfig: { maxBudget: 16_384 },
+					},
 				},
 				"high",
 				16_384,

@@ -14,5 +14,4 @@ export interface EnvironmentConfig {
 	environment: Environment
 	appBaseUrl: string
 	apiBaseUrl: string
-	mcpBaseUrl: string
 }

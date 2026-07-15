@@ -4,7 +4,6 @@ import { formatResponse } from "@core/prompts/responses"
 import { getWorkspaceBasename, resolveWorkspacePath } from "@core/workspace"
 import { listFiles } from "@services/glob/list-files"
 import { arePathsEqual, getReadablePath, isLocatedInWorkspace } from "@utils/path"
-import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
 import { showNotificationForApproval } from "../../utils"
@@ -59,7 +58,7 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 		const recursiveRaw: string | undefined = block.params.recursive
 		const recursive = recursiveRaw?.toLowerCase() === "true"
 
-		// Extract provider using the proven pattern from ReportBugHandler
+		// Read the active provider for local tool context.
 		const apiConfig = config.services.stateManager.getApiConfiguration()
 		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
 		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
@@ -139,16 +138,6 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 			}
 
 			// Capture telemetry
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			const notificationMessage = `Cline wants to view directory ${getWorkspaceBasename(absolutePath, "ListFilesToolHandler.notification")}/`
@@ -160,28 +149,8 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("tool", completeMessage, config)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			}
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				false,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		}
 
 		// Run PreToolUse hook after approval but before execution

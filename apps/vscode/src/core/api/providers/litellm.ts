@@ -322,7 +322,9 @@ export class LiteLlmHandler implements ApiHandler {
 			...(isAdaptiveThinkingModel && adaptiveThinking?.effort
 				? { output_config: { effort: adaptiveThinking.effort } }
 				: {}),
-			...(this.options.ulid && { litellm_session_id: `cline-${this.options.ulid}` }), // Add session ID for LiteLLM tracking
+			...(this.options.ulid && {
+				litellm_session_id: `cline-${this.options.ulid}`,
+			}), // Add session ID for LiteLLM tracking
 		} as LiteLlmChatCompletionCreateParams)
 
 		for await (const chunk of stream) {

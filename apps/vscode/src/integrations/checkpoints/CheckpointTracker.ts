@@ -3,7 +3,6 @@ import fs from "fs/promises"
 import { isBinaryFile } from "isbinaryfile"
 import * as path from "path"
 import simpleGit from "simple-git"
-import { telemetryService } from "@/services/telemetry"
 import { Logger } from "@/shared/services/Logger"
 import { GitOperations } from "./CheckpointGitOperations"
 import { getShadowGitPath, hashWorkingDir } from "./CheckpointUtils"
@@ -170,8 +169,6 @@ class CheckpointTracker {
 			await newTracker.sendCheckpointSubscriptionEvent("CHECKPOINT_INIT", false)
 
 			const durationMs = Math.round(performance.now() - startTime)
-			telemetryService.captureCheckpointUsage(taskId, "shadow_git_initialized", durationMs)
-
 			return newTracker
 		} catch (error) {
 			Logger.error("Failed to create CheckpointTracker:", error)
@@ -235,8 +232,6 @@ class CheckpointTracker {
 
 			const durationMs = Math.round(performance.now() - startTime)
 			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_COMMIT", false, commitHash)
-			telemetryService.captureCheckpointUsage(this.taskId, "commit_created", durationMs)
-
 			return commitHash
 		} catch (error) {
 			Logger.error("Failed to create checkpoint:", {
@@ -319,7 +314,6 @@ class CheckpointTracker {
 
 			const durationMs = Math.round(performance.now() - startTime)
 			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_RESTORE", false, commitHash)
-			telemetryService.captureCheckpointUsage(this.taskId, "restored", durationMs)
 		} catch (error) {
 			Logger.error("Failed to reset to checkpoint:", {
 				taskId: this.taskId,
@@ -422,8 +416,6 @@ class CheckpointTracker {
 		}
 
 		const durationMs = Math.round(performance.now() - startTime)
-		telemetryService.captureCheckpointUsage(this.taskId, "diff_generated", durationMs)
-
 		return result
 	}
 
@@ -451,8 +443,6 @@ class CheckpointTracker {
 		const diffSummary = await git.diffSummary([diffRange])
 
 		const durationMs = Math.round(performance.now() - startTime)
-		telemetryService.captureCheckpointUsage(this.taskId, "diff_generated", durationMs)
-
 		return diffSummary.files.length
 	}
 }

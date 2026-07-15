@@ -37,7 +37,10 @@ export const HuaweiCloudMaasProvider = ({ showModelOptions, isPopup, currentMode
 							const modelInfo = huaweiCloudMaasModels[modelId as keyof typeof huaweiCloudMaasModels]
 							handleModeFieldsChange(
 								{
-									apiModelId: { plan: "planModeApiModelId", act: "actModeApiModelId" },
+									apiModelId: {
+										plan: "planModeApiModelId",
+										act: "actModeApiModelId",
+									},
 									huaweiCloudMaaSModelId: {
 										plan: "planModeHuaweiCloudMaasModelId",
 										act: "actModeHuaweiCloudMaasModelId",

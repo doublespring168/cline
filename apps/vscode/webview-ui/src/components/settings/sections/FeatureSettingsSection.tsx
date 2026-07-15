@@ -3,7 +3,6 @@ import { memo, type ReactNode, useCallback } from "react"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import Section from "../Section"
 import SettingsSlider from "../SettingsSlider"
@@ -16,8 +15,6 @@ interface FeatureCheckboxProps {
 	label: string
 	description: ReactNode
 	disabled?: boolean
-	isRemoteLocked?: boolean
-	remoteTooltip?: string
 	isVisible?: boolean
 }
 
@@ -80,13 +77,6 @@ const agentFeatures: FeatureToggle[] = [
 
 const editorFeatures: FeatureToggle[] = [
 	{
-		id: "show-feature-tips",
-		label: "Feature Tips",
-		description: "Show rotating tips during the thinking phase to help you discover Cline features.",
-		stateKey: "showFeatureTips",
-		settingKey: "showFeatureTips",
-	},
-	{
 		id: "background-edit",
 		label: "Background Edit",
 		description: "Allow edits without stealing editor focus",
@@ -99,13 +89,6 @@ const editorFeatures: FeatureToggle[] = [
 		description: "Save progress at key points for easy rollback",
 		stateKey: "enableCheckpointsSetting",
 		settingKey: "enableCheckpointsSetting",
-	},
-	{
-		id: "cline-web-tools",
-		label: "Cline Web Tools",
-		description: "Access web browsing and search capabilities",
-		stateKey: "clineWebToolsEnabled",
-		settingKey: "clineWebToolsEnabled",
 	},
 	{
 		id: "worktrees",
@@ -133,13 +116,6 @@ const experimentalFeatures: FeatureToggle[] = [
 		stateKey: "doubleCheckCompletionEnabled",
 		settingKey: "doubleCheckCompletionEnabled",
 	},
-	{
-		id: "lazy-teammate",
-		label: "Lazy Teammate Mode",
-		description: "Sometimes Cline just isn't feeling it today. For entertainment purposes only.",
-		stateKey: "lazyTeammateModeEnabled",
-		settingKey: "lazyTeammateModeEnabled",
-	},
 ]
 
 const advancedFeatures: FeatureToggle[] = [
@@ -159,9 +135,7 @@ const FeatureRow = memo(
 		label,
 		description,
 		disabled,
-		isRemoteLocked,
 		isVisible = true,
-		remoteTooltip,
 	}: FeatureCheckboxProps) => {
 		if (!isVisible) {
 			return null
@@ -174,12 +148,11 @@ const FeatureRow = memo(
 					<Switch
 						checked={checked}
 						className="shrink-0"
-						disabled={disabled || isRemoteLocked}
+						disabled={disabled}
 						id={label}
 						onCheckedChange={onChange}
 						size="lg"
 					/>
-					{isRemoteLocked && <i className="codicon codicon-lock text-description text-sm" />}
 				</div>
 			</div>
 		)
@@ -187,16 +160,7 @@ const FeatureRow = memo(
 		return (
 			<div className="flex flex-col items-start justify-between gap-4 py-3 w-full">
 				<div className="space-y-0.5 flex-1 w-full">
-					{isRemoteLocked ? (
-						<Tooltip>
-							<TooltipTrigger asChild>{checkbox}</TooltipTrigger>
-							<TooltipContent className="max-w-xs" side="top">
-								{remoteTooltip}
-							</TooltipContent>
-						</Tooltip>
-					) : (
-						checkbox
-					)}
+					{checkbox}
 				</div>
 				<div className="text-xs text-description">{description}</div>
 			</div>
@@ -217,27 +181,26 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		yoloModeToggled,
 		useAutoCondense,
 		subagentsEnabled,
-		clineWebToolsEnabled,
 		worktreesEnabled,
 		focusChainSettings,
 		nativeToolCallSetting,
 		enableParallelToolCalling,
 		backgroundEditEnabled,
 		doubleCheckCompletionEnabled,
-		lazyTeammateModeEnabled,
-		showFeatureTips,
 	} = useExtensionState()
 
 	const handleFocusChainIntervalChange = useCallback(
 		(value: number) => {
-			updateSetting("focusChainSettings", { ...focusChainSettings, remindClineInterval: value })
+			updateSetting("focusChainSettings", {
+				...focusChainSettings,
+				remindClineInterval: value,
+			})
 		},
 		[focusChainSettings],
 	)
 
 	// State lookup for mapped features
 	const featureState: Record<string, boolean | undefined> = {
-		showFeatureTips,
 		enableCheckpointsSetting,
 		strictPlanModeEnabled,
 		hooksEnabled,
@@ -245,12 +208,10 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		focusChainEnabled: focusChainSettings?.enabled,
 		useAutoCondense,
 		subagentsEnabled,
-		clineWebToolsEnabled: clineWebToolsEnabled?.user,
 		worktreesEnabled: worktreesEnabled?.user,
 		enableParallelToolCalling,
 		backgroundEditEnabled,
 		doubleCheckCompletionEnabled,
-		lazyTeammateModeEnabled,
 		yoloModeToggled,
 	}
 
@@ -266,7 +227,10 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 				if (feature.settingKey === "focusChainSettings") {
 					currentValue = focusChainSettings ?? {}
 				}
-				updateSetting(feature.settingKey, { ...currentValue, [feature.nestedKey]: checked })
+				updateSetting(feature.settingKey, {
+					...currentValue,
+					[feature.nestedKey]: checked,
+				})
 			} else {
 				updateSetting(feature.settingKey, checked)
 			}

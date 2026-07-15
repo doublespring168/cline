@@ -68,8 +68,14 @@ const OpenRouterModelPicker: React.FC<OpenRouterModelPickerProps> = ({ isPopup, 
 
 		handleModeFieldsChange(
 			{
-				openRouterModelId: { plan: "planModeOpenRouterModelId", act: "actModeOpenRouterModelId" },
-				openRouterModelInfo: { plan: "planModeOpenRouterModelInfo", act: "actModeOpenRouterModelInfo" },
+				openRouterModelId: {
+					plan: "planModeOpenRouterModelId",
+					act: "actModeOpenRouterModelId",
+				},
+				openRouterModelInfo: {
+					plan: "planModeOpenRouterModelInfo",
+					act: "actModeOpenRouterModelInfo",
+				},
 			},
 			{
 				openRouterModelId: newModelId,
@@ -306,7 +312,12 @@ const OpenRouterModelPicker: React.FC<OpenRouterModelPickerProps> = ({ isPopup, 
 										onMouseEnter={() => setSelectedIndex(index)}
 										ref={(el) => (itemRefs.current[index] = el)}
 										role="option">
-										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+											}}>
 											<span dangerouslySetInnerHTML={{ __html: item.html }} />
 											<StarIcon
 												isFavorite={isFavorite}

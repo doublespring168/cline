@@ -60,8 +60,14 @@ export interface ClineModelPickerProps {
 	showProviderRouting?: boolean
 	initialTab?: "recommended" | "free"
 	defaultModelId?: string
-	modelIdFieldPair?: { plan: keyof ApiConfiguration; act: keyof ApiConfiguration }
-	modelInfoFieldPair?: { plan: keyof ApiConfiguration; act: keyof ApiConfiguration }
+	modelIdFieldPair?: {
+		plan: keyof ApiConfiguration
+		act: keyof ApiConfiguration
+	}
+	modelInfoFieldPair?: {
+		plan: keyof ApiConfiguration
+		act: keyof ApiConfiguration
+	}
 	models?: Record<string, ModelInfo>
 	showFeaturedModels?: boolean
 	// Custom featured tabs shown instead of the
@@ -115,8 +121,14 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 	showProviderRouting,
 	initialTab,
 	defaultModelId,
-	modelIdFieldPair = { plan: "planModeClineModelId", act: "actModeClineModelId" },
-	modelInfoFieldPair = { plan: "planModeClineModelInfo", act: "actModeClineModelInfo" },
+	modelIdFieldPair = {
+		plan: "planModeClineModelId",
+		act: "actModeClineModelId",
+	},
+	modelInfoFieldPair = {
+		plan: "planModeClineModelInfo",
+		act: "actModeClineModelInfo",
+	},
 	models,
 	showFeaturedModels = true,
 	featuredTabs,
@@ -612,7 +624,12 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 										onMouseEnter={() => setSelectedIndex(index)}
 										ref={(el) => (itemRefs.current[index] = el)}
 										role="option">
-										<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+										<div
+											style={{
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+											}}>
 											<span dangerouslySetInnerHTML={{ __html: item.html }} />
 											<StarIcon
 												isFavorite={isFavorite}

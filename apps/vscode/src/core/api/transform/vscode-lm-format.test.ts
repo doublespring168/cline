@@ -165,7 +165,9 @@ describe("convertToAnthropicMessage", () => {
 	it("should convert VSCode assistant messages to Anthropic format", () => {
 		const vsCodeMsg = vscode.LanguageModelChatMessage.Assistant([
 			new vscode.LanguageModelTextPart("Test message"),
-			new vscode.LanguageModelToolCallPart("tool-id", "testTool", { param: "value" }),
+			new vscode.LanguageModelToolCallPart("tool-id", "testTool", {
+				param: "value",
+			}),
 		])
 
 		const result = convertToAnthropicMessage(vsCodeMsg)

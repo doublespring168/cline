@@ -14,7 +14,16 @@ describe("OpenRouterHandler", () => {
 		},
 	})
 
-	const tools = [{ type: "function", function: { name: "read_file", description: "", parameters: { type: "object" } } }] as any
+	const tools = [
+		{
+			type: "function",
+			function: {
+				name: "read_file",
+				description: "",
+				parameters: { type: "object" },
+			},
+		},
+	] as any
 
 	it("should handle usage-only chunks when delta is missing", async () => {
 		const handler = new OpenRouterHandler({

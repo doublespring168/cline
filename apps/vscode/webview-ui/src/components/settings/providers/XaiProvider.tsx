@@ -77,7 +77,10 @@ export const XaiProvider = ({ showModelOptions, isPopup, currentMode }: XaiProvi
 									setReasoningEffortSelected(isChecked)
 									if (!isChecked) {
 										handleModeFieldChange(
-											{ plan: "planModeReasoningEffort", act: "actModeReasoningEffort" },
+											{
+												plan: "planModeReasoningEffort",
+												act: "actModeReasoningEffort",
+											},
 											"",
 											currentMode,
 										)
@@ -97,7 +100,10 @@ export const XaiProvider = ({ showModelOptions, isPopup, currentMode }: XaiProvi
 											id="reasoning-effort-dropdown"
 											onChange={(e: any) => {
 												handleModeFieldChange(
-													{ plan: "planModeReasoningEffort", act: "actModeReasoningEffort" },
+													{
+														plan: "planModeReasoningEffort",
+														act: "actModeReasoningEffort",
+													},
 													e.target.value,
 													currentMode,
 												)

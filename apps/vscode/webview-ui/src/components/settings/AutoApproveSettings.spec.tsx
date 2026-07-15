@@ -74,7 +74,9 @@ describe("AutoApproveSettings", () => {
 
 	it("uses the existing settings API for notifications", () => {
 		render(<AutoApproveSettings />)
-		const notifications = screen.getByRole("checkbox", { name: "Enable notifications" })
+		const notifications = screen.getByRole("checkbox", {
+			name: "Enable notifications",
+		})
 		fireEvent.change(notifications, { target: { checked: true } })
 
 		expect(mocks.updateAutoApproveSettings).toHaveBeenCalledWith(

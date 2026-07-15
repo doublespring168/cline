@@ -30,17 +30,26 @@ describe("new_task tool contextRequirements", () => {
 	})
 
 	it("should be enabled when yoloModeToggled is false", () => {
-		const context: SystemPromptContext = { ...baseContext, yoloModeToggled: false }
+		const context: SystemPromptContext = {
+			...baseContext,
+			yoloModeToggled: false,
+		}
 		expect(genericVariant!.contextRequirements!(context)).to.be.true
 	})
 
 	it("should be enabled when yoloModeToggled is undefined", () => {
-		const context: SystemPromptContext = { ...baseContext, yoloModeToggled: undefined }
+		const context: SystemPromptContext = {
+			...baseContext,
+			yoloModeToggled: undefined,
+		}
 		expect(genericVariant!.contextRequirements!(context)).to.be.true
 	})
 
 	it("should be disabled when yoloModeToggled is true", () => {
-		const context: SystemPromptContext = { ...baseContext, yoloModeToggled: true }
+		const context: SystemPromptContext = {
+			...baseContext,
+			yoloModeToggled: true,
+		}
 		expect(genericVariant!.contextRequirements!(context)).to.be.false
 	})
 
@@ -53,8 +62,14 @@ describe("new_task tool contextRequirements", () => {
 		expect(newTaskTool!.config.contextRequirements).to.be.a("function")
 		expect(askTool!.config.contextRequirements).to.be.a("function")
 
-		const yoloContext: SystemPromptContext = { ...baseContext, yoloModeToggled: true }
-		const normalContext: SystemPromptContext = { ...baseContext, yoloModeToggled: false }
+		const yoloContext: SystemPromptContext = {
+			...baseContext,
+			yoloModeToggled: true,
+		}
+		const normalContext: SystemPromptContext = {
+			...baseContext,
+			yoloModeToggled: false,
+		}
 
 		expect(newTaskTool!.config.contextRequirements!(yoloContext)).to.be.false
 		expect(askTool!.config.contextRequirements!(yoloContext)).to.be.false

@@ -319,7 +319,9 @@ export class AwsBedrockHandler implements ApiHandler {
 			userAgentAppId: `cline#${ExtensionRegistryInfo.version}`,
 			region: this.getRegion(),
 			...auth,
-			...(this.options.awsBedrockEndpoint && { endpoint: this.options.awsBedrockEndpoint }),
+			...(this.options.awsBedrockEndpoint && {
+				endpoint: this.options.awsBedrockEndpoint,
+			}),
 		})
 	}
 

@@ -169,7 +169,13 @@ describe("GeminiHandler", () => {
 		}
 		sinon.stub(handler as any, "ensureClient").returns(fakeClient as any)
 
-		const tools = [{ name: "read_file", description: "read file", parameters: { type: "OBJECT" } }] as any
+		const tools = [
+			{
+				name: "read_file",
+				description: "read file",
+				parameters: { type: "OBJECT" },
+			},
+		] as any
 		const chunks: any[] = []
 		for await (const chunk of handler.createMessage("system", [{ role: "user", content: "hi" }], tools)) {
 			if (chunk.type === "tool_calls") {
@@ -219,7 +225,13 @@ describe("GeminiHandler", () => {
 		}
 		sinon.stub(handler as any, "ensureClient").returns(fakeClient as any)
 
-		const tools = [{ name: "read_file", description: "read file", parameters: { type: "OBJECT" } }] as any
+		const tools = [
+			{
+				name: "read_file",
+				description: "read file",
+				parameters: { type: "OBJECT" },
+			},
+		] as any
 		const chunks: any[] = []
 		for await (const chunk of handler.createMessage("system", [{ role: "user", content: "hi" }], tools)) {
 			if (chunk.type === "tool_calls") {

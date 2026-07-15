@@ -1,9 +1,8 @@
 import type { ToolUse } from "@core/assistant-message"
 import { getWorkspaceBasename, resolveWorkspacePath } from "@core/workspace"
-import { parseSourceCodeForDefinitionsTopLevel } from "@services/tree-sitter"
+import { listCodeDefinitionsTopLevel } from "@services/symbols"
 import { getReadablePath, isLocatedInWorkspace } from "@utils/path"
 import { formatResponse } from "@/core/prompts/responses"
-import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
 import { showNotificationForApproval } from "../../utils"
@@ -53,7 +52,7 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {
 		const relDirPath: string | undefined = block.params.path
 
-		// Extract provider using the proven pattern from ReportBugHandler
+		// Read the active provider for local tool context.
 		const apiConfig = config.services.stateManager.getApiConfiguration()
 		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
 		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
@@ -76,14 +75,14 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 			const pathResult = resolveWorkspacePath(config, relDirPath!, "ListCodeDefinitionNamesToolHandler.execute")
 			;({ absolutePath, displayPath } =
 				typeof pathResult === "string" ? { absolutePath: pathResult, displayPath: relDirPath! } : pathResult)
-			result = await parseSourceCodeForDefinitionsTopLevel(absolutePath, config.services.clineIgnoreController)
+			result = await listCodeDefinitionsTopLevel(absolutePath, config.services.clineIgnoreController)
 		} catch (error) {
 			config.taskState.consecutiveMistakeCount++
 			const errorMessage = error instanceof Error ? error.message : String(error)
 			return formatResponse.toolError(`Error listing code definitions: ${errorMessage}`)
 		}
 
-		// parseSourceCodeForDefinitionsTopLevel returns error strings for file paths
+		// listCodeDefinitionsTopLevel returns error strings for file paths
 		// and non-existent directories rather than throwing. Check for these error
 		// conditions and increment the counter so repeated failures accumulate.
 		const isErrorResult =
@@ -119,16 +118,6 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 			}
 
 			// Capture telemetry
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				undefined,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			const notificationMessage = `Cline wants to analyze code definitions in ${getWorkspaceBasename(absolutePath, "ListCodeDefinitionNamesToolHandler.notification")}`
@@ -140,28 +129,8 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("tool", completeMessage, config)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					undefined,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			}
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				false,
-				true,
-				undefined,
-				block.isNativeToolCall,
-			)
 		}
 
 		// Run PreToolUse hook after approval but before execution

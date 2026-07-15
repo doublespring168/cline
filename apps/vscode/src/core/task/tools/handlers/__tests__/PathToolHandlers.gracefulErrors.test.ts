@@ -100,7 +100,10 @@ function createConfig() {
 			browserSession: {},
 			urlContentFetcher: {},
 			diffViewProvider: {},
-			clineIgnoreController: { validateAccess: () => true, filterPaths: (paths: string[]) => paths },
+			clineIgnoreController: {
+				validateAccess: () => true,
+				filterPaths: (paths: string[]) => paths,
+			},
 			commandPermissionController: {},
 			contextManager: {},
 		},
@@ -144,7 +147,7 @@ describe("ListCodeDefinitionNamesToolHandler.execute – error recovery", () => 
 
 		const result = await handler.execute(config, makeBlock("no-such-dir"))
 
-		// parseSourceCodeForDefinitionsTopLevel returns a descriptive string for
+		// listCodeDefinitionsTopLevel returns a descriptive string for
 		// non-existent directories rather than throwing. The handler now detects
 		// this error condition and increments the counter.
 		assert.equal(typeof result, "string")
@@ -197,15 +200,15 @@ describe("ListCodeDefinitionNamesToolHandler.execute – error recovery", () => 
 		const { config, taskState, validator } = createConfig()
 		const handler = new ListCodeDefinitionNamesToolHandler(validator)
 
-		// Stub parseSourceCodeForDefinitionsTopLevel to throw
-		const treeSitter = await import("@services/tree-sitter")
-		sandbox.stub(treeSitter, "parseSourceCodeForDefinitionsTopLevel").rejects(new Error("tree-sitter crashed"))
+		// Stub the VS Code symbol operation to throw
+		const symbols = await import("@services/symbols")
+		sandbox.stub(symbols, "listCodeDefinitionsTopLevel").rejects(new Error("symbol provider crashed"))
 
 		const result = await handler.execute(config, makeBlock("some-dir"))
 
 		assert.equal(typeof result, "string")
 		assert.ok((result as string).includes("Error"))
-		assert.ok((result as string).includes("tree-sitter crashed"))
+		assert.ok((result as string).includes("symbol provider crashed"))
 		assert.equal(taskState.consecutiveMistakeCount, 1)
 	})
 
@@ -213,8 +216,8 @@ describe("ListCodeDefinitionNamesToolHandler.execute – error recovery", () => 
 		const { config, taskState, validator } = createConfig()
 		const handler = new ListCodeDefinitionNamesToolHandler(validator)
 
-		const treeSitter = await import("@services/tree-sitter")
-		sandbox.stub(treeSitter, "parseSourceCodeForDefinitionsTopLevel").rejects(new Error("boom"))
+		const symbols = await import("@services/symbols")
+		sandbox.stub(symbols, "listCodeDefinitionsTopLevel").rejects(new Error("boom"))
 
 		await handler.execute(config, makeBlock("dir-1"))
 		assert.equal(taskState.consecutiveMistakeCount, 1)
@@ -378,7 +381,9 @@ describe("ListFilesToolHandler.execute – error recovery", () => {
 	it("increments consecutiveMistakeCount on clineignore denial", async () => {
 		const { config, taskState } = createConfig()
 		// Create a validator whose clineIgnoreController blocks all paths
-		const blockingValidator = new ToolValidator({ validateAccess: () => false } as any)
+		const blockingValidator = new ToolValidator({
+			validateAccess: () => false,
+		} as any)
 		const handler = new ListFilesToolHandler(blockingValidator)
 
 		const result = await handler.execute(config, makeBlock("blocked-dir"))
@@ -390,7 +395,9 @@ describe("ListFilesToolHandler.execute – error recovery", () => {
 
 	it("accumulates clineignore denials across repeated calls", async () => {
 		const { config, taskState } = createConfig()
-		const blockingValidator = new ToolValidator({ validateAccess: () => false } as any)
+		const blockingValidator = new ToolValidator({
+			validateAccess: () => false,
+		} as any)
 		const handler = new ListFilesToolHandler(blockingValidator)
 
 		await handler.execute(config, makeBlock("blocked-1"))

@@ -89,7 +89,13 @@ const CompletionOutputActionRow = memo(
 		messageTs: number
 	}) => {
 		return (
-			<div style={{ paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+			<div
+				style={{
+					paddingTop: 10,
+					display: "flex",
+					flexDirection: "column",
+					gap: 8,
+				}}>
 				<SuccessButton
 					disabled={seeNewChangesDisabled}
 					onClick={() => {

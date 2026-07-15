@@ -94,7 +94,6 @@ The following tools are currently registered:
 - `replace_in_file`
 - `search_files`
 - `use_mcp_tool`
-- `web_fetch` (exported as `get_web_fetch_variants`)
 - `write_to_file`
 
 ## Adding New Tools

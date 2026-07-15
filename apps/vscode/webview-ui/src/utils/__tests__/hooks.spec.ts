@@ -7,7 +7,11 @@ describe("useShortcut", () => {
 		const callback = vi.fn()
 		renderHook(() => useShortcut("Meta+Shift+a", callback))
 
-		const event = new KeyboardEvent("keydown", { key: "a", metaKey: true, shiftKey: true })
+		const event = new KeyboardEvent("keydown", {
+			key: "a",
+			metaKey: true,
+			shiftKey: true,
+		})
 		window.dispatchEvent(event)
 
 		expect(callback).toHaveBeenCalled()
@@ -17,7 +21,11 @@ describe("useShortcut", () => {
 		const callback = vi.fn()
 		renderHook(() => useShortcut("Command+Shift+b", callback))
 
-		const event = new KeyboardEvent("keydown", { key: "a", metaKey: true, shiftKey: true })
+		const event = new KeyboardEvent("keydown", {
+			key: "a",
+			metaKey: true,
+			shiftKey: true,
+		})
 		window.dispatchEvent(event)
 
 		expect(callback).not.toHaveBeenCalled()
@@ -31,7 +39,11 @@ describe("useShortcut", () => {
 		document.body.appendChild(input)
 		input.focus()
 
-		const event = new KeyboardEvent("keydown", { key: "a", metaKey: true, shiftKey: true })
+		const event = new KeyboardEvent("keydown", {
+			key: "a",
+			metaKey: true,
+			shiftKey: true,
+		})
 		input.dispatchEvent(event)
 
 		expect(callback).not.toHaveBeenCalled()

@@ -23,7 +23,10 @@ const meta: Meta<typeof TaskHeader> = {
 		cacheWrites: { control: "number", description: "Cache write tokens" },
 		cacheReads: { control: "number", description: "Cache read tokens" },
 		totalCost: { control: "number", description: "Total cost in USD" },
-		doesModelSupportPromptCache: { control: "boolean", description: "Whether model supports prompt caching" },
+		doesModelSupportPromptCache: {
+			control: "boolean",
+			description: "Whether model supports prompt caching",
+		},
 	},
 }
 

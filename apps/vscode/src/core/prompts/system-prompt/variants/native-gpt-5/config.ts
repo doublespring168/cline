@@ -65,8 +65,6 @@ export const config = createVariant(ModelFamily.NATIVE_GPT_5)
 		ClineDefaultTool.LIST_FILES,
 		ClineDefaultTool.LIST_CODE_DEF,
 		ClineDefaultTool.BROWSER,
-		ClineDefaultTool.WEB_FETCH,
-		ClineDefaultTool.WEB_SEARCH,
 		ClineDefaultTool.MCP_ACCESS,
 		ClineDefaultTool.ASK,
 		ClineDefaultTool.ATTEMPT,

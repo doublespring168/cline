@@ -1,7 +1,6 @@
 import { CreateWorktreeRequest, WorktreeResult } from "@shared/proto/cline/worktree"
 import { createWorktree as createWorktreeUtil, listWorktrees } from "@utils/git-worktree"
 import { getWorkspacePath } from "@utils/path"
-import { telemetryService } from "@/services/telemetry"
 import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
@@ -31,12 +30,8 @@ export async function createWorktree(_controller: Controller, request: CreateWor
 		if (result.success) {
 			try {
 				const { worktrees } = await listWorktrees(cwd)
-				telemetryService.captureWorktreeCreated(true, worktrees.length)
-			} catch {
-				telemetryService.captureWorktreeCreated(true)
-			}
+			} catch {}
 		} else {
-			telemetryService.captureWorktreeCreated(false)
 		}
 
 		return WorktreeResult.create({

@@ -151,7 +151,13 @@ const HookMessage = memo(({ message, CommandOutput }: HookMessageProps) => {
 				<span style={{ color: normalColor, fontWeight: "bold" }}>Hook:</span>
 				<span style={{ color: normalColor }}>{metadata.hookName}</span>
 				{metadata.toolName && (
-					<span style={{ color: "var(--vscode-descriptionForeground)", fontSize: "0.9em" }}>({metadata.toolName})</span>
+					<span
+						style={{
+							color: "var(--vscode-descriptionForeground)",
+							fontSize: "0.9em",
+						}}>
+						({metadata.toolName})
+					</span>
 				)}
 			</div>
 			<div

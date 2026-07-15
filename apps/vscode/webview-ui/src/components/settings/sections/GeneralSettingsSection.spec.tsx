@@ -8,7 +8,6 @@ vi.mock("@/context/ExtensionStateContext", () => ({
 	useExtensionState: vi.fn(() => ({
 		chatFontSize: 15,
 		preferredLanguage: "English",
-		remoteConfigSettings: {},
 	})),
 }))
 
@@ -44,7 +43,9 @@ describe("GeneralSettingsSection", () => {
 
 	it("updates chatFontSize when the slider changes", () => {
 		render(<GeneralSettingsSection renderSectionHeader={() => null} />)
-		const slider = screen.getByRole("slider", { name: "Chat interface font size (px)" })
+		const slider = screen.getByRole("slider", {
+			name: "Chat interface font size (px)",
+		})
 		fireEvent.change(slider, { target: { value: "16" } })
 
 		expect(mockUpdateSetting).toHaveBeenCalledWith("chatFontSize", 16)

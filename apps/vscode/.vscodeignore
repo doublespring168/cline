@@ -13,6 +13,9 @@ src/**
 .gitignore
 .yarnrc
 esbuild.js
+esbuild.mjs
+biome.jsonc
+.env.example
 vsc-extension-quickstart.md
 tsconfig*.json
 **/.eslintrc.json
@@ -42,6 +45,13 @@ README.marketplace.md
 .github/
 eslint-rules/
 old_docs/
+walkthrough/
+scripts/
+proto/
+dist/proto/
+assets/icon-bk/
+assets/icons/social/
+assets/icons/.DS_Store
 evals/
 .codespellrc
 .mocharc.json
@@ -56,6 +66,8 @@ webview-ui/README.md
 webview-ui/package.json
 webview-ui/package-lock.json
 webview-ui/node_modules/**
+webview-ui/.storybook/**
+webview-ui/tailwind.config.mjs
 **/.gitignore
 
 # Ignore docs

@@ -242,7 +242,9 @@ describe("Hook Management", () => {
 
 			// Create a hook first
 			const hookPath = path.join(globalHooksDir, hookFileName("TaskStart"))
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o755 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o755,
+			})
 
 			const request = DeleteHookRequest.create({
 				hookName: "TaskStart",
@@ -284,7 +286,9 @@ describe("Hook Management", () => {
 
 			// Create a workspace hook first
 			const hookPath = path.join(workspaceHooksDir, hookFileName("TaskResume"))
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o755 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o755,
+			})
 
 			const request = DeleteHookRequest.create({
 				hookName: "TaskResume",
@@ -311,7 +315,9 @@ describe("Hook Management", () => {
 
 			// Create a non-executable hook
 			const hookPath = path.join(globalHooksDir, "TaskStart")
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o644 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o644,
+			})
 
 			const request = ToggleHookRequest.create({
 				hookName: "TaskStart",
@@ -337,7 +343,9 @@ describe("Hook Management", () => {
 
 			// Create an executable hook
 			const hookPath = path.join(globalHooksDir, "TaskResume")
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o755 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o755,
+			})
 
 			const request = ToggleHookRequest.create({
 				hookName: "TaskResume",
@@ -362,7 +370,9 @@ describe("Hook Management", () => {
 
 			// Create a workspace hook
 			const hookPath = path.join(workspaceHooksDir, "UserPromptSubmit")
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o644 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o644,
+			})
 
 			const request = ToggleHookRequest.create({
 				hookName: "UserPromptSubmit",
@@ -381,7 +391,9 @@ describe("Hook Management", () => {
 			this.timeout(5000)
 
 			const hookPath = path.join(globalHooksDir, hookFileName("TaskComplete"))
-			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", { mode: 0o644 })
+			await fs.writeFile(hookPath, "#!/usr/bin/env node\nconsole.log('test')", {
+				mode: 0o644,
+			})
 
 			const request = ToggleHookRequest.create({
 				hookName: "TaskComplete",
@@ -524,7 +536,10 @@ describe("Hook Management", () => {
 			this.timeout(5000)
 
 			// Remove workspace hooks directory
-			await fs.rm(path.dirname(workspaceHooksDir), { recursive: true, force: true })
+			await fs.rm(path.dirname(workspaceHooksDir), {
+				recursive: true,
+				force: true,
+			})
 
 			const result = await refreshHooks(mockController, undefined)
 

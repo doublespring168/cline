@@ -427,22 +427,34 @@ describe("Diagnostics Tests", () => {
 						{
 							severity: DiagnosticSeverity.DIAGNOSTIC_ERROR,
 							message: "Error",
-							range: { start: { line: 0, character: 0 }, end: { line: 0, character: 10 } },
+							range: {
+								start: { line: 0, character: 0 },
+								end: { line: 0, character: 10 },
+							},
 						},
 						{
 							severity: DiagnosticSeverity.DIAGNOSTIC_WARNING,
 							message: "Warning",
-							range: { start: { line: 1, character: 0 }, end: { line: 1, character: 10 } },
+							range: {
+								start: { line: 1, character: 0 },
+								end: { line: 1, character: 10 },
+							},
 						},
 						{
 							severity: DiagnosticSeverity.DIAGNOSTIC_INFORMATION,
 							message: "Information",
-							range: { start: { line: 2, character: 0 }, end: { line: 2, character: 10 } },
+							range: {
+								start: { line: 2, character: 0 },
+								end: { line: 2, character: 10 },
+							},
 						},
 						{
 							severity: DiagnosticSeverity.DIAGNOSTIC_HINT,
 							message: "Hint",
-							range: { start: { line: 3, character: 0 }, end: { line: 3, character: 10 } },
+							range: {
+								start: { line: 3, character: 0 },
+								end: { line: 3, character: 10 },
+							},
 						},
 					],
 				},

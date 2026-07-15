@@ -9,7 +9,6 @@ import { HostProvider } from "@/hosts/host-provider"
 import { McpDisplayMode } from "@/shared/McpDisplayMode"
 import { ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
-import { telemetryService } from "../../../services/telemetry"
 import { BrowserSettings as SharedBrowserSettings } from "../../../shared/BrowserSettings"
 import { Controller } from ".."
 
@@ -131,23 +130,11 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			const isEnabled = !!request.hooksEnabled
 			controller.stateManager.setGlobalState("hooksEnabled", isEnabled)
 			if (controller.task && wasEnabled !== isEnabled) {
-				telemetryService.captureFeatureToggle(controller.task.ulid, "hooks", isEnabled, controller.task.api.getModel().id)
 			}
 		}
 		// Update yolo mode setting
 		if (request.yoloModeToggled !== undefined) {
-			if (controller.task) {
-				telemetryService.captureYoloModeToggle(controller.task.ulid, request.yoloModeToggled)
-			}
 			controller.stateManager.setGlobalState("yoloModeToggled", request.yoloModeToggled)
-		}
-
-		// Update cline web tools setting
-		if (request.clineWebToolsEnabled !== undefined) {
-			if (controller.task) {
-				telemetryService.captureClineWebToolsToggle(controller.task.ulid, request.clineWebToolsEnabled)
-			}
-			controller.stateManager.setGlobalState("clineWebToolsEnabled", request.clineWebToolsEnabled)
 		}
 
 		// Update worktrees setting
@@ -157,46 +144,21 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 
 		// Update subagents setting
 		if (request.subagentsEnabled !== undefined) {
-			const wasEnabled = controller.stateManager.getGlobalSettingsKey("subagentsEnabled") ?? false
-			const isEnabled = !!request.subagentsEnabled
-			controller.stateManager.setGlobalState("subagentsEnabled", isEnabled)
-
-			// Capture telemetry when setting changes
-			if (wasEnabled !== isEnabled) {
-				telemetryService.captureSubagentToggle(isEnabled)
-			}
+			controller.stateManager.setGlobalState("subagentsEnabled", !!request.subagentsEnabled)
 		}
 
 		// Update auto-condense setting
 		if (request.useAutoCondense !== undefined) {
-			if (controller.task) {
-				telemetryService.captureAutoCondenseToggle(
-					controller.task.ulid,
-					request.useAutoCondense,
-					controller.task.api.getModel().id,
-				)
-			}
 			controller.stateManager.setGlobalState("useAutoCondense", request.useAutoCondense)
 		}
 
 		// Update focus chain settings
 		if (request.focusChainSettings !== undefined) {
-			{
-				const currentSettings = controller.stateManager.getGlobalSettingsKey("focusChainSettings")
-				const wasEnabled = currentSettings?.enabled ?? false
-				const isEnabled = request.focusChainSettings.enabled
-
-				const focusChainSettings = {
-					enabled: isEnabled,
-					remindClineInterval: request.focusChainSettings.remindClineInterval,
-				}
-				controller.stateManager.setGlobalState("focusChainSettings", focusChainSettings)
-
-				// Capture telemetry when setting changes
-				if (wasEnabled !== isEnabled) {
-					telemetryService.captureFocusChainToggle(isEnabled)
-				}
+			const focusChainSettings = {
+				enabled: request.focusChainSettings.enabled,
+				remindClineInterval: request.focusChainSettings.remindClineInterval,
 			}
+			controller.stateManager.setGlobalState("focusChainSettings", focusChainSettings)
 		}
 
 		// Update custom prompt choice
@@ -258,7 +220,7 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			// Update the terminal manager of the current task if it exists
 			if (controller.task) {
 				// Call the updated setDefaultTerminalProfile method that returns closed terminal info
-					// Terminal profile updates report which terminals were closed or remain busy.
+				// Terminal profile updates report which terminals were closed or remain busy.
 				const result = controller.task.terminalManager.setDefaultTerminalProfile(profileId) as any
 				closedCount = result.closedCount
 				busyTerminalsCount = result.busyTerminals?.length ?? 0
@@ -296,12 +258,6 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 		if (request.nativeToolCallEnabled !== undefined) {
 			controller.stateManager.setGlobalState("nativeToolCallEnabled", !!request.nativeToolCallEnabled)
 			if (controller.task) {
-				telemetryService.captureFeatureToggle(
-					controller.task.ulid,
-					"native-tool-call",
-					request.nativeToolCallEnabled,
-					controller.task.api.getModel().id,
-				)
 			}
 		}
 
@@ -313,13 +269,6 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			controller.stateManager.setGlobalState("doubleCheckCompletionEnabled", request.doubleCheckCompletionEnabled)
 		}
 
-		if (request.lazyTeammateModeEnabled !== undefined) {
-			controller.stateManager.setGlobalState("lazyTeammateModeEnabled", request.lazyTeammateModeEnabled)
-		}
-
-		if (request.showFeatureTips !== undefined) {
-			controller.stateManager.setGlobalState("showFeatureTips", request.showFeatureTips)
-		}
 
 		// Post updated state to webview
 		await controller.postStateToWebview()

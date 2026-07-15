@@ -52,7 +52,11 @@ describe("parseYamlFrontmatter", () => {
 		const result = parseYamlFrontmatter(input)
 		expect(result.hadFrontmatter).to.equal(true)
 		expect(result.parseError).to.equal(undefined)
-		expect(result.data).to.deep.equal({ count: 42, enabled: true, tags: ["a", "b"] })
+		expect(result.data).to.deep.equal({
+			count: 42,
+			enabled: true,
+			tags: ["a", "b"],
+		})
 		expect(result.body.trim()).to.equal("Content")
 	})
 })

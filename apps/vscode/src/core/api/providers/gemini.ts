@@ -11,7 +11,6 @@ import {
 import { GeminiModelId, geminiDefaultModelId, geminiModels, getVertexCustomModelInfo, ModelInfo } from "@shared/api"
 import { GEMINI_FLASH_MAX_OUTPUT_TOKENS, isGeminiFlashModel } from "@utils/model-utils"
 import { buildExternalBasicHeaders } from "@/services/EnvUtils"
-import { telemetryService } from "@/services/telemetry"
 import { ClineStorageMessage } from "@/shared/messages/content"
 import { Logger } from "@/shared/services/Logger"
 import { ApiHandler, CommonApiHandlerOptions } from "../"
@@ -195,12 +194,7 @@ export class GeminiHandler implements ApiHandler {
 		}
 
 		// Generate content using the configured parameters
-		const sdkCallStartTime = Date.now()
 		let responseId: string | undefined
-		let sdkFirstChunkTime: number | undefined
-		let ttftSdkMs: number | undefined
-		let apiSuccess = false
-		let apiError: string | undefined
 		let promptTokens = 0
 		let outputTokens = 0
 		let cacheReadTokens = 0
@@ -227,14 +221,8 @@ export class GeminiHandler implements ApiHandler {
 				},
 			})
 
-			let isFirstSdkChunk = true
 			for await (const chunk of result) {
 				const responseKey = chunk.responseId || "gemini-response"
-				if (isFirstSdkChunk) {
-					sdkFirstChunkTime = Date.now()
-					ttftSdkMs = sdkFirstChunkTime - sdkCallStartTime
-					isFirstSdkChunk = false
-				}
 
 				// Handle thinking content from Gemini's response
 				const parts = chunk?.candidates?.[0]?.content?.parts || []
@@ -292,8 +280,6 @@ export class GeminiHandler implements ApiHandler {
 					cacheReadTokens = lastUsageMetadata.cachedContentTokenCount ?? cacheReadTokens
 				}
 			}
-			apiSuccess = true
-
 			if (lastUsageMetadata) {
 				const totalCost = this.calculateCost({
 					info,
@@ -314,12 +300,8 @@ export class GeminiHandler implements ApiHandler {
 				}
 			}
 		} catch (error) {
-			apiSuccess = false
 			// Let the error propagate to be handled by withRetry or Task.ts
-			// Telemetry will be sent in the finally block.
 			if (error instanceof Error) {
-				apiError = error.message
-
 				if (error instanceof ApiError) {
 					if (error.status === 429) {
 						// The API includes more details in the message
@@ -335,7 +317,7 @@ export class GeminiHandler implements ApiHandler {
 								)
 
 								const detailedError = new RetriableError(
-									apiError,
+									error.message,
 									this.parseRetryDelay(detail?.retryDelay) || undefined,
 									{
 										cause: error,
@@ -345,45 +327,19 @@ export class GeminiHandler implements ApiHandler {
 							}
 						}
 
-						throw new RetriableError(apiError, undefined, { cause: error })
+						throw new RetriableError(error.message, undefined, { cause: error })
 					}
 
 					// Fallback in case Gemini throws a rate limit error without a 429 status code
 					// https://github.com/cline/cline/pull/5205#discussion_r2311761559
 					const isRateLimit = rateLimitPatterns.some((pattern) => pattern.test(error.message))
 					if (isRateLimit) {
-						throw new RetriableError(apiError, undefined, { cause: error })
+						throw new RetriableError(error.message, undefined, { cause: error })
 					}
 				}
-			} else {
-				apiError = String(error)
 			}
 
 			throw error
-		} finally {
-			const sdkCallEndTime = Date.now()
-			const totalDurationSdkMs = sdkCallEndTime - sdkCallStartTime
-			const cacheHit = cacheReadTokens > 0
-			const cacheHitPercentage = promptTokens > 0 ? (cacheReadTokens / promptTokens) * 100 : undefined
-			const throughputTokensPerSecSdk =
-				totalDurationSdkMs > 0 && outputTokens > 0 ? outputTokens / (totalDurationSdkMs / 1000) : undefined
-
-			if (this.options.ulid) {
-				telemetryService.captureGeminiApiPerformance(this.options.ulid, modelId, {
-					ttftSec: ttftSdkMs !== undefined ? ttftSdkMs / 1000 : undefined,
-					totalDurationSec: totalDurationSdkMs / 1000,
-					promptTokens,
-					outputTokens,
-					cacheReadTokens,
-					cacheHit,
-					cacheHitPercentage,
-					apiSuccess,
-					apiError,
-					throughputTokensPerSec: throughputTokensPerSecSdk,
-				})
-			} else {
-				Logger.warn("GeminiHandler: ulid not available for telemetry in createMessage.")
-			}
 		}
 	}
 
@@ -449,13 +405,25 @@ export class GeminiHandler implements ApiHandler {
 
 		// Create the trace object for debugging
 		const trace: Record<string, { price: number; tokens: number; cost: number }> = {
-			input: { price: inputPrice, tokens: uncachedInputTokens, cost: inputTokensCost },
-			output: { price: outputPrice, tokens: outputTokens, cost: responseTokensCost },
+			input: {
+				price: inputPrice,
+				tokens: uncachedInputTokens,
+				cost: inputTokensCost,
+			},
+			output: {
+				price: outputPrice,
+				tokens: outputTokens,
+				cost: responseTokensCost,
+			},
 		}
 
 		// Only include cache read costs in the trace (cache write costs are tracked separately)
 		if ((cacheReadTokens ?? 0) > 0) {
-			trace.cacheRead = { price: cacheReadsPrice, tokens: cacheReadTokens ?? 0, cost: cacheReadCost }
+			trace.cacheRead = {
+				price: cacheReadsPrice,
+				tokens: cacheReadTokens ?? 0,
+				cost: cacheReadCost,
+			}
 		}
 
 		// Logger.log(`[GeminiHandler] calculateCost -> ${totalCost}`, trace)
@@ -472,7 +440,10 @@ export class GeminiHandler implements ApiHandler {
 			return { id, info: geminiModels[id] }
 		}
 		if (modelId && this.options.isVertex) {
-			return { id: modelId, info: getVertexCustomModelInfo(this.options.vertexCustomModelInfo) }
+			return {
+				id: modelId,
+				info: getVertexCustomModelInfo(this.options.vertexCustomModelInfo),
+			}
 		}
 		return {
 			id: geminiDefaultModelId,

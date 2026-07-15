@@ -16,7 +16,15 @@ const OpenRouterBalanceDisplay = ({ apiKey }: { apiKey: string }) => {
 	const { data: keyInfo, isLoading, error } = useOpenRouterKeyInfo(apiKey)
 
 	if (isLoading) {
-		return <span style={{ fontSize: "12px", color: "var(--vscode-descriptionForeground)" }}>Loading...</span>
+		return (
+			<span
+				style={{
+					fontSize: "12px",
+					color: "var(--vscode-descriptionForeground)",
+				}}>
+				Loading...
+			</span>
+		)
 	}
 
 	if (error || !keyInfo || keyInfo.limit === null) {
@@ -70,7 +78,13 @@ export const OpenRouterProvider = ({ showModelOptions, isPopup, currentMode }: O
 					placeholder="Enter API Key..."
 					style={{ width: "100%" }}
 					type="password">
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+							width: "100%",
+						}}>
 						<span style={{ fontWeight: 500 }}>OpenRouter API Key</span>
 						{apiConfiguration?.openRouterApiKey && (
 							<OpenRouterBalanceDisplay apiKey={apiConfiguration.openRouterApiKey} />

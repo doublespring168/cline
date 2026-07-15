@@ -205,7 +205,11 @@ export class PatchParser {
 			lines.push(line.substring(1))
 		}
 
-		this.patch.actions[path] = { type: PatchActionType.ADD, newFile: lines.join("\n"), chunks: [] }
+		this.patch.actions[path] = {
+			type: PatchActionType.ADD,
+			newFile: lines.join("\n"),
+			chunks: [],
+		}
 	}
 }
 

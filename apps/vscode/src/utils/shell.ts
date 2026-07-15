@@ -54,7 +54,10 @@ function getWindowsTerminalConfig() {
 		const profiles = config.get<WindowsTerminalProfiles>("profiles.windows") || {}
 		return { defaultProfileName, profiles }
 	} catch {
-		return { defaultProfileName: null, profiles: {} as WindowsTerminalProfiles }
+		return {
+			defaultProfileName: null,
+			profiles: {} as WindowsTerminalProfiles,
+		}
 	}
 }
 

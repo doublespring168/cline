@@ -20,8 +20,14 @@ const HOOK_TYPES = [
 	{ name: "TaskComplete", description: "Executes when a task completes" },
 	{ name: "PreToolUse", description: "Executes before any tool is used" },
 	{ name: "PostToolUse", description: "Executes after any tool is used" },
-	{ name: "UserPromptSubmit", description: "Executes when user submits a prompt" },
-	{ name: "PreCompact", description: "Executes before conversation compaction" },
+	{
+		name: "UserPromptSubmit",
+		description: "Executes when user submits a prompt",
+	},
+	{
+		name: "PreCompact",
+		description: "Executes before conversation compaction",
+	},
 ]
 
 const NewRuleRow: React.FC<NewRuleRowProps> = ({ isGlobal, ruleType, existingHooks = [], workspaceName }) => {

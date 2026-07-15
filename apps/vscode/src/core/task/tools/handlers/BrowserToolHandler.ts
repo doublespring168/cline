@@ -88,7 +88,9 @@ export class BrowserToolHandler implements IFullyManagedTool {
 				config.taskState.consecutiveMistakeCount = 0
 
 				// Handle approval flow for launch using callbacks
-				const autoApprover = config.autoApprover || { shouldAutoApproveTool: () => false }
+				const autoApprover = config.autoApprover || {
+					shouldAutoApproveTool: () => false,
+				}
 				if (autoApprover.shouldAutoApproveTool(block.name)) {
 					await config.callbacks.removeLastPartialMessageIfExistsWithType("ask", "browser_action_launch")
 					await config.callbacks.say("browser_action_launch", url, undefined, undefined, false)

@@ -168,7 +168,9 @@ function SubagentPromptText({ prompt, isExpanded, onShowMore }: SubagentPromptTe
 					<span
 						aria-hidden="true"
 						className="pointer-events-none absolute inset-y-0 -left-[6px] w-[6px]"
-						style={{ background: "linear-gradient(to left, var(--vscode-editor-background), transparent)" }}
+						style={{
+							background: "linear-gradient(to left, var(--vscode-editor-background), transparent)",
+						}}
 					/>
 					Show more
 				</button>

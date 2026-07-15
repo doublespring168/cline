@@ -51,11 +51,7 @@ export async function orchestrateCommandExecution(
 	callbacks: CommandExecutorCallbacks,
 	options: OrchestrationOptions,
 ): Promise<OrchestrationResult> {
-	const {
-		timeoutSeconds,
-		showShellIntegrationSuggestion,
-		suppressUserInteraction = false,
-	} = options
+	const { timeoutSeconds, showShellIntegrationSuggestion, suppressUserInteraction = false } = options
 
 	const say = async (
 		type: Parameters<CommandExecutorCallbacks["say"]>[0],
@@ -263,7 +259,9 @@ export async function orchestrateCommandExecution(
 
 		// Set up file logging using ClineTempManager for proper cleanup
 		largeOutputLogPath = ClineTempManager.createTempFilePath("large-output")
-		largeOutputLogStream = fs.createWriteStream(largeOutputLogPath, { flags: "a" })
+		largeOutputLogStream = fs.createWriteStream(largeOutputLogPath, {
+			flags: "a",
+		})
 
 		// Write all existing lines to file in a single batch to reduce I/O overhead
 		if (outputLines.length > 0) {

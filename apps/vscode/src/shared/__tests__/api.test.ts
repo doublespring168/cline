@@ -1,8 +1,5 @@
 import { expect } from "chai"
-import {
-	internationalZAiModels,
-	mainlandZAiModels,
-} from "../api"
+import { internationalZAiModels, mainlandZAiModels } from "../api"
 
 describe("Z AI model info", () => {
 	it("includes GLM 5.2 for both direct Z AI entrypoints", () => {

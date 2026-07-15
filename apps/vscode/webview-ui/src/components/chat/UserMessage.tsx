@@ -95,7 +95,7 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 				backgroundColor: isEditing ? "unset" : "rgba(207, 236, 207, 0.7)",
 				whiteSpace: "pre-line",
 				wordWrap: "break-word",
-				borderRadius:"12px",
+				borderRadius: "12px",
 			}}>
 			{isEditing ? (
 				<>
@@ -124,7 +124,13 @@ const UserMessage: React.FC<UserMessageProps> = ({ text, images, files, messageT
 						}}
 						value={editedText}
 					/>
-					<div style={{ display: "flex", gap: "8px", marginTop: "8px", justifyContent: "flex-end" }}>
+					<div
+						style={{
+							display: "flex",
+							gap: "8px",
+							marginTop: "8px",
+							justifyContent: "flex-end",
+						}}>
 						{!checkpointManagerErrorMessage && (
 							<RestoreButton
 								isPrimary={false}

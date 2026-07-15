@@ -6,7 +6,6 @@ import { formatResponse } from "@/core/prompts/responses"
 import { parseWorkspaceInlinePath } from "@/core/workspace/utils/parseWorkspaceInlinePath"
 import { WorkspacePathAdapter } from "@/core/workspace/WorkspacePathAdapter"
 import { resolveWorkspacePath } from "@/core/workspace/WorkspaceResolver"
-import { telemetryService } from "@/services/telemetry"
 import { ClineSayTool } from "@/shared/ExtensionMessage"
 import { Logger } from "@/shared/services/Logger"
 import { ClineDefaultTool } from "@/shared/tools"
@@ -37,7 +36,11 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 		parsedPath: string,
 		workspaceHint: string | undefined,
 		originalPath: string,
-	): Array<{ absolutePath: string; workspaceName?: string; workspaceRoot?: string }> {
+	): Array<{
+		absolutePath: string
+		workspaceName?: string
+		workspaceRoot?: string
+	}> {
 		if (config.isMultiRootEnabled && config.workspaceManager) {
 			const adapter = new WorkspacePathAdapter({
 				cwd: config.cwd,
@@ -50,7 +53,13 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 				const absolutePath = adapter.resolvePath(parsedPath, workspaceHint)
 				const workspaceRoots = adapter.getWorkspaceRoots()
 				const root = workspaceRoots.find((r) => r.name === workspaceHint)
-				return [{ absolutePath, workspaceName: workspaceHint, workspaceRoot: root?.path }]
+				return [
+					{
+						absolutePath,
+						workspaceName: workspaceHint,
+						workspaceRoot: root?.path,
+					},
+				]
 			}
 			// As a fallback, perform the search across all available workspaces.
 			// Typically, models should provide explicit hints to target specific workspaces for searching.
@@ -264,15 +273,6 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 				: searchPaths.length > 1
 					? "cross_workspace_search"
 					: "fallback_to_primary"
-			telemetryService.captureWorkspacePathResolved(
-				config.ulid,
-				"SearchFilesToolHandler",
-				resolutionType,
-				workspaceHint ? "workspace_name" : undefined,
-				searchPaths.length > 0, // resolution success = found paths to search
-				undefined, // TODO: could calculate primary workspace index
-				true,
-			)
 		}
 
 		// Execute searches in all relevant workspaces in parallel
@@ -302,15 +302,6 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 		if (config.isMultiRootEnabled && config.workspaceManager) {
 			const searchType = workspaceHint ? "targeted" : searchPaths.length > 1 ? "cross_workspace" : "primary_only"
 			const resultsFound = searchResults.some((result) => result.resultCount > 0)
-
-			telemetryService.captureWorkspaceSearchPattern(
-				config.ulid,
-				searchType,
-				searchPaths.length,
-				!!workspaceHint,
-				resultsFound,
-				searchDurationMs,
-			)
 		}
 
 		const sharedMessageProps = {
@@ -334,16 +325,6 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 			}
 
 			// Capture telemetry
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			const notificationMessage = `Cline wants to search files for ${regex}`
@@ -355,28 +336,8 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback("tool", completeMessage, config)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			}
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				false,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		}
 
 		// Run PreToolUse hook after approval but before execution

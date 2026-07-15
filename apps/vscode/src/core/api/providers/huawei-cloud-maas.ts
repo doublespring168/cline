@@ -44,7 +44,10 @@ export class HuaweiCloudMaaSHandler implements ApiHandler {
 		const huaweiCloudMaasModelId = this.options.huaweiCloudMaasModelId
 		const huaweiCloudMaasModelInfo = this.options.huaweiCloudMaasModelInfo
 		if (huaweiCloudMaasModelId && huaweiCloudMaasModelInfo) {
-			return { id: huaweiCloudMaasModelId as HuaweiCloudMaasModelId, info: huaweiCloudMaasModelInfo }
+			return {
+				id: huaweiCloudMaasModelId as HuaweiCloudMaasModelId,
+				info: huaweiCloudMaasModelInfo,
+			}
 		}
 
 		// Second priority: huaweiCloudMaasModelId with static model info

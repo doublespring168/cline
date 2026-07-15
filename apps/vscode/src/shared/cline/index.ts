@@ -1,6 +1,4 @@
 export * from "./context"
-export * from "./onboarding"
-
 export enum ClineClient {
 	VSCode = "VSCode Extension",
 }

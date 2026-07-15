@@ -8,7 +8,6 @@ import {
 	isSettingsKey,
 	type LocalState,
 	type LocalStateKey,
-	type RemoteConfigFields,
 	type SecretKey,
 	SecretKeys,
 	type Secrets,
@@ -77,15 +76,36 @@ export class StateManager {
 	// These are for dynamic providers that fetch models from APIs
 	private modelInfoCache: {
 		clineModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		openRouterModels: { data: Record<string, ModelInfo>; timestamp: number } | null
+		openRouterModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
 		groqModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		basetenModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		huggingFaceModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		requestyModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		huaweiCloudMaasModels: { data: Record<string, ModelInfo>; timestamp: number } | null
+		basetenModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
+		huggingFaceModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
+		requestyModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
+		huaweiCloudMaasModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
 		hicapModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		aihubmixModels: { data: Record<string, ModelInfo>; timestamp: number } | null
-		liteLlmModels: { data: Record<string, ModelInfo>; timestamp: number } | null
+		aihubmixModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
+		liteLlmModels: {
+			data: Record<string, ModelInfo>
+			timestamp: number
+		} | null
 		vercelModels: { data: Record<string, ModelInfo>; timestamp: number } | null
 	} = {
 		clineModels: null,
@@ -387,18 +407,6 @@ export class StateManager {
 	}
 
 	/**
-	 * Compatibility accessor for code paths that previously supported organization
-	 * remote configuration. Remote configuration is disabled, so it is always empty.
-	 */
-	getRemoteConfigSettings(): Partial<RemoteConfigFields> {
-		if (!this.isInitialized) {
-			throw new Error(STATE_MANAGER_NOT_INITIALIZED)
-		}
-
-		return {}
-	}
-
-	/**
 	 * Set models cache for a specific provider (in-memory only, not persisted)
 	 */
 	setModelsCache(
@@ -571,7 +579,10 @@ export class StateManager {
 
 				return acc
 			},
-			{ settingsUpdates: {} as Partial<Settings>, secretsUpdates: {} as Partial<Secrets> },
+			{
+				settingsUpdates: {} as Partial<Settings>,
+				secretsUpdates: {} as Partial<Secrets>,
+			},
 		)
 
 		// Batch update settings (stored in global state)
@@ -862,8 +873,8 @@ export class StateManager {
 		const secrets = Object.fromEntries(SecretKeys.map((key) => [key, this.getSecret(key)])) as Secrets
 
 		// Preserve legacy fallback behavior for LiteLLM API key:
-		// if a remoteLiteLlmApiKey is set (via remote config), it should
-		// take precedence over the local liteLlmApiKey.
+		// A legacy managed LiteLLM key, when present in an existing installation,
+		// continues to take precedence over the local LiteLLM key.
 		const remoteLiteLlmApiKey = this.secretsCache["remoteLiteLlmApiKey"]
 		if (remoteLiteLlmApiKey !== undefined && remoteLiteLlmApiKey !== null && remoteLiteLlmApiKey !== "") {
 			secrets.liteLlmApiKey = remoteLiteLlmApiKey

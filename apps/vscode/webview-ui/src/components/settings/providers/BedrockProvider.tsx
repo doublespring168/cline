@@ -13,7 +13,7 @@ import {
 import Fuse from "fuse.js"
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react"
 import styled from "styled-components"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { DebouncedTextField } from "../common/DebouncedTextField"
 import { ModelInfoView } from "../common/ModelInfoView"
@@ -50,7 +50,7 @@ interface BedrockProviderProps {
 }
 
 export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: BedrockProviderProps) => {
-	const { apiConfiguration, remoteConfigSettings } = useExtensionState()
+	const { apiConfiguration } = useExtensionState()
 	const { handleFieldChange, handleModeFieldChange, handleModeFieldsChange } = useApiConfigurationHandlers()
 
 	const { selectedModelId, selectedModelInfo } = normalizeApiConfiguration(apiConfiguration, currentMode)
@@ -226,24 +226,17 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 			)}
 
 			<Tooltip>
-				<TooltipContent hidden={remoteConfigSettings?.awsRegion === undefined}>
-					This setting is managed by your organization's remote configuration
-				</TooltipContent>
 				<TooltipTrigger>
 					<DropdownContainer className="dropdown-container mb-2.5" zIndex={DROPDOWN_Z_INDEX - 1}>
 						<div className="flex items-center gap-2 mb-1">
 							<label htmlFor="aws-region">
 								<span className="font-medium">AWS Region</span>
 							</label>
-							{remoteConfigSettings?.awsRegion !== undefined && (
-								<i className="codicon codicon-lock text-description text-sm flex items-center" />
-							)}
 						</div>
 						<RegionDropdownWrapper ref={dropdownRef}>
 							<VSCodeTextField
 								aria-autocomplete="list"
 								aria-expanded={isDropdownVisible}
-								disabled={remoteConfigSettings?.awsRegion !== undefined}
 								id="aws-region"
 								onBlur={() => {
 									if (!isSelectingRef.current && searchTerm !== currentRegion) {
@@ -319,14 +312,10 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 
 			<div className="flex flex-col">
 				<Tooltip>
-					<TooltipContent hidden={remoteConfigSettings?.awsBedrockEndpoint === undefined}>
-						This setting is managed by your organization's remote configuration
-					</TooltipContent>
 					<TooltipTrigger>
 						<div className="flex items-center gap-2">
 							<VSCodeCheckbox
 								checked={awsEndpointSelected}
-								disabled={remoteConfigSettings?.awsBedrockEndpoint !== undefined}
 								onChange={(e: any) => {
 									const isChecked = e.target.checked === true
 									setAwsEndpointSelected(isChecked)
@@ -336,15 +325,11 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 								}}>
 								Use custom VPC endpoint
 							</VSCodeCheckbox>
-							{remoteConfigSettings?.awsBedrockEndpoint !== undefined && (
-								<i className="codicon codicon-lock text-description text-sm flex items-center" />
-							)}
 						</div>
 
 						{awsEndpointSelected && (
 							<DebouncedTextField
 								className="mt-0.5 mb-1 text-sm text-description"
-								disabled={remoteConfigSettings?.awsBedrockEndpoint !== undefined}
 								initialValue={apiConfiguration?.awsBedrockEndpoint || ""}
 								onChange={(value) => handleFieldChange("awsBedrockEndpoint", value)}
 								placeholder="Enter VPC Endpoint URL (optional)"
@@ -355,14 +340,10 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 				</Tooltip>
 
 				<Tooltip>
-					<TooltipContent hidden={remoteConfigSettings?.awsUseCrossRegionInference === undefined}>
-						This setting is managed by your organization's remote configuration
-					</TooltipContent>
 					<TooltipTrigger>
 						<div className="flex items-center gap-2">
 							<VSCodeCheckbox
 								checked={apiConfiguration?.awsUseCrossRegionInference || false}
-								disabled={remoteConfigSettings?.awsUseCrossRegionInference !== undefined}
 								onChange={(e: any) => {
 									const isChecked = e.target.checked === true
 
@@ -370,32 +351,22 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 								}}>
 								Use cross-region inference
 							</VSCodeCheckbox>
-							{remoteConfigSettings?.awsUseCrossRegionInference !== undefined && (
-								<i className="codicon codicon-lock text-description text-sm" />
-							)}
 						</div>
 					</TooltipTrigger>
 				</Tooltip>
 
 				{apiConfiguration?.awsUseCrossRegionInference && selectedModelInfo.supportsGlobalEndpoint && (
 					<Tooltip>
-						<TooltipContent hidden={remoteConfigSettings?.awsUseGlobalInference === undefined}>
-							This setting is managed by your organization's remote configuration
-						</TooltipContent>
 						<TooltipTrigger>
 							<div className="flex items-center gap-2">
 								<VSCodeCheckbox
 									checked={apiConfiguration?.awsUseGlobalInference || false}
-									disabled={remoteConfigSettings?.awsUseGlobalInference !== undefined}
 									onChange={(e: any) => {
 										const isChecked = e.target.checked === true
 										handleFieldChange("awsUseGlobalInference", isChecked)
 									}}>
 									Use global inference profile
 								</VSCodeCheckbox>
-								{remoteConfigSettings?.awsUseGlobalInference !== undefined && (
-									<i className="codicon codicon-lock text-description text-sm" />
-								)}
 							</div>
 						</TooltipTrigger>
 					</Tooltip>
@@ -403,23 +374,16 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 
 				{selectedModelInfo.supportsPromptCache && (
 					<Tooltip>
-						<TooltipContent hidden={remoteConfigSettings?.awsBedrockUsePromptCache === undefined}>
-							This setting is managed by your organization's remote configuration
-						</TooltipContent>
 						<TooltipTrigger>
 							<div className="flex items-center gap-2">
 								<VSCodeCheckbox
 									checked={apiConfiguration?.awsBedrockUsePromptCache || false}
-									disabled={remoteConfigSettings?.awsBedrockUsePromptCache !== undefined}
 									onChange={(e: any) => {
 										const isChecked = e.target.checked === true
 										handleFieldChange("awsBedrockUsePromptCache", isChecked)
 									}}>
 									Use prompt caching
 								</VSCodeCheckbox>
-								{remoteConfigSettings?.awsBedrockUsePromptCache !== undefined && (
-									<i className="codicon codicon-lock text-description text-sm" />
-								)}
 							</div>
 						</TooltipTrigger>
 					</Tooltip>
@@ -446,7 +410,10 @@ export const BedrockProvider = ({ showModelOptions, isPopup, currentMode }: Bedr
 
 								handleModeFieldsChange(
 									{
-										apiModelId: { plan: "planModeApiModelId", act: "actModeApiModelId" },
+										apiModelId: {
+											plan: "planModeApiModelId",
+											act: "actModeApiModelId",
+										},
 										awsBedrockCustomSelected: {
 											plan: "planModeAwsBedrockCustomSelected",
 											act: "actModeAwsBedrockCustomSelected",

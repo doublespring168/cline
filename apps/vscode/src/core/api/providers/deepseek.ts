@@ -1,10 +1,7 @@
 import { DeepSeekModelId, deepSeekDefaultModelId, deepSeekModels, ModelInfo } from "@shared/api"
 import { calculateApiCostOpenAI } from "@utils/cost"
 import OpenAI from "openai"
-import type {
-	ChatCompletionReasoningEffort,
-	ChatCompletionTool as OpenAITool,
-} from "openai/resources/chat/completions"
+import type { ChatCompletionReasoningEffort, ChatCompletionTool as OpenAITool } from "openai/resources/chat/completions"
 import { buildExternalBasicHeaders } from "@/services/EnvUtils"
 import { ClineStorageMessage } from "@/shared/messages/content"
 import { fetch } from "@/shared/net"
@@ -105,7 +102,9 @@ export class DeepSeekHandler implements ApiHandler {
 			// DeepSeek thinking models accept reasoning effort (low/medium map to high, xhigh maps to max).
 			// "none" isn't a valid DeepSeek value, so omit it and let the API use its default.
 			...(isDeepSeekThinkingModel && this.options.reasoningEffort && this.options.reasoningEffort !== "none"
-				? { reasoning_effort: this.options.reasoningEffort as ChatCompletionReasoningEffort }
+				? {
+						reasoning_effort: this.options.reasoningEffort as ChatCompletionReasoningEffort,
+					}
 				: {}),
 			...getOpenAIToolParams(tools),
 		})

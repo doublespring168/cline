@@ -18,7 +18,10 @@ export function getNewDiagnostics(oldDiagnostics: FileDiagnostics[], newDiagnost
 		)
 
 		if (newProblemsForFile.length > 0) {
-			newProblems.push({ filePath: newDiags.filePath, diagnostics: newProblemsForFile })
+			newProblems.push({
+				filePath: newDiags.filePath,
+				diagnostics: newProblemsForFile,
+			})
 		}
 	}
 

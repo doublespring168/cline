@@ -49,7 +49,10 @@ export async function cleanupLegacyCheckpoints(): Promise<void> {
 					const folderCheckpointsDir = path.join(folder.path, "checkpoints")
 					if (await fileExistsAtPath(folderCheckpointsDir)) {
 						try {
-							await fs.rm(folderCheckpointsDir, { recursive: true, force: true })
+							await fs.rm(folderCheckpointsDir, {
+								recursive: true,
+								force: true,
+							})
 							results.deleted.push(folder.folder)
 						} catch (_error) {
 							// Ignore error if directory removal fails

@@ -6,17 +6,38 @@
  * and use cases.
  */
 
-export { config as devstralConfig, type DevstralVariantConfig } from "./devstral/config"
-export { config as Gemini3Config, type Gemini3VariantConfig } from "./gemini-3/config"
-export { config as genericConfig, type GenericVariantConfig } from "./generic/config"
+export {
+	config as devstralConfig,
+	type DevstralVariantConfig,
+} from "./devstral/config"
+export {
+	config as Gemini3Config,
+	type Gemini3VariantConfig,
+} from "./gemini-3/config"
+export {
+	config as genericConfig,
+	type GenericVariantConfig,
+} from "./generic/config"
 export { config as glmConfig, type GLMVariantConfig } from "./glm/config"
 export { config as gpt5Config, type GPT5VariantConfig } from "./gpt-5/config"
-export { config as hermesConfig, type HermesVariantConfig } from "./hermes/config"
+export {
+	config as hermesConfig,
+	type HermesVariantConfig,
+} from "./hermes/config"
 export { config as NativeGPT5Config } from "./native-gpt-5/config"
 export { config as NativeGPT51Config } from "./native-gpt-5-1/config"
-export { config as nativeNextGenConfig, type NativeNextGenVariantConfig } from "./native-next-gen/config"
-export { config as nextGenConfig, type NextGenVariantConfig } from "./next-gen/config"
-export { config as trinityConfig, type TrinityVariantConfig } from "./trinity/config"
+export {
+	config as nativeNextGenConfig,
+	type NativeNextGenVariantConfig,
+} from "./native-next-gen/config"
+export {
+	config as nextGenConfig,
+	type NextGenVariantConfig,
+} from "./next-gen/config"
+export {
+	config as trinityConfig,
+	type TrinityVariantConfig,
+} from "./trinity/config"
 export { config as xsConfig, type XsVariantConfig } from "./xs/config"
 
 import { ModelFamily } from "@/shared/prompts"

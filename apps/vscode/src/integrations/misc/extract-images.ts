@@ -21,7 +21,10 @@ export async function extractImageContent(
 		const dimensions = sizeOf(uint8Array)
 
 		if (!dimensions.width || !dimensions.height) {
-			return { success: false, error: "Could not determine image dimensions, so image could not be read" }
+			return {
+				success: false,
+				error: "Could not determine image dimensions, so image could not be read",
+			}
 		}
 
 		if (dimensions.width > 7500 || dimensions.height > 7500) {

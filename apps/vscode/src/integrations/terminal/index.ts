@@ -4,7 +4,10 @@
 export { CommandExecutor } from "./CommandExecutor"
 
 // Export command orchestrator (shared logic)
-export { findLastIndex, orchestrateCommandExecution } from "./CommandOrchestrator"
+export {
+	findLastIndex,
+	orchestrateCommandExecution,
+} from "./CommandOrchestrator"
 
 // Export all types from types.ts
 export type {

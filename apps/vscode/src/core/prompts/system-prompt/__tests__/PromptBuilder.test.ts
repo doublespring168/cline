@@ -132,7 +132,10 @@ describe("PromptBuilder", () => {
 					let template = variant.componentOverrides?.SYSTEM_INFO_SECTION?.template || "DEFAULT"
 
 					if (typeof template === "function") {
-						const mockContext = { cwd: "/test", yoloModeToggled: false } as SystemPromptContext
+						const mockContext = {
+							cwd: "/test",
+							yoloModeToggled: false,
+						} as SystemPromptContext
 						template = template(mockContext)
 					}
 					return template.replace("{{os}}", "Linux").replace("{{shell}}", "bash")

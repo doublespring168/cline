@@ -46,7 +46,12 @@ export const OpenAiCodexProvider = ({ showModelOptions, isPopup, currentMode }: 
 		<div>
 			<div style={{ marginBottom: "15px" }}>
 				{openAiCodexIsAuthenticated ? (
-					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+					<div
+						style={{
+							display: "flex",
+							justifyContent: "space-between",
+							alignItems: "center",
+						}}>
 						<span style={{ color: "var(--vscode-descriptionForeground)" }}>Signed in to OpenAI Codex</span>
 						<VSCodeButton appearance="secondary" onClick={handleSignOut}>
 							Sign Out

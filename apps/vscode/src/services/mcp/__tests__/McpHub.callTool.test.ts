@@ -12,8 +12,7 @@ import { McpHub } from "../McpHub"
  *
  * These tests exercise the real `McpHub.callTool` method by building a
  * partially-initialized `McpHub` instance (bypassing the constructor's
- * filesystem side-effects) and injecting only the state `callTool`
- * actually touches: `connections` and `telemetryService`.
+ * filesystem side-effects) and injecting the connection state used by `callTool`.
  */
 
 /** Minimal mock for MCP Client.request() */
@@ -24,13 +23,6 @@ function createMockClient(responseOverride?: any) {
 				content: [{ type: "text", text: "success" }],
 			},
 		),
-	}
-}
-
-/** Minimal mock for TelemetryService */
-function createMockTelemetryService() {
-	return {
-		captureMcpToolCall: sinon.stub(),
 	}
 }
 
@@ -48,8 +40,6 @@ function createMcpHub(
 ) {
 	const client = options.client ?? createMockClient()
 	const serverName = options.serverName ?? "test-server"
-	const telemetryService = createMockTelemetryService()
-
 	const connection = {
 		server: {
 			name: serverName,
@@ -62,10 +52,9 @@ function createMcpHub(
 	}
 
 	const hub = Object.create(McpHub.prototype) as McpHub
-	;(hub as any).telemetryService = telemetryService
 	;(hub as any).connections = [connection]
 
-	return { hub, client, telemetryService, connection }
+	return { hub, client, connection }
 }
 
 describe("McpHub.callTool", () => {
@@ -100,7 +89,10 @@ describe("McpHub.callTool", () => {
 
 			client.request.calledOnce.should.be.true()
 			const requestArgs = client.request.firstCall.args[0]
-			requestArgs.params.arguments.should.deepEqual({ url: "https://example.com", verbose: true })
+			requestArgs.params.arguments.should.deepEqual({
+				url: "https://example.com",
+				verbose: true,
+			})
 		})
 
 		it("should pass empty object {} when toolArguments is explicitly passed as undefined", async () => {
@@ -122,7 +114,11 @@ describe("McpHub.callTool", () => {
 			await hub.callTool("test-server", "configure", args, "ulid-004")
 
 			const requestArgs = client.request.firstCall.args[0]
-			requestArgs.params.arguments.should.deepEqual({ enabled: false, count: 0, name: "" })
+			requestArgs.params.arguments.should.deepEqual({
+				enabled: false,
+				count: 0,
+				name: "",
+			})
 		})
 
 		it("should pass an already-empty object through unchanged", async () => {
@@ -197,10 +193,10 @@ describe("McpHub.callTool", () => {
 			threw.should.be.true()
 		})
 
-		it("should capture error telemetry when client.request fails", async () => {
+		it("should propagate errors when client.request fails", async () => {
 			const client = createMockClient()
 			client.request.rejects(new Error("Network timeout"))
-			const { hub, telemetryService } = createMcpHub({ client })
+			const { hub } = createMcpHub({ client })
 
 			let threw = false
 			try {
@@ -210,52 +206,6 @@ describe("McpHub.callTool", () => {
 			}
 
 			threw.should.be.true()
-			telemetryService.captureMcpToolCall.calledTwice.should.be.true()
-
-			// First call: "started"
-			const startedCall = telemetryService.captureMcpToolCall.firstCall.args
-			startedCall[3].should.equal("started")
-
-			// Second call: "error"
-			const errorCall = telemetryService.captureMcpToolCall.secondCall.args
-			errorCall[3].should.equal("error")
-			errorCall[4].should.equal("Network timeout")
-		})
-	})
-
-	// ── Telemetry ───────────────────────────────────────────────────────
-
-	describe("telemetry", () => {
-		it("should capture 'started' telemetry before request and 'success' after", async () => {
-			const { hub, telemetryService } = createMcpHub()
-
-			await hub.callTool("test-server", "list_pages", undefined, "ulid-012")
-
-			telemetryService.captureMcpToolCall.calledTwice.should.be.true()
-			telemetryService.captureMcpToolCall.firstCall.args[3].should.equal("started")
-			telemetryService.captureMcpToolCall.secondCall.args[3].should.equal("success")
-		})
-
-		it("should report undefined for argument keys when toolArguments is undefined", async () => {
-			const { hub, telemetryService } = createMcpHub()
-
-			await hub.callTool("test-server", "list_pages", undefined, "ulid-013")
-
-			// Both started and success should report undefined argument keys
-			const startedArgKeys = telemetryService.captureMcpToolCall.firstCall.args[5]
-			should(startedArgKeys).be.undefined()
-
-			const successArgKeys = telemetryService.captureMcpToolCall.secondCall.args[5]
-			should(successArgKeys).be.undefined()
-		})
-
-		it("should report argument keys when toolArguments is provided", async () => {
-			const { hub, telemetryService } = createMcpHub()
-
-			await hub.callTool("test-server", "navigate", { url: "https://x.com", timeout: 5000 }, "ulid-014")
-
-			const startedArgKeys = telemetryService.captureMcpToolCall.firstCall.args[5]
-			startedArgKeys.should.deepEqual(["url", "timeout"])
 		})
 	})
 

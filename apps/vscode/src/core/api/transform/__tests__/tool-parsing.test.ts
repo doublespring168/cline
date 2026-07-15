@@ -45,7 +45,9 @@ describe("Tool Call Parsing", () => {
 			msg.tool_calls.should.have.length(1)
 			msg.tool_calls[0].type.should.equal("function")
 			msg.tool_calls[0].function.name.should.equal("read_file")
-			JSON.parse(msg.tool_calls[0].function.arguments).should.deepEqual({ path: "/test/file.ts" })
+			JSON.parse(msg.tool_calls[0].function.arguments).should.deepEqual({
+				path: "/test/file.ts",
+			})
 		})
 
 		it("should truncate long tool IDs to 40 characters", () => {

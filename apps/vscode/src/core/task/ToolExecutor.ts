@@ -120,7 +120,12 @@ export class ToolExecutor {
 		private runUserPromptSubmitHook: (
 			userContent: ClineContent[],
 			context: "initial_task" | "resume" | "feedback",
-		) => Promise<{ cancel?: boolean; wasCancelled?: boolean; contextModification?: string; errorMessage?: string }>,
+		) => Promise<{
+			cancel?: boolean
+			wasCancelled?: boolean
+			contextModification?: string
+			errorMessage?: string
+		}>,
 	) {
 		this.autoApprover = new AutoApprove(this.stateManager)
 
@@ -280,7 +285,11 @@ export class ToolExecutor {
 		const apiConfig = this.stateManager.getApiConfiguration()
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
 		const providerId = (mode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
-		return isParallelToolCallingEnabled(enableParallelSetting, { providerId, model, mode })
+		return isParallelToolCallingEnabled(enableParallelSetting, {
+			providerId,
+			model,
+			mode,
+		})
 	}
 
 	/**

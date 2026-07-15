@@ -307,14 +307,22 @@ describe("AwsBedrockHandler", () => {
 							},
 						},
 					},
-					{ contentBlockDelta: { delta: { text: "50.653の立方根は約3.707です。" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "50.653の立方根は約3.707です。" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 					{ metadata: { usage: { inputTokens: 100, outputTokens: 50 } } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -343,7 +351,9 @@ describe("AwsBedrockHandler", () => {
 					// Regular text that contains thinking tags should NOT be parsed as thinking
 					{
 						contentBlockDelta: {
-							delta: { text: "Let me explain <thinking>this is not real thinking</thinking> in the text." },
+							delta: {
+								text: "Let me explain <thinking>this is not real thinking</thinking> in the text.",
+							},
 							contentBlockIndex: 0,
 						},
 					},
@@ -352,7 +362,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -382,13 +395,21 @@ describe("AwsBedrockHandler", () => {
 							},
 						},
 					},
-					{ contentBlockDelta: { delta: { text: "Direct response without thinking" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Direct response without thinking" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -414,31 +435,56 @@ describe("AwsBedrockHandler", () => {
 						metadata: {
 							additionalModelResponseFields: {
 								thinkingResponse: {
-									reasoning: [{ type: "text", text: "Initial thought process", signature: "sig1" }],
+									reasoning: [
+										{
+											type: "text",
+											text: "Initial thought process",
+											signature: "sig1",
+										},
+									],
 								},
 							},
 						},
 					},
 					// Then some text
-					{ contentBlockDelta: { delta: { text: "Based on my analysis" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Based on my analysis" },
+							contentBlockIndex: 0,
+						},
+					},
 					// More thinking
 					{
 						metadata: {
 							additionalModelResponseFields: {
 								thinkingResponse: {
-									reasoning: [{ type: "text", text: "Additional consideration", signature: "sig2" }],
+									reasoning: [
+										{
+											type: "text",
+											text: "Additional consideration",
+											signature: "sig2",
+										},
+									],
 								},
 							},
 						},
 					},
 					// Final text
-					{ contentBlockDelta: { delta: { text: ", here is the answer." }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: ", here is the answer." },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -468,14 +514,27 @@ describe("AwsBedrockHandler", () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
 					// Text block only - reasoning is now in additionalModelResponseFields
-					{ contentBlockDelta: { delta: { text: "Here is " }, contentBlockIndex: 0 } },
-					{ contentBlockDelta: { delta: { text: "my response" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Here is " },
+							contentBlockIndex: 0,
+						},
+					},
+					{
+						contentBlockDelta: {
+							delta: { text: "my response" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -499,13 +558,21 @@ describe("AwsBedrockHandler", () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
 					// Text block with Japanese response
-					{ contentBlockDelta: { delta: { text: "# 生成AIの仕組み - 10歳の君にも分かる説明" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "# 生成AIの仕組み - 10歳の君にも分かる説明" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -527,15 +594,28 @@ describe("AwsBedrockHandler", () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
 					// Interleaved text blocks
-					{ contentBlockDelta: { delta: { text: "Text 1" }, contentBlockIndex: 0 } },
-					{ contentBlockDelta: { delta: { text: " Text 2" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Text 1" },
+							contentBlockIndex: 0,
+						},
+					},
+					{
+						contentBlockDelta: {
+							delta: { text: " Text 2" },
+							contentBlockIndex: 0,
+						},
+					},
 					// Stop blocks
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -560,11 +640,18 @@ describe("AwsBedrockHandler", () => {
 			it("should handle internalServerException", async () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
-					{ internalServerException: { message: "Internal server error occurred" } },
+					{
+						internalServerException: {
+							message: "Internal server error occurred",
+						},
+					},
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -589,7 +676,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -612,7 +702,12 @@ describe("AwsBedrockHandler", () => {
 			it("should track usage with cache tokens", async () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
-					{ contentBlockDelta: { delta: { text: "Response" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Response" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{ messageStop: { stopReason: "end_turn" } },
 					{
@@ -628,7 +723,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				// Replace getBedrockClient with our mock
 				const originalGetBedrockClient = handler["getBedrockClient"]
@@ -679,7 +777,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				const originalGetBedrockClient = handler["getBedrockClient"]
 				handler["getBedrockClient"] = async () => mockClient as any
@@ -731,7 +832,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				const originalGetBedrockClient = handler["getBedrockClient"]
 				handler["getBedrockClient"] = async () => mockClient as any
@@ -749,7 +853,12 @@ describe("AwsBedrockHandler", () => {
 			it("should handle text and tool use interleaving", async () => {
 				const mockChunks = [
 					{ messageStart: { role: "assistant" } },
-					{ contentBlockDelta: { delta: { text: "Checking" }, contentBlockIndex: 0 } },
+					{
+						contentBlockDelta: {
+							delta: { text: "Checking" },
+							contentBlockIndex: 0,
+						},
+					},
 					{ contentBlockStop: { contentBlockIndex: 0 } },
 					{
 						contentBlockStart: {
@@ -768,7 +877,10 @@ describe("AwsBedrockHandler", () => {
 				]
 
 				const mockClient = new MockBedrockClient(mockChunks)
-				const command = new ConverseStreamCommand({ modelId: "test-model", messages: [] })
+				const command = new ConverseStreamCommand({
+					modelId: "test-model",
+					messages: [],
+				})
 
 				const originalGetBedrockClient = handler["getBedrockClient"]
 				handler["getBedrockClient"] = async () => mockClient as any
@@ -1185,20 +1297,45 @@ describe("AwsBedrockHandler", () => {
 					role: "assistant",
 					content: [
 						{ type: "text", text: "I'll read the file." },
-						{ type: "tool_use", id: "call-1", name: "read_file", input: { path: "a.ts" } },
+						{
+							type: "tool_use",
+							id: "call-1",
+							name: "read_file",
+							input: { path: "a.ts" },
+						},
 					],
 				},
 				{
 					role: "user",
-					content: [{ type: "tool_result", tool_use_id: "call-1", content: "export const a = 1" }],
+					content: [
+						{
+							type: "tool_result",
+							tool_use_id: "call-1",
+							content: "export const a = 1",
+						},
+					],
 				},
 				{
 					role: "assistant",
-					content: [{ type: "tool_use", id: "call-2", name: "read_file", input: { path: "b.ts" } }],
+					content: [
+						{
+							type: "tool_use",
+							id: "call-2",
+							name: "read_file",
+							input: { path: "b.ts" },
+						},
+					],
 				},
 				{
 					role: "user",
-					content: [{ type: "tool_result", tool_use_id: "call-2", content: "export const b = 2", is_error: false }],
+					content: [
+						{
+							type: "tool_result",
+							tool_use_id: "call-2",
+							content: "export const b = 2",
+							is_error: false,
+						},
+					],
 				},
 			]
 
@@ -1227,7 +1364,11 @@ describe("AwsBedrockHandler", () => {
 				{
 					role: "assistant",
 					content: [
-						{ type: "thinking", thinking: "Let me reason about this...", signature: "sig123" },
+						{
+							type: "thinking",
+							thinking: "Let me reason about this...",
+							signature: "sig123",
+						},
 						{ type: "text", text: "Here is my response." },
 					],
 				},
@@ -1269,7 +1410,13 @@ describe("AwsBedrockHandler", () => {
 			const conversation: any[] = [
 				{
 					role: "assistant",
-					content: [{ type: "thinking", thinking: "Internal reasoning only", signature: "sig456" }],
+					content: [
+						{
+							type: "thinking",
+							thinking: "Internal reasoning only",
+							signature: "sig456",
+						},
+					],
 				},
 			]
 

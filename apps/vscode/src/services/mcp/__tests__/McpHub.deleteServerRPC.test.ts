@@ -74,7 +74,10 @@ describe("McpHub.deleteServerRPC", () => {
 	})
 
 	it("returns the remaining servers (not an empty list) after deleting one", async () => {
-		await writeSettings({ alpha: { type: "stdio", command: "a" }, beta: { type: "stdio", command: "b" } })
+		await writeSettings({
+			alpha: { type: "stdio", command: "a" },
+			beta: { type: "stdio", command: "b" },
+		})
 
 		const result = await hub.deleteServerRPC("alpha")
 
@@ -83,7 +86,10 @@ describe("McpHub.deleteServerRPC", () => {
 	})
 
 	it("persists the remaining server to the settings file", async () => {
-		await writeSettings({ alpha: { type: "stdio", command: "a" }, beta: { type: "stdio", command: "b" } })
+		await writeSettings({
+			alpha: { type: "stdio", command: "a" },
+			beta: { type: "stdio", command: "b" },
+		})
 
 		await hub.deleteServerRPC("alpha")
 
@@ -93,7 +99,10 @@ describe("McpHub.deleteServerRPC", () => {
 
 	it("guards the write with isUpdatingClineSettings so the watcher skips its own event", async () => {
 		const clock = sandbox.useFakeTimers()
-		await writeSettings({ alpha: { type: "stdio", command: "a" }, beta: { type: "stdio", command: "b" } })
+		await writeSettings({
+			alpha: { type: "stdio", command: "a" },
+			beta: { type: "stdio", command: "b" },
+		})
 
 		// Capture the flag at the moment the settings file is written.
 		let flagDuringWrite: boolean | undefined

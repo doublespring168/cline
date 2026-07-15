@@ -7,7 +7,6 @@ import { KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from
 import { useInterval } from "react-use"
 import styled from "styled-components"
 import { normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { PLATFORM_CONFIG, PlatformType } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { ModelsServiceClient } from "@/services/grpc-client"
@@ -98,7 +97,7 @@ const ApiOptions = ({
 	initialModelTab,
 }: ApiOptionsProps) => {
 	// Use full context state for immediate save payload
-	const { apiConfiguration, remoteConfigSettings } = useExtensionState()
+	const { apiConfiguration } = useExtensionState()
 
 	const { selectedProvider } = normalizeApiConfiguration(apiConfiguration, currentMode)
 
@@ -147,14 +146,8 @@ const ApiOptions = ({
 			providers = providers.filter((option) => option.value !== "vscode-lm")
 		}
 
-		// Filter by remote config if remoteConfiguredProviders is set
-		const remoteProviders: string[] = remoteConfigSettings?.remoteConfiguredProviders || []
-		if (remoteProviders.length > 0) {
-			providers = providers.filter((option) => remoteProviders.includes(option.value))
-		}
-
 		return providers
-	}, [remoteConfigSettings])
+	}, [])
 
 	const getProviderDisplayLabel = useCallback((option: (typeof PROVIDERS.list)[number]) => option.label, [])
 
@@ -271,7 +264,13 @@ const ApiOptions = ({
 	*/
 
 	return (
-		<div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: isPopup ? -10 : 0 }}>
+		<div
+			style={{
+				display: "flex",
+				flexDirection: "column",
+				gap: 5,
+				marginBottom: isPopup ? -10 : 0,
+			}}>
 			<style>
 				{`
 				.provider-item-highlight {
@@ -281,23 +280,9 @@ const ApiOptions = ({
 				`}
 			</style>
 			<DropdownContainer className="dropdown-container">
-				{remoteConfigSettings?.remoteConfiguredProviders && remoteConfigSettings.remoteConfiguredProviders.length > 0 ? (
-					<Tooltip>
-						<TooltipTrigger>
-							<div className="flex items-center gap-2 mb-1">
-								<label htmlFor="api-provider">
-									<span style={{ fontWeight: 500 }}>API Provider</span>
-								</label>
-								<i className="codicon codicon-lock text-description text-sm" />
-							</div>
-						</TooltipTrigger>
-						<TooltipContent>Provider options are managed by your organization's remote configuration</TooltipContent>
-					</Tooltip>
-				) : (
-					<label htmlFor="api-provider">
-						<span style={{ fontWeight: 500 }}>API Provider</span>
-					</label>
-				)}
+				<label htmlFor="api-provider">
+					<span style={{ fontWeight: 500 }}>API Provider</span>
+				</label>
 				<ProviderDropdownWrapper ref={dropdownRef}>
 					<VSCodeTextField
 						data-testid="provider-selector-input"

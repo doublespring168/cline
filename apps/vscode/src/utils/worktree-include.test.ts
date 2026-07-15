@@ -99,7 +99,9 @@ describe("Worktree Include Utilities", () => {
 			const tgt = path.join(tmpDir, "dir-copy-tgt")
 
 			// Setup source with directory
-			await fs.mkdir(path.join(src, "node_modules", "pkg"), { recursive: true })
+			await fs.mkdir(path.join(src, "node_modules", "pkg"), {
+				recursive: true,
+			})
 			await fs.mkdir(tgt, { recursive: true })
 			await fs.writeFile(path.join(src, ".worktreeinclude"), "node_modules/")
 			await fs.writeFile(path.join(src, ".gitignore"), "node_modules/")

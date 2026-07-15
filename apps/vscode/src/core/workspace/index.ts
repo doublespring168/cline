@@ -12,7 +12,10 @@ export {
 	removeWorkspaceHint,
 } from "./utils/parseWorkspaceInlinePath"
 export type { WorkspaceAdapterConfig } from "./WorkspacePathAdapter"
-export { createWorkspacePathAdapter, WorkspacePathAdapter } from "./WorkspacePathAdapter"
+export {
+	createWorkspacePathAdapter,
+	WorkspacePathAdapter,
+} from "./WorkspacePathAdapter"
 export {
 	getWorkspaceBasename,
 	isWorkspaceTraceEnabled,
@@ -21,7 +24,10 @@ export {
 	workspaceResolver,
 } from "./WorkspaceResolver"
 export type { WorkspaceContext } from "./WorkspaceRootManager"
-export { createLegacyWorkspaceRoot, WorkspaceRootManager } from "./WorkspaceRootManager"
+export {
+	createLegacyWorkspaceRoot,
+	WorkspaceRootManager,
+} from "./WorkspaceRootManager"
 
 // Re-export convenience function at module level for easier imports
 // Usage: import { resolveWorkspacePath } from "@core/workspace"

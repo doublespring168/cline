@@ -18,7 +18,10 @@ import {
 } from "../model-utils"
 
 // Minimal helper — modelDoesntSupportWebp only reads apiHandlerModel.id
-const m = (id: string): ApiHandlerModel => ({ id, info: { supportsPromptCache: false } })
+const m = (id: string): ApiHandlerModel => ({
+	id,
+	info: { supportsPromptCache: false },
+})
 const providerInfo = (providerId: string, modelId: string): ApiProviderInfo => ({
 	providerId,
 	model: m(modelId),
@@ -106,11 +109,7 @@ describe("isClaude4PlusModelFamily", () => {
 
 describe("isClaudeAdaptiveThinkingModel", () => {
 	it("should return true for Claude Sonnet 5 IDs across provider naming variants", () => {
-		for (const modelId of [
-			"claude-sonnet-5",
-			"anthropic/claude-sonnet-5:1m",
-			"anthropic/claude-5-sonnet",
-		]) {
+		for (const modelId of ["claude-sonnet-5", "anthropic/claude-sonnet-5:1m", "anthropic/claude-5-sonnet"]) {
 			isClaudeAdaptiveThinkingModel(modelId).should.equal(true)
 		}
 	})

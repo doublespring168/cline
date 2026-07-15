@@ -32,8 +32,14 @@ const BasetenModelPicker: React.FC<BasetenModelPickerProps> = ({ isPopup, curren
 
 		handleModeFieldsChange(
 			{
-				basetenModelId: { plan: "planModeBasetenModelId", act: "actModeBasetenModelId" },
-				basetenModelInfo: { plan: "planModeBasetenModelInfo", act: "actModeBasetenModelInfo" },
+				basetenModelId: {
+					plan: "planModeBasetenModelId",
+					act: "actModeBasetenModelId",
+				},
+				basetenModelInfo: {
+					plan: "planModeBasetenModelInfo",
+					act: "actModeBasetenModelInfo",
+				},
 			},
 			{
 				basetenModelId: newModelId,

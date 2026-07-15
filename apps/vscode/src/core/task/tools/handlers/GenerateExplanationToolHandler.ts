@@ -30,7 +30,12 @@ function createExplanationMessage(
 	status: ClineSayGenerateExplanation["status"],
 	error?: string,
 ): string {
-	const message: ClineSayGenerateExplanation = { title, fromRef, toRef, status }
+	const message: ClineSayGenerateExplanation = {
+		title,
+		fromRef,
+		toRef,
+		status,
+	}
 	if (error) {
 		message.error = error
 	}

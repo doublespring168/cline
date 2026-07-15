@@ -126,7 +126,9 @@ const CreateWorktreeModal = ({ open, onClose, openAfterCreate = false, onSuccess
 				{hasWorktreeInclude === false && (
 					<div
 						className="flex items-start gap-2 p-2 rounded mb-3"
-						style={{ backgroundColor: "var(--vscode-inputValidation-warningBackground)" }}>
+						style={{
+							backgroundColor: "var(--vscode-inputValidation-warningBackground)",
+						}}>
 						<AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5 text-[var(--vscode-editorWarning-foreground)]" />
 						<p className="text-xs text-[var(--vscode-foreground)] m-0">
 							No .worktreeinclude detected.{" "}

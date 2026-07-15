@@ -32,7 +32,11 @@ describe("groupLowStakesTools", () => {
 		])
 
 		expect(grouped).toHaveLength(2)
-		expect(grouped[0]).toMatchObject({ type: "say", say: "text", text: "Initial text" })
+		expect(grouped[0]).toMatchObject({
+			type: "say",
+			say: "text",
+			text: "Initial text",
+		})
 		expect(isToolGroup(grouped[1])).toBe(true)
 
 		if (isToolGroup(grouped[1])) {
@@ -48,9 +52,17 @@ describe("groupLowStakesTools", () => {
 		])
 
 		expect(grouped).toHaveLength(3)
-		expect(grouped[0]).toMatchObject({ type: "say", say: "text", text: "Initial text" })
+		expect(grouped[0]).toMatchObject({
+			type: "say",
+			say: "text",
+			text: "Initial text",
+		})
 		expect(grouped[1]).toMatchObject({ type: "say", say: "tool" })
-		expect(grouped[2]).toMatchObject({ type: "say", say: "text", text: "Follow-up text" })
+		expect(grouped[2]).toMatchObject({
+			type: "say",
+			say: "text",
+			text: "Follow-up text",
+		})
 	})
 
 	it("keeps independent reasoning when no low-stakes tool group follows", () => {
@@ -60,8 +72,16 @@ describe("groupLowStakesTools", () => {
 		])
 
 		expect(grouped).toHaveLength(2)
-		expect(grouped[0]).toMatchObject({ type: "say", say: "reasoning", text: "Thinking through options" })
-		expect(grouped[1]).toMatchObject({ type: "say", say: "text", text: "Answer text" })
+		expect(grouped[0]).toMatchObject({
+			type: "say",
+			say: "reasoning",
+			text: "Thinking through options",
+		})
+		expect(grouped[1]).toMatchObject({
+			type: "say",
+			say: "text",
+			text: "Answer text",
+		})
 	})
 
 	it("keeps independent reasoning before a non-low-stakes tool", () => {
@@ -71,7 +91,11 @@ describe("groupLowStakesTools", () => {
 		])
 
 		expect(grouped).toHaveLength(2)
-		expect(grouped[0]).toMatchObject({ type: "say", say: "reasoning", text: "Thinking through options" })
+		expect(grouped[0]).toMatchObject({
+			type: "say",
+			say: "reasoning",
+			text: "Thinking through options",
+		})
 		expect(grouped[1]).toMatchObject({ type: "say", say: "tool" })
 	})
 
@@ -79,7 +103,11 @@ describe("groupLowStakesTools", () => {
 		const grouped = groupLowStakesTools([createReasoningMessage(1, "Planning next read"), createToolMessage(2, "readFile")])
 
 		expect(grouped).toHaveLength(2)
-		expect(grouped[0]).toMatchObject({ type: "say", say: "reasoning", text: "Planning next read" })
+		expect(grouped[0]).toMatchObject({
+			type: "say",
+			say: "reasoning",
+			text: "Planning next read",
+		})
 		expect(isToolGroup(grouped[1])).toBe(true)
 	})
 })

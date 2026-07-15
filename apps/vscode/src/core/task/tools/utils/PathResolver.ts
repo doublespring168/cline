@@ -16,7 +16,10 @@ export class PathResolver {
 			const pathResult = resolveWorkspacePath(this.config, filePath, caller)
 			return typeof pathResult === "string"
 				? { absolutePath: pathResult, resolvedPath: filePath }
-				: { absolutePath: pathResult.absolutePath, resolvedPath: pathResult.resolvedPath }
+				: {
+						absolutePath: pathResult.absolutePath,
+						resolvedPath: pathResult.resolvedPath,
+					}
 		} catch {
 			return undefined
 		}

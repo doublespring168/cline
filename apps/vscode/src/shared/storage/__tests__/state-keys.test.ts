@@ -142,7 +142,10 @@ describe("State Keys Type Safety", () => {
 		it("should not have undefined defaults masquerading as non-optional types", () => {
 			// This test catches the pattern: { default: undefined as SomeType }
 			// where SomeType doesn't include undefined
-			const allDefaults = { ...GLOBAL_STATE_DEFAULTS, ...SETTINGS_DEFAULTS } as Record<string, unknown>
+			const allDefaults = {
+				...GLOBAL_STATE_DEFAULTS,
+				...SETTINGS_DEFAULTS,
+			} as Record<string, unknown>
 
 			const undefinedKeys = Object.entries(allDefaults)
 				.filter(([_, value]) => value === undefined)
@@ -156,7 +159,10 @@ describe("State Keys Type Safety", () => {
 		})
 
 		it("should have array defaults that are actually arrays", () => {
-			const allDefaults = { ...GLOBAL_STATE_DEFAULTS, ...SETTINGS_DEFAULTS } as Record<string, unknown>
+			const allDefaults = {
+				...GLOBAL_STATE_DEFAULTS,
+				...SETTINGS_DEFAULTS,
+			} as Record<string, unknown>
 
 			for (const [key, value] of Object.entries(allDefaults)) {
 				if (Array.isArray(value)) {
@@ -167,7 +173,10 @@ describe("State Keys Type Safety", () => {
 		})
 
 		it("should have object defaults that are plain objects", () => {
-			const allDefaults = { ...GLOBAL_STATE_DEFAULTS, ...SETTINGS_DEFAULTS } as Record<string, unknown>
+			const allDefaults = {
+				...GLOBAL_STATE_DEFAULTS,
+				...SETTINGS_DEFAULTS,
+			} as Record<string, unknown>
 
 			for (const [key, value] of Object.entries(allDefaults)) {
 				if (typeof value === "object" && value !== null && !Array.isArray(value)) {
@@ -285,7 +294,10 @@ describe("State Keys Type Safety", () => {
 
 		it("should return correct default values for known keys", () => {
 			// Test a few known defaults
-			const testCases: Array<{ key: GlobalStateAndSettingsKey; expectedType: string }> = [
+			const testCases: Array<{
+				key: GlobalStateAndSettingsKey
+				expectedType: string
+			}> = [
 				{ key: "autoApprovalSettings", expectedType: "object" },
 				{ key: "browserSettings", expectedType: "object" },
 				{ key: "shellIntegrationTimeout", expectedType: "number" },

@@ -47,7 +47,11 @@ describe("FileContextTracker", () => {
 		chokidarWatchStub = sandbox.stub(chokidar, "watch").returns(mockFileSystemWatcher as any)
 
 		// Mock disk module functions
-		mockTaskMetadata = { files_in_context: [], model_usage: [], environment_history: [] }
+		mockTaskMetadata = {
+			files_in_context: [],
+			model_usage: [],
+			environment_history: [],
+		}
 		getTaskMetadataStub = sandbox.stub(diskModule, "getTaskMetadata").resolves(mockTaskMetadata)
 		saveTaskMetadataStub = sandbox.stub(diskModule, "saveTaskMetadata").resolves()
 

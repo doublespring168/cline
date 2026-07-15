@@ -24,9 +24,21 @@ const MARKERS = {
 
 // Style mappings for actions
 const ACTION_STYLES = {
-	Add: { icon: FilePlus, iconClass: "text-success", borderClass: "border-l-success" },
-	Delete: { icon: FileX, iconClass: "text-error", borderClass: "border-l-error" },
-	default: { icon: FileText, iconClass: "text-info", borderClass: "border-l-background" },
+	Add: {
+		icon: FilePlus,
+		iconClass: "text-success",
+		borderClass: "border-l-success",
+	},
+	Delete: {
+		icon: FileX,
+		iconClass: "text-error",
+		borderClass: "border-l-error",
+	},
+	default: {
+		icon: FileText,
+		iconClass: "text-info",
+		borderClass: "border-l-background",
+	},
 } as const
 
 interface DiffEditRowProps {
@@ -63,7 +75,11 @@ export const DiffEditRow = memo<DiffEditRowProps>(({ patch, path, isLoading, sta
 	)
 })
 
-const FileBlock = memo<{ file: Patch; isStreaming: boolean; startLineNumber?: number }>(
+const FileBlock = memo<{
+	file: Patch
+	isStreaming: boolean
+	startLineNumber?: number
+}>(
 	({ file, isStreaming, startLineNumber }) => {
 		const [isExpanded, setIsExpanded] = useState(true)
 		const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -198,64 +214,66 @@ const DiffStats = memo<{ additions: number; deletions: number }>(({ additions, d
 ))
 
 // Diff line component with Tailwind styling - indicator bar, line number, prefix, code
-const DiffLine = memo<{ line: string; lineNumber?: number; showLineNumberColumn?: boolean }>(
-	({ line, lineNumber, showLineNumberColumn = true }) => {
-		const isAddition = line.startsWith("+")
-		const isDeletion = line.startsWith("-")
-		const hasSpacePrefix = line.startsWith("+ ") || line.startsWith("- ")
-		// Extract just the code content (without +/- prefix)
-		const code = isAddition || isDeletion ? line.slice(hasSpacePrefix ? 2 : 1) : line
-		// Get the prefix character to display
-		const prefix = isAddition ? "+" : isDeletion ? "-" : " "
+const DiffLine = memo<{
+	line: string
+	lineNumber?: number
+	showLineNumberColumn?: boolean
+}>(({ line, lineNumber, showLineNumberColumn = true }) => {
+	const isAddition = line.startsWith("+")
+	const isDeletion = line.startsWith("-")
+	const hasSpacePrefix = line.startsWith("+ ") || line.startsWith("- ")
+	// Extract just the code content (without +/- prefix)
+	const code = isAddition || isDeletion ? line.slice(hasSpacePrefix ? 2 : 1) : line
+	// Get the prefix character to display
+	const prefix = isAddition ? "+" : isDeletion ? "-" : " "
 
-		return (
-			<div
-				className={cn(
-					"flex text-xs font-mono",
-					// Row background tint
-					isAddition && "bg-green-500/10",
-					isDeletion && "bg-red-500/10",
-					// Left indicator bar (the colored stripe)
-					isAddition && "border-l-4 border-l-green-500",
-					isDeletion && "border-l-4 border-l-red-500",
-					!isAddition && !isDeletion && "border-l-4 border-l-transparent",
-				)}>
-				{/* Line number column - always reserve space to prevent layout shift during streaming */}
-				{showLineNumberColumn && (
-					<span
-						className={cn(
-							"w-10 min-w-10 text-right pr-2 py-0.5 select-none border-r border-code-block-background/50",
-							isAddition && "text-green-400/60",
-							isDeletion && "text-red-400/60",
-							!isAddition && !isDeletion && "text-description/50",
-						)}>
-						{lineNumber ?? ""}
-					</span>
-				)}
-				{/* Prefix character (+/-) for backwards compatibility with traditional diff views */}
+	return (
+		<div
+			className={cn(
+				"flex text-xs font-mono",
+				// Row background tint
+				isAddition && "bg-green-500/10",
+				isDeletion && "bg-red-500/10",
+				// Left indicator bar (the colored stripe)
+				isAddition && "border-l-4 border-l-green-500",
+				isDeletion && "border-l-4 border-l-red-500",
+				!isAddition && !isDeletion && "border-l-4 border-l-transparent",
+			)}>
+			{/* Line number column - always reserve space to prevent layout shift during streaming */}
+			{showLineNumberColumn && (
 				<span
 					className={cn(
-						"w-4 min-w-4 text-center py-0.5 select-none",
-						isAddition && "text-green-400",
-						isDeletion && "text-red-400",
+						"w-10 min-w-10 text-right pr-2 py-0.5 select-none border-r border-code-block-background/50",
+						isAddition && "text-green-400/60",
+						isDeletion && "text-red-400/60",
 						!isAddition && !isDeletion && "text-description/50",
 					)}>
-					{prefix}
+					{lineNumber ?? ""}
 				</span>
-				{/* Code content */}
-				<span
-					className={cn(
-						"flex-1 pr-2 py-0.5 whitespace-nowrap",
-						isAddition && "text-green-400",
-						isDeletion && "text-red-400",
-						!isAddition && !isDeletion && "text-editor-foreground",
-					)}>
-					{code}
-				</span>
-			</div>
-		)
-	},
-)
+			)}
+			{/* Prefix character (+/-) for backwards compatibility with traditional diff views */}
+			<span
+				className={cn(
+					"w-4 min-w-4 text-center py-0.5 select-none",
+					isAddition && "text-green-400",
+					isDeletion && "text-red-400",
+					!isAddition && !isDeletion && "text-description/50",
+				)}>
+				{prefix}
+			</span>
+			{/* Code content */}
+			<span
+				className={cn(
+					"flex-1 pr-2 py-0.5 whitespace-nowrap",
+					isAddition && "text-green-400",
+					isDeletion && "text-red-400",
+					!isAddition && !isDeletion && "text-editor-foreground",
+				)}>
+				{code}
+			</span>
+		</div>
+	)
+})
 
 // ============================================================================
 // Parsing Functions

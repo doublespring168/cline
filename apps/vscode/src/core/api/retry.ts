@@ -27,7 +27,10 @@ export class RetriableError extends Error {
 }
 
 export function withRetry(options: RetryOptions = {}) {
-	const { maxRetries, baseDelay, maxDelay, retryAllErrors } = { ...DEFAULT_OPTIONS, ...options }
+	const { maxRetries, baseDelay, maxDelay, retryAllErrors } = {
+		...DEFAULT_OPTIONS,
+		...options,
+	}
 
 	return (_target: any, _propertyKey: string, descriptor: PropertyDescriptor) => {
 		const originalMethod = descriptor.value

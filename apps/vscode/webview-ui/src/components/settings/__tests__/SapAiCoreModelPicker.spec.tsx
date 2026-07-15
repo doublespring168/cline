@@ -489,7 +489,12 @@ describe("SapAiCoreModelPicker Component", () => {
 		expect(mockOnModelChange).not.toHaveBeenCalled()
 
 		// Switch to different credentials with different deployments
-		const newDeployments = [{ modelName: "anthropic--claude-3.5-sonnet", deploymentId: "new-deployment-2" }]
+		const newDeployments = [
+			{
+				modelName: "anthropic--claude-3.5-sonnet",
+				deploymentId: "new-deployment-2",
+			},
+		]
 		rerender(
 			<ExtensionStateContextProvider>
 				<SapAiCoreModelPicker

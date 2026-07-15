@@ -1,7 +1,6 @@
 // type that represents json data that is sent from extension to webview, called ExtensionMessage and has 'type' enum which can be 'plusButtonClicked' or 'settingsButtonClicked' or 'hello'
 
 import { WorkspaceRoot } from "@shared/multi-root/types"
-import { RemoteConfigFields } from "@shared/storage/state-keys"
 import type { Environment } from "../config"
 import { AutoApprovalSettings } from "./AutoApprovalSettings"
 import { ApiConfiguration } from "./api"
@@ -12,7 +11,6 @@ import { FocusChainSettings } from "./FocusChainSettings"
 import { HistoryItem } from "./HistoryItem"
 import { McpDisplayMode } from "./McpDisplayMode"
 import { ClineMessageModelInfo } from "./messages"
-import { OnboardingModelGroup } from "./proto/cline/state"
 import { Mode } from "./storage/types"
 // webview will hold state
 export interface ExtensionMessage {
@@ -36,7 +34,6 @@ export const COMMAND_CANCEL_TOKEN = "__cline_command_cancel__"
 export interface ExtensionState {
 	isNewUser: boolean
 	welcomeViewCompleted: boolean
-	onboardingModels: OnboardingModelGroup | undefined
 	apiConfiguration?: ApiConfiguration
 	autoApprovalSettings: AutoApprovalSettings
 	browserSettings: BrowserSettings
@@ -48,7 +45,6 @@ export interface ExtensionState {
 	clineMessages: ClineMessage[]
 	currentTaskItem?: HistoryItem
 	currentFocusChainChecklist?: string | null
-	mcpMarketplaceEnabled?: boolean
 	mcpDisplayMode: McpDisplayMode
 	planActSeparateModelsSetting: boolean
 	enableCheckpointsSetting?: boolean
@@ -68,15 +64,12 @@ export interface ExtensionState {
 	globalWorkflowToggles: ClineRulesToggles
 	localCursorRulesToggles: ClineRulesToggles
 	localWindsurfRulesToggles: ClineRulesToggles
-	remoteRulesToggles?: ClineRulesToggles
-	remoteWorkflowToggles?: ClineRulesToggles
 	localAgentsRulesToggles: ClineRulesToggles
 	mcpResponsesCollapsed?: boolean
 	strictPlanModeEnabled?: boolean
 	yoloModeToggled?: boolean
 	useAutoCondense?: boolean
 	subagentsEnabled?: boolean
-	clineWebToolsEnabled?: ClineFeatureSetting
 	worktreesEnabled?: ClineFeatureSetting
 	focusChainSettings: FocusChainSettings
 	customPrompt?: string
@@ -87,15 +80,12 @@ export interface ExtensionState {
 	isMultiRootWorkspace: boolean
 	multiRootSetting: ClineFeatureSetting
 	hooksEnabled?: boolean
-	remoteConfigSettings?: Partial<RemoteConfigFields>
 	globalSkillsToggles?: Record<string, boolean>
 	localSkillsToggles?: Record<string, boolean>
 	nativeToolCallSetting?: boolean
 	enableParallelToolCalling?: boolean
 	backgroundEditEnabled?: boolean
 	doubleCheckCompletionEnabled?: boolean
-	lazyTeammateModeEnabled?: boolean
-	showFeatureTips?: boolean
 	openAiCodexIsAuthenticated?: boolean
 }
 
@@ -135,7 +125,6 @@ export type ClineAsk =
 	| "new_task"
 	| "condense"
 	| "summarize_task"
-	| "report_bug"
 	| "use_subagents"
 
 export type ClineSay =
@@ -219,7 +208,7 @@ export interface ClineSayHook {
 		content?: string // Content preview (first 200 chars)
 		diff?: string // Diff preview (first 200 chars)
 		regex?: string // Regex pattern for search_files
-		url?: string // URL for web_fetch or browser_action
+		url?: string // URL for browser_action
 		mcpTool?: string // MCP tool name
 		mcpServer?: string // MCP server name
 		resourceUri?: string // MCP resource URI

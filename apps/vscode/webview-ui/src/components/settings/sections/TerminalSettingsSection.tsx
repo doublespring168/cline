@@ -12,12 +12,8 @@ interface TerminalSettingsSectionProps {
 }
 
 export const TerminalSettingsSection: React.FC<TerminalSettingsSectionProps> = ({ renderSectionHeader }) => {
-	const {
-		shellIntegrationTimeout,
-		terminalReuseEnabled,
-		defaultTerminalProfile,
-		availableTerminalProfiles,
-	} = useExtensionState()
+	const { shellIntegrationTimeout, terminalReuseEnabled, defaultTerminalProfile, availableTerminalProfiles } =
+		useExtensionState()
 
 	const [inputValue, setInputValue] = useState((shellIntegrationTimeout / 1000).toString())
 	const [inputError, setInputError] = useState<string | null>(null)
@@ -134,7 +130,6 @@ export const TerminalSettingsSection: React.FC<TerminalSettingsSectionProps> = (
 						</p>
 					</div>
 					<TerminalOutputLineLimitSlider />
-					
 				</div>
 			</Section>
 		</div>

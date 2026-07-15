@@ -130,7 +130,11 @@ const SearchResultsDisplay: React.FC<SearchResultsDisplayProps> = ({
 			</div>
 
 			{isExpanded && (
-				<div style={{ padding: "10px", borderTop: "1px solid var(--vscode-editorGroup-border)" }}>
+				<div
+					style={{
+						padding: "10px",
+						borderTop: "1px solid var(--vscode-editorGroup-border)",
+					}}>
 					{/* Summary line */}
 					<div
 						style={{

@@ -26,7 +26,10 @@ function createFakeTask(taskState: {
 		api: { getModel: () => ({ id: "test-model" }) },
 		stateManager: {
 			getGlobalSettingsKey: (key: string) => (key === "hooksEnabled" ? false : "act"),
-			getApiConfiguration: () => ({ actModeApiProvider: "anthropic", planModeApiProvider: "anthropic" }),
+			getApiConfiguration: () => ({
+				actModeApiProvider: "anthropic",
+				planModeApiProvider: "anthropic",
+			}),
 		},
 		taskId: "task-1",
 		messageStateHandler: {

@@ -82,7 +82,12 @@ export const useApiConfigurationHandlers = () => {
 	 * @param currentMode - The current mode being targeted
 	 */
 	const handleModeFieldsChange = async <T extends Record<string, any>>(
-		fieldPairs: { [K in keyof T]: { plan: keyof ApiConfiguration; act: keyof ApiConfiguration } },
+		fieldPairs: {
+			[K in keyof T]: {
+				plan: keyof ApiConfiguration
+				act: keyof ApiConfiguration
+			}
+		},
 		values: T,
 		currentMode: Mode,
 	) => {
@@ -105,5 +110,10 @@ export const useApiConfigurationHandlers = () => {
 		}
 	}
 
-	return { handleFieldChange, handleFieldsChange, handleModeFieldChange, handleModeFieldsChange }
+	return {
+		handleFieldChange,
+		handleFieldsChange,
+		handleModeFieldChange,
+		handleModeFieldsChange,
+	}
 }

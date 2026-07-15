@@ -7,7 +7,6 @@ import { useExtensionState } from "@/context/ExtensionStateContext"
 import { DROPDOWN_Z_INDEX, DropdownContainer } from "../ApiOptions"
 import { DebouncedTextField } from "../common/DebouncedTextField"
 import { ModelInfoView } from "../common/ModelInfoView"
-import { LockIcon, RemotelyConfiguredInputWrapper } from "../common/RemotelyConfiguredInputWrapper"
 import ReasoningEffortSelector from "../ReasoningEffortSelector"
 import ThinkingBudgetSlider from "../ThinkingBudgetSlider"
 import { getModeSpecificFields, normalizeApiConfiguration } from "../utils/providerUtils"
@@ -53,7 +52,7 @@ const REGIONS = VertexData.regions
  * The GCP Vertex AI provider configuration component
  */
 export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: VertexProviderProps) => {
-	const { apiConfiguration, remoteConfigSettings } = useExtensionState()
+	const { apiConfiguration } = useExtensionState()
 	const { handleFieldChange, handleModeFieldChange, handleModeFieldsChange } = useApiConfigurationHandlers()
 	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 
@@ -71,7 +70,10 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 
 	const handleCustomModelInfoChange = (updates: Partial<ModelInfo>) => {
 		handleModeFieldChange(
-			{ plan: "planModeVertexCustomModelInfo", act: "actModeVertexCustomModelInfo" },
+			{
+				plan: "planModeVertexCustomModelInfo",
+				act: "actModeVertexCustomModelInfo",
+			},
 			{ ...customModelInfo, ...updates },
 			currentMode,
 		)
@@ -84,32 +86,23 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 				flexDirection: "column",
 				gap: 5,
 			}}>
-			<RemotelyConfiguredInputWrapper hidden={remoteConfigSettings?.vertexProjectId === undefined}>
-				<DebouncedTextField
-					disabled={remoteConfigSettings?.vertexProjectId !== undefined}
+			<DebouncedTextField
 					initialValue={apiConfiguration?.vertexProjectId || ""}
 					onChange={(value) => handleFieldChange("vertexProjectId", value)}
 					placeholder="Enter Project ID..."
 					style={{ width: "100%" }}>
 					<div className="flex items-center gap-2 mb-1">
 						<span style={{ fontWeight: 500 }}>Google Cloud Project ID</span>
-						{remoteConfigSettings?.vertexProjectId !== undefined && <LockIcon />}
 					</div>
-				</DebouncedTextField>
-			</RemotelyConfiguredInputWrapper>
+			</DebouncedTextField>
 
-			<RemotelyConfiguredInputWrapper hidden={remoteConfigSettings?.vertexRegion === undefined}>
-				<DropdownContainer className="dropdown-container" zIndex={DROPDOWN_Z_INDEX - 1}>
-					<div
-						className="flex items-center gap-2 mb-1"
-						style={{ opacity: remoteConfigSettings?.vertexRegion !== undefined ? 0.4 : 1 }}>
+			<DropdownContainer className="dropdown-container" zIndex={DROPDOWN_Z_INDEX - 1}>
+					<div className="flex items-center gap-2 mb-1">
 						<label htmlFor="vertex-region-dropdown">
 							<span className="font-medium">Google Cloud Region</span>
 						</label>
-						{remoteConfigSettings?.vertexRegion !== undefined && <LockIcon />}
 					</div>
 					<VSCodeDropdown
-						disabled={remoteConfigSettings?.vertexRegion !== undefined}
 						id="vertex-region-dropdown"
 						onChange={(e: any) => handleFieldChange("vertexRegion", e.target.value)}
 						style={{ width: "100%" }}
@@ -121,8 +114,7 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 							</VSCodeOption>
 						))}
 					</VSCodeDropdown>
-				</DropdownContainer>
-			</RemotelyConfiguredInputWrapper>
+			</DropdownContainer>
 
 			<p
 				style={{
@@ -157,7 +149,10 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 
 								handleModeFieldsChange(
 									{
-										apiModelId: { plan: "planModeApiModelId", act: "actModeApiModelId" },
+										apiModelId: {
+											plan: "planModeApiModelId",
+											act: "actModeApiModelId",
+										},
 										vertexCustomModelSelected: {
 											plan: "planModeVertexCustomModelSelected",
 											act: "actModeVertexCustomModelSelected",
@@ -250,7 +245,9 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 								<VSCodeCheckbox
 									checked={!!customModelInfo.supportsImages}
 									onChange={(e: any) =>
-										handleCustomModelInfoChange({ supportsImages: e.target.checked === true })
+										handleCustomModelInfoChange({
+											supportsImages: e.target.checked === true,
+										})
 									}>
 									Supports Images
 								</VSCodeCheckbox>
@@ -258,7 +255,9 @@ export const VertexProvider = ({ showModelOptions, isPopup, currentMode }: Verte
 								<VSCodeCheckbox
 									checked={!!customModelInfo.supportsReasoning}
 									onChange={(e: any) =>
-										handleCustomModelInfoChange({ supportsReasoning: e.target.checked === true })
+										handleCustomModelInfoChange({
+											supportsReasoning: e.target.checked === true,
+										})
 									}>
 									Supports Reasoning
 								</VSCodeCheckbox>

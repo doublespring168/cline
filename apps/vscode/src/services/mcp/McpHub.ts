@@ -1,7 +1,6 @@
 import { setTimeout as setTimeoutPromise } from "node:timers/promises"
 import { sendMcpServersUpdate } from "@core/controller/mcp/subscribeToMcpServers"
 import { getMcpSettingsFilePath as getMcpSettingsFilePathHelper } from "@core/storage/disk"
-import { StateManager } from "@core/storage/StateManager"
 import { UnauthorizedError } from "@modelcontextprotocol/sdk/client/auth.js"
 import { Client } from "@modelcontextprotocol/sdk/client/index.js"
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js"
@@ -42,7 +41,6 @@ import { ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
 import { expandEnvironmentVariables } from "@/utils/envExpansion"
 import { getServerAuthHash } from "@/utils/mcpAuth"
-import type { TelemetryService } from "../telemetry"
 import { DEFAULT_REQUEST_TIMEOUT_MS } from "./constants"
 import { McpOAuthManager } from "./McpOAuthManager"
 import { StreamableHttpReconnectHandler } from "./StreamableHttpReconnectHandler"
@@ -52,7 +50,6 @@ export class McpHub {
 	getMcpServersPath: () => Promise<string>
 	private getSettingsDirectoryPath: () => Promise<string>
 	private clientVersion: string
-	private telemetryService: TelemetryService
 	private mcpOAuthManager: McpOAuthManager
 
 	private settingsWatcher?: FSWatcher
@@ -75,9 +72,6 @@ export class McpHub {
 	 */
 	private isUpdatingClineSettings = false
 
-	// Track when remote config is updating to prevent unnecessary watcher triggers
-	private isUpdatingFromRemoteConfig = false
-
 	/**
 	 * Map of unique keys to each connected server names
 	 */
@@ -98,12 +92,10 @@ export class McpHub {
 		getMcpServersPath: () => Promise<string>,
 		getSettingsDirectoryPath: () => Promise<string>,
 		clientVersion: string,
-		telemetryService: TelemetryService,
 	) {
 		this.getMcpServersPath = getMcpServersPath
 		this.getSettingsDirectoryPath = getSettingsDirectoryPath
 		this.clientVersion = clientVersion
-		this.telemetryService = telemetryService
 		this.mcpOAuthManager = new McpOAuthManager()
 		this.watchMcpSettingsFile()
 		this.initializeMcpServers()
@@ -148,21 +140,6 @@ export class McpHub {
 	 */
 	async getMcpSettingsFilePath(): Promise<string> {
 		return getMcpSettingsFilePathHelper(await this.getSettingsDirectoryPath())
-	}
-
-	/**
-	 * Sets the flag to indicate remote config is updating
-	 * Used to prevent watcher from triggering on remote config writes
-	 */
-	setIsUpdatingFromRemoteConfig(value: boolean): void {
-		this.isUpdatingFromRemoteConfig = value
-	}
-
-	/**
-	 * Gets whether remote config is currently updating
-	 */
-	getIsUpdatingFromRemoteConfig(): boolean {
-		return this.isUpdatingFromRemoteConfig
 	}
 
 	private async readAndValidateMcpSettingsFile(): Promise<z.infer<typeof McpSettingsSchema> | undefined> {
@@ -225,10 +202,6 @@ export class McpHub {
 		})
 
 		this.settingsWatcher.on("change", async () => {
-			// Skip if remote config is currently updating to prevent unnecessary reconnections
-			if (this.isUpdatingFromRemoteConfig) {
-				return
-			}
 			// Skip processing if we're updating Cline-specific settings (autoApprove, timeout)
 			if (this.isUpdatingClineSettings) {
 				return
@@ -237,29 +210,6 @@ export class McpHub {
 			const settings = await this.readAndValidateMcpSettingsFile()
 			if (settings) {
 				try {
-					// Re-add any remotely configured servers that were manually removed from the file
-					const remoteServers = StateManager.get().getRemoteConfigSettings().remoteMCPServers
-					if (remoteServers?.length) {
-						let fileNeedsUpdate = false
-						for (const rs of remoteServers) {
-							if (!settings.mcpServers[rs.name]) {
-								;(settings.mcpServers as Record<string, any>)[rs.name] = {
-									url: rs.url,
-									type: "streamableHttp",
-									disabled: false,
-									autoApprove: [],
-									remoteConfigured: true,
-								}
-								fileNeedsUpdate = true
-							}
-						}
-						if (fileNeedsUpdate) {
-							this.isUpdatingFromRemoteConfig = true
-							const settingsPath = await getMcpSettingsFilePathHelper(await this.getSettingsDirectoryPath())
-							await fs.writeFile(settingsPath, JSON.stringify({ mcpServers: settings.mcpServers }, null, 2))
-							this.isUpdatingFromRemoteConfig = false
-						}
-					}
 					await this.updateServerConnections(settings.mcpServers)
 				} catch (error) {
 					Logger.error("Failed to process MCP settings change:", error)
@@ -290,51 +240,6 @@ export class McpHub {
 	): Promise<void> {
 		// Remove existing connection if it exists (should never happen, the connection should be deleted beforehand)
 		this.connections = this.connections.filter((conn) => conn.server.name !== name)
-
-		// Validate remote MCP server URL against remote config if blockPersonalRemoteMCPServers is enabled
-		if (config.type !== "stdio" && "url" in config && config.url) {
-			const stateManager = StateManager.get()
-			const remoteConfig = stateManager.getRemoteConfigSettings()
-
-			if (remoteConfig.blockPersonalRemoteMCPServers === true) {
-				const remoteMCPServers = remoteConfig.remoteMCPServers || []
-				const allowedUrls = remoteMCPServers.map((server) => server.url)
-
-				if (!allowedUrls.includes(config.url)) {
-					return
-				}
-			}
-		}
-
-		// Validate local MCP servers based on remote config (enterprise feature)
-		if (config.type === "stdio") {
-			const stateManager = StateManager.get()
-			const remoteConfig = stateManager.getRemoteConfigSettings()
-
-			// Early exit for non-enterprise users: if no remote config is set, allow all local servers
-			if (Object.keys(remoteConfig).length === 0) {
-				// No remote config restrictions - proceed with connection (default behavior for non-enterprise users)
-				// This ensures backwards compatibility and that regular users are not affected
-			} else {
-				// Enterprise restrictions apply
-
-				// If marketplace is explicitly disabled by enterprise config, block all local servers
-				if (remoteConfig.mcpMarketplaceEnabled === false) {
-					return
-				}
-
-				// If allowlist exists, only servers on the allowlist are allowed
-				const hasAllowlist = remoteConfig.allowedMCPServers && remoteConfig.allowedMCPServers.length > 0
-				if (hasAllowlist) {
-					const allowedIds = remoteConfig.allowedMCPServers!.map((server: { id: string }) => server.id)
-					if (!allowedIds.includes(name)) {
-						return
-					}
-				}
-
-				// If marketplace is enabled with no allowlist, all local servers are allowed
-			}
-		}
 
 		if (config.disabled) {
 			//Logger.log(`[MCP Debug] Creating disabled connection object for server "${name}"`)
@@ -975,18 +880,8 @@ export class McpHub {
 	 */
 	private configsRequireRestart(oldConfig: McpServerConfig, newConfig: McpServerConfig): boolean {
 		// Exclude Cline-specific settings from comparison (add new ones here)
-		const {
-			autoApprove: _oldAutoApprove,
-			timeout: _oldTimeout,
-			remoteConfigured: _oldRemoteConfigured,
-			...oldConnectionConfig
-		} = oldConfig
-		const {
-			autoApprove: _newAutoApprove,
-			timeout: _newTimeout,
-			remoteConfigured: _newRemoteConfigured,
-			...newConnectionConfig
-		} = newConfig
+		const { autoApprove: _oldAutoApprove, timeout: _oldTimeout, ...oldConnectionConfig } = oldConfig
+		const { autoApprove: _newAutoApprove, timeout: _newTimeout, ...newConnectionConfig } = newConfig
 		return !deepEqual(oldConnectionConfig, newConnectionConfig)
 	}
 
@@ -1234,7 +1129,7 @@ export class McpHub {
 		serverName: string,
 		toolName: string,
 		toolArguments: Record<string, unknown> | undefined,
-		ulid: string,
+		_ulid: string,
 	): Promise<McpToolCallResponse> {
 		const connection = this.connections.find((conn) => conn.server.name === serverName)
 		if (!connection) {
@@ -1256,16 +1151,6 @@ export class McpHub {
 		} catch (error) {
 			Logger.error(`Failed to parse timeout configuration for server ${serverName}: ${error}`)
 		}
-
-		this.telemetryService.captureMcpToolCall(
-			ulid,
-			serverName,
-			toolName,
-			"started",
-			undefined,
-			toolArguments ? Object.keys(toolArguments) : undefined,
-		)
-
 		try {
 			const result = await connection.client.request(
 				{
@@ -1280,29 +1165,11 @@ export class McpHub {
 					timeout,
 				},
 			)
-
-			this.telemetryService.captureMcpToolCall(
-				ulid,
-				serverName,
-				toolName,
-				"success",
-				undefined,
-				toolArguments ? Object.keys(toolArguments) : undefined,
-			)
-
 			return {
 				...result,
 				content: result.content ?? [],
 			}
 		} catch (error) {
-			this.telemetryService.captureMcpToolCall(
-				ulid,
-				serverName,
-				toolName,
-				"error",
-				error instanceof Error ? error.message : String(error),
-				toolArguments ? Object.keys(toolArguments) : undefined,
-			)
 			throw error
 		}
 	}
@@ -1460,7 +1327,13 @@ export class McpHub {
 			// ToDo: We could benefit from input / output types reflecting the non-transformed / transformed versions
 			await fs.writeFile(
 				settingsPath,
-				JSON.stringify({ mcpServers: { ...settings.mcpServers, [serverName]: serverConfig } }, null, 2),
+				JSON.stringify(
+					{
+						mcpServers: { ...settings.mcpServers, [serverName]: serverConfig },
+					},
+					null,
+					2,
+				),
 			)
 
 			await this.updateServerConnectionsRPC(settings.mcpServers)

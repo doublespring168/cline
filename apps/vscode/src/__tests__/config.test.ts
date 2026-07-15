@@ -21,9 +21,7 @@ describe("ClineEndpoint configuration", () => {
 
 		// Stub os.homedir to return our temp directory
 		originalHomedir = os.homedir
-		sandbox
-			.stub(os, "homedir")
-			.returns(tempDir)
+		sandbox.stub(os, "homedir").returns(tempDir)
 
 		// Reset the singleton state using internal method
 		;(ClineEndpoint as any)._instance = null
@@ -48,7 +46,6 @@ describe("ClineEndpoint configuration", () => {
 			const validConfig = {
 				appBaseUrl: "https://app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(validConfig), "utf8")
@@ -58,7 +55,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("https://app.enterprise.com")
 			config.apiBaseUrl.should.equal("https://api.enterprise.com")
-			config.mcpBaseUrl.should.equal("https://mcp.enterprise.com")
 			config.environment.should.equal(Environment.selfHosted)
 		})
 
@@ -78,7 +74,6 @@ describe("ClineEndpoint configuration", () => {
 			const validConfig = {
 				appBaseUrl: "http://localhost:3000",
 				apiBaseUrl: "http://localhost:7777",
-				mcpBaseUrl: "http://localhost:8080/mcp",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(validConfig), "utf8")
@@ -88,14 +83,12 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("http://localhost:3000")
 			config.apiBaseUrl.should.equal("http://localhost:7777")
-			config.mcpBaseUrl.should.equal("http://localhost:8080/mcp")
 		})
 
 		it("should accept URLs with paths", async () => {
 			const validConfig = {
 				appBaseUrl: "https://proxy.enterprise.com/cline/app",
 				apiBaseUrl: "https://proxy.enterprise.com/cline/api",
-				mcpBaseUrl: "https://proxy.enterprise.com/cline/mcp",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(validConfig), "utf8")
@@ -185,7 +178,6 @@ describe("ClineEndpoint configuration", () => {
 		it("should throw ClineConfigurationError when appBaseUrl is missing", async () => {
 			const config = {
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -202,7 +194,6 @@ describe("ClineEndpoint configuration", () => {
 		it("should throw ClineConfigurationError when apiBaseUrl is missing", async () => {
 			const config = {
 				appBaseUrl: "https://app.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -213,23 +204,6 @@ describe("ClineEndpoint configuration", () => {
 			} catch (error: any) {
 				error.should.be.instanceof(ClineConfigurationError)
 				error.message.should.containEql('Missing required field "apiBaseUrl"')
-			}
-		})
-
-		it("should throw ClineConfigurationError when mcpBaseUrl is missing", async () => {
-			const config = {
-				appBaseUrl: "https://app.enterprise.com",
-				apiBaseUrl: "https://api.enterprise.com",
-			}
-
-			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
-
-			try {
-				await ClineEndpoint.initialize(tempDir)
-				throw new Error("Should have thrown")
-			} catch (error: any) {
-				error.should.be.instanceof(ClineConfigurationError)
-				error.message.should.containEql('Missing required field "mcpBaseUrl"')
 			}
 		})
 
@@ -249,7 +223,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: null,
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -267,7 +240,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -285,7 +257,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "   ",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -303,7 +274,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: 12345,
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -323,7 +293,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "not-a-valid-url",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -341,7 +310,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -359,7 +327,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "https://",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -378,7 +345,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: invalidUrl,
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -398,7 +364,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "https://app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -421,7 +386,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "https://app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -464,7 +428,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "https://app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
@@ -479,7 +442,6 @@ describe("ClineEndpoint configuration", () => {
 			const customConfig = {
 				appBaseUrl: "https://custom-app.internal",
 				apiBaseUrl: "https://custom-api.internal",
-				mcpBaseUrl: "https://custom-mcp.internal/v1",
 			}
 
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(customConfig), "utf8")
@@ -489,7 +451,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("https://custom-app.internal")
 			config.apiBaseUrl.should.equal("https://custom-api.internal")
-			config.mcpBaseUrl.should.equal("https://custom-mcp.internal/v1")
 		})
 	})
 
@@ -525,7 +486,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = {
 				appBaseUrl: "https://app.enterprise.com",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 			await fs.writeFile(path.join(tempDir, ".cline", "endpoints.json"), JSON.stringify(config), "utf8")
 			await ClineEndpoint.initialize(tempDir)
@@ -567,7 +527,6 @@ describe("ClineEndpoint configuration", () => {
 			const bundledConfig = {
 				appBaseUrl: "https://bundled.enterprise.com",
 				apiBaseUrl: "https://bundled-api.enterprise.com",
-				mcpBaseUrl: "https://bundled-mcp.enterprise.com",
 			}
 
 			// Set up bundled config
@@ -578,7 +537,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("https://bundled.enterprise.com")
 			config.apiBaseUrl.should.equal("https://bundled-api.enterprise.com")
-			config.mcpBaseUrl.should.equal("https://bundled-mcp.enterprise.com")
 			config.environment.should.equal(Environment.selfHosted)
 		})
 
@@ -586,13 +544,11 @@ describe("ClineEndpoint configuration", () => {
 			const bundledConfig = {
 				appBaseUrl: "https://bundled.enterprise.com",
 				apiBaseUrl: "https://bundled-api.enterprise.com",
-				mcpBaseUrl: "https://bundled-mcp.enterprise.com",
 			}
 
 			const userConfig = {
 				appBaseUrl: "https://user.enterprise.com",
 				apiBaseUrl: "https://user-api.enterprise.com",
-				mcpBaseUrl: "https://user-mcp.enterprise.com",
 			}
 
 			// Set up both configs
@@ -605,14 +561,12 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("https://bundled.enterprise.com")
 			config.apiBaseUrl.should.equal("https://bundled-api.enterprise.com")
-			config.mcpBaseUrl.should.equal("https://bundled-mcp.enterprise.com")
 		})
 
 		it("should fall back to user endpoints.json when bundled is not present", async () => {
 			const userConfig = {
 				appBaseUrl: "https://user.enterprise.com",
 				apiBaseUrl: "https://user-api.enterprise.com",
-				mcpBaseUrl: "https://user-mcp.enterprise.com",
 			}
 
 			// Only create user config, no bundled config
@@ -624,7 +578,6 @@ describe("ClineEndpoint configuration", () => {
 			const config = ClineEndpoint.config
 			config.appBaseUrl.should.equal("https://user.enterprise.com")
 			config.apiBaseUrl.should.equal("https://user-api.enterprise.com")
-			config.mcpBaseUrl.should.equal("https://user-mcp.enterprise.com")
 		})
 
 		it("should use standard mode when neither bundled nor user file exists", async () => {
@@ -643,7 +596,6 @@ describe("ClineEndpoint configuration", () => {
 			const invalidConfig = {
 				appBaseUrl: "not-a-url",
 				apiBaseUrl: "https://api.enterprise.com",
-				mcpBaseUrl: "https://mcp.enterprise.com",
 			}
 
 			// Set up invalid bundled config
@@ -676,7 +628,6 @@ describe("ClineEndpoint configuration", () => {
 		it("should indicate bundled source in error messages", async () => {
 			const incompleteConfig = {
 				appBaseUrl: "https://bundled.enterprise.com",
-				// Missing apiBaseUrl and mcpBaseUrl
 			}
 
 			await fs.writeFile(path.join(bundledDir, "endpoints.json"), JSON.stringify(incompleteConfig), "utf8")

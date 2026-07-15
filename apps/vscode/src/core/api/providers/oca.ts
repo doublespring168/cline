@@ -379,7 +379,9 @@ export class OcaHandler implements ApiHandler {
 
 	async *createMessageResponsesApi(systemPrompt: string, messages: ClineStorageMessage[], tools?: OpenAITool[]): ApiStream {
 		const client = this.ensureOpenAIClient()
-		const inputMessages = convertToOpenAIResponsesInput(messages, { usePreviousResponseId: false }).input
+		const inputMessages = convertToOpenAIResponsesInput(messages, {
+			usePreviousResponseId: false,
+		}).input
 		// Convert messages to Responses API input format
 		const input: OpenAI.Responses.ResponseInputItem[] = [{ role: "system", content: systemPrompt }, ...inputMessages]
 
@@ -417,7 +419,10 @@ export class OcaHandler implements ApiHandler {
 		}
 
 		if (reasoningOn) {
-			responsesParams.reasoning = { effort: this.options.ocaReasoningEffort as any, summary: "auto" }
+			responsesParams.reasoning = {
+				effort: this.options.ocaReasoningEffort as any,
+				summary: "auto",
+			}
 		}
 
 		// Create the response using Responses API

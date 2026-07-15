@@ -69,7 +69,10 @@ const TOKEN_DETAILS_CONFIG: Omit<TokenDetail, "value">[] = [
 const TokenUsageDetails = memo<TokenUsageInfoProps>(({ tokensIn, tokensOut, cacheWrites, cacheReads }) => {
 	const contextTokenDetails = useMemo(() => {
 		const values = [tokensIn, tokensOut, cacheWrites || 0, cacheReads || 0]
-		return TOKEN_DETAILS_CONFIG.map((config, index) => ({ ...config, value: values[index] })).filter((item) => item.value)
+		return TOKEN_DETAILS_CONFIG.map((config, index) => ({
+			...config,
+			value: values[index],
+		})).filter((item) => item.value)
 	}, [tokensIn, tokensOut, cacheWrites, cacheReads])
 
 	if (!tokensIn) {

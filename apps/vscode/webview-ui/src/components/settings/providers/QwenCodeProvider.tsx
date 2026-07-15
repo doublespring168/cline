@@ -36,16 +36,31 @@ export const QwenCodeProvider = ({ showModelOptions, isPopup, currentMode }: Qwe
 				value={apiConfiguration?.qwenCodeOauthPath || ""}>
 				OAuth Credentials Path
 			</VSCodeTextField>
-			<div style={{ fontSize: "12px", color: "var(--vscode-descriptionForeground)", marginTop: "4px" }}>
+			<div
+				style={{
+					fontSize: "12px",
+					color: "var(--vscode-descriptionForeground)",
+					marginTop: "4px",
+				}}>
 				Path to your Qwen OAuth credentials file. Use ~/.qwen/oauth_creds.json or provide a custom path.
 			</div>
 
-			<div style={{ fontSize: "12px", color: "var(--vscode-descriptionForeground)", marginTop: "12px" }}>
+			<div
+				style={{
+					fontSize: "12px",
+					color: "var(--vscode-descriptionForeground)",
+					marginTop: "12px",
+				}}>
 				Qwen Code is an OAuth-based API that requires authentication through the official Qwen client. You'll need to set
 				up OAuth credentials first.
 			</div>
 
-			<div style={{ fontSize: "12px", color: "var(--vscode-descriptionForeground)", marginTop: "8px" }}>
+			<div
+				style={{
+					fontSize: "12px",
+					color: "var(--vscode-descriptionForeground)",
+					marginTop: "8px",
+				}}>
 				To get started:
 				<br />
 				1. Install the official Qwen client

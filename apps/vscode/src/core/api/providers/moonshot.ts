@@ -105,6 +105,9 @@ export class MoonshotHandler implements ApiHandler {
 			const id = modelId as MoonshotModelId
 			return { id, info: moonshotModels[id] }
 		}
-		return { id: moonshotDefaultModelId, info: moonshotModels[moonshotDefaultModelId] }
+		return {
+			id: moonshotDefaultModelId,
+			info: moonshotModels[moonshotDefaultModelId],
+		}
 	}
 }

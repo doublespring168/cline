@@ -73,7 +73,10 @@ describe("SubagentBuilder", () => {
 			getCachedConfig: () => undefined,
 		} as unknown as AgentConfigLoader)
 
-		sinon.stub(api, "buildApiHandler").returns({ getModel: sinon.stub(), createMessage: sinon.stub() } as never)
+		sinon.stub(api, "buildApiHandler").returns({
+			getModel: sinon.stub(),
+			createMessage: sinon.stub(),
+		} as never)
 		const builder = new SubagentBuilder(createTaskConfig("act", "anthropic"))
 
 		assert.deepEqual(builder.getAllowedTools(), SUBAGENT_DEFAULT_ALLOWED_TOOLS)
@@ -122,7 +125,10 @@ describe("SubagentBuilder", () => {
 						}
 					: undefined,
 		} as unknown as AgentConfigLoader)
-		sinon.stub(api, "buildApiHandler").returns({ getModel: sinon.stub(), createMessage: sinon.stub() } as never)
+		sinon.stub(api, "buildApiHandler").returns({
+			getModel: sinon.stub(),
+			createMessage: sinon.stub(),
+		} as never)
 
 		const getModelFamilyStub = sinon.stub(PromptRegistry.getInstance(), "getModelFamily").returns("test-family" as never)
 		const getToolsStub = sinon.stub(ClineToolSet, "getToolsForVariantWithFallback").returns([

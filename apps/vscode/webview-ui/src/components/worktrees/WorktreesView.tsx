@@ -103,7 +103,9 @@ const WorktreesView = ({ onDone }: WorktreesViewProps) => {
 			if (result.success) {
 				setHasWorktreeInclude(true)
 				// Open the file in the editor
-				await FileServiceClient.openFileRelativePath({ value: ".worktreeinclude" })
+				await FileServiceClient.openFileRelativePath({
+					value: ".worktreeinclude",
+				})
 			} else {
 				setError(result.message)
 			}

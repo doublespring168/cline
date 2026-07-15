@@ -10,7 +10,6 @@ import { HookProcessRegistry } from "./core/hooks/HookProcessRegistry"
 import { StateManager } from "./core/storage/StateManager"
 import { AgentConfigLoader } from "./core/task/tools/subagent/AgentConfigLoader"
 import { ClineTempManager } from "./services/temp"
-import { cleanupTestMode } from "./services/test/TestMode"
 import { ShowMessageType } from "./shared/proto/host/window"
 import { arePathsEqual } from "./utils/path"
 
@@ -106,6 +105,4 @@ export async function tearDown(): Promise<void> {
 	// Stop periodic temp file cleanup
 	ClineTempManager.stopPeriodicCleanup()
 
-	// Clean up test mode
-	cleanupTestMode()
 }

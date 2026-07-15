@@ -384,7 +384,7 @@ Common tools to include in `.tools()`:
 - `BASH` - Execute shell commands
 - `FILE_READ`, `FILE_NEW`, `FILE_EDIT` - File operations
 - `SEARCH`, `LIST_FILES`, `LIST_CODE_DEF` - Code search
-- `BROWSER`, `WEB_FETCH` - Web operations
+- `BROWSER` - Browser operations
 - `MCP_USE`, `MCP_ACCESS` - MCP integration
 - `ASK`, `ATTEMPT` - Task management
 - `PLAN_MODE`, `ACT_MODE` - Mode switching

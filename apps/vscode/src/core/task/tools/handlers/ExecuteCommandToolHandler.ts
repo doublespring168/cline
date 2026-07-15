@@ -5,7 +5,6 @@ import { showApprovalNotification, showSystemNotification } from "@integrations/
 import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences"
 import { ClineAsk } from "@shared/ExtensionMessage"
 import { arePathsEqual } from "@utils/path"
-import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator"
@@ -91,7 +90,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		const timeoutParam: string | undefined = block.params.timeout
 		let timeoutSeconds: number | undefined
 
-		// Extract provider using the proven pattern from ReportBugHandler
+		// Read the active provider for local tool context.
 		const apiConfig = config.services.stateManager.getApiConfiguration()
 		const currentMode = config.services.stateManager.getGlobalSettingsKey("mode")
 		const provider = (currentMode === "plan" ? apiConfig.planModeApiProvider : apiConfig.actModeApiProvider) as string
@@ -114,11 +113,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 		config.taskState.consecutiveMistakeCount = 0
 
 		// Handling of timeout while in yolo mode
-		timeoutSeconds = resolveCommandTimeoutSeconds(
-			command,
-			timeoutParam,
-			config.yoloModeToggled,
-		)
+		timeoutSeconds = resolveCommandTimeoutSeconds(command, timeoutParam, config.yoloModeToggled)
 
 		// Pre-process command for certain models
 		if (config.api.getModel().id.includes("gemini")) {
@@ -209,15 +204,6 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 
 		// Capture workspace path resolution telemetry
 		if (config.isMultiRootEnabled && config.workspaceManager) {
-			telemetryService.captureWorkspacePathResolved(
-				config.ulid,
-				"ExecuteCommandToolHandler",
-				workspaceHintUsed ? "hint_provided" : "fallback_to_primary",
-				workspaceHintUsed ? "workspace_name" : undefined,
-				resolvedToNonPrimary, // resolution success = resolved to different workspace
-				undefined, // TODO: could calculate workspace index if needed
-				true,
-			)
 		}
 
 		if (
@@ -231,20 +217,13 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 				await config.callbacks.say("command", actualCommand, undefined, undefined, false)
 			}
 			didAutoApprove = true
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				true,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		} else {
 			// Manual approval flow
 			void showApprovalNotification(
-				{ message: actualCommand, requiresExplicitApproval: autoApproveSafe && requiresApprovalPerLLM },
+				{
+					message: actualCommand,
+					requiresExplicitApproval: autoApproveSafe && requiresApprovalPerLLM,
+				},
 				config.autoApprovalSettings.enableNotifications,
 			)
 
@@ -254,28 +233,8 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 				config,
 			)
 			if (!didApprove) {
-				telemetryService.captureToolUsage(
-					config.ulid,
-					block.name,
-					config.api.getModel().id,
-					provider,
-					false,
-					false,
-					workspaceContext,
-					block.isNativeToolCall,
-				)
 				return formatResponse.toolDenied()
 			}
-			telemetryService.captureToolUsage(
-				config.ulid,
-				block.name,
-				config.api.getModel().id,
-				provider,
-				false,
-				true,
-				workspaceContext,
-				block.isNativeToolCall,
-			)
 		}
 
 		// Run PreToolUse hook after approval but before execution

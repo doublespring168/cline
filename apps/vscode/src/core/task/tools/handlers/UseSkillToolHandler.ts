@@ -1,7 +1,6 @@
 import type { ToolUse } from "@core/assistant-message"
 import { discoverAvailableSkills, getSkillContent } from "@core/context/instructions/user-instructions/skills"
 import type { SkillMetadata } from "@shared/skills"
-import { telemetryService } from "@/services/telemetry"
 import { ClineDefaultTool } from "@/shared/tools"
 import type { ToolResponse } from "../../index"
 import type { IPartialBlockHandler, IToolHandler } from "../ToolExecutorCoordinator"
@@ -36,13 +35,10 @@ export class UseSkillToolHandler implements IToolHandler, IPartialBlockHandler {
 		}
 
 		// Discover skills on-demand (lazy loading)
-		const remoteSkillEntries = config.services.stateManager.getRemoteConfigSettings().remoteGlobalSkills || []
 		const stateManager = config.services.stateManager
 		const availableSkills = await discoverAvailableSkills(config.cwd, {
-			remoteSkillEntries,
 			globalSkillsToggles: stateManager.getGlobalSettingsKey("globalSkillsToggles") ?? {},
 			localSkillsToggles: stateManager.getWorkspaceStateKey("localSkillsToggles") ?? {},
-			remoteSkillsToggles: stateManager.getGlobalStateKey("remoteSkillsToggles") ?? {},
 		})
 
 		if (availableSkills.length === 0) {
@@ -65,27 +61,12 @@ export class UseSkillToolHandler implements IToolHandler, IPartialBlockHandler {
 		config.taskState.consecutiveMistakeCount = 0
 
 		try {
-			const skillContent = await getSkillContent(skillName, availableSkills, remoteSkillEntries)
+			const skillContent = await getSkillContent(skillName, availableSkills)
 
 			if (!skillContent) {
 				const availableNames = availableSkills.map((s: SkillMetadata) => s.name).join(", ")
 				return `Error: Skill "${skillName}" not found. Available skills: ${availableNames || "none"}`
 			}
-
-			telemetryService.safeCapture(
-				() =>
-					telemetryService.captureSkillUsed({
-						ulid: config.ulid,
-						skillName,
-						skillSource: skillContent.source === "global" ? "global" : "project",
-						skillsAvailableGlobal: globalCount,
-						skillsAvailableProject: projectCount,
-						provider,
-						modelId: config.api.getModel().id,
-					}),
-				"UseSkillToolHandler.execute",
-			)
-
 			const skillDirNote = skillContent.path.startsWith("remote:")
 				? ""
 				: ` You may access other files in the skill directory at: ${skillContent.path.replace(/SKILL\.md$/, "")}`

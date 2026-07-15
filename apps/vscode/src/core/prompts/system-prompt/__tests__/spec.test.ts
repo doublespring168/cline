@@ -10,9 +10,12 @@ const mockContext: SystemPromptContext = {
 	cwd: "/test/project",
 	ide: "TestIde",
 	supportsBrowserUse: true,
-	clineWebToolsEnabled: true,
 	subagentsEnabled: true,
-	providerInfo: { providerId: "test", model: { id: "test-model", info: { supportsPromptCache: false } }, mode: "act" },
+	providerInfo: {
+		providerId: "test",
+		model: { id: "test-model", info: { supportsPromptCache: false } },
+		mode: "act",
+	},
 	enableNativeToolCalls: false,
 	isTesting: true,
 }

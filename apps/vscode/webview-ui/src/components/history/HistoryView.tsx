@@ -82,7 +82,10 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 	const toggleFavorite = useCallback(
 		async (taskId: string, currentValue: boolean) => {
 			// Optimistic UI update
-			setPendingFavoriteToggles((prev) => ({ ...prev, [taskId]: !currentValue }))
+			setPendingFavoriteToggles((prev) => ({
+				...prev,
+				[taskId]: !currentValue,
+			}))
 
 			try {
 				await TaskServiceClient.toggleTaskFavorite(
@@ -451,7 +454,8 @@ const HistoryView = ({ onDone }: HistoryViewProps) => {
 								.finally(() => setDeleteAllDisabled(false))
 						}}
 						variant="danger">
-						Delete All History{totalTasksSize !== null ? ` (${formatSize(totalTasksSize)})` : ""}
+						Delete All History
+						{totalTasksSize !== null ? ` (${formatSize(totalTasksSize)})` : ""}
 					</Button>
 				)}
 			</div>

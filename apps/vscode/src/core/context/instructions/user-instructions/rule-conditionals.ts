@@ -71,7 +71,10 @@ const evaluatePathsConditional: ConditionalEvaluatorWithMatch = (frontmatterValu
 		}
 	}
 
-	return { passed: matchedPatterns.length > 0, matched: matchedPatterns.length > 0 ? matchedPatterns : undefined }
+	return {
+		passed: matchedPatterns.length > 0,
+		matched: matchedPatterns.length > 0 ? matchedPatterns : undefined,
+	}
 }
 
 const conditionalEvaluators: Record<string, ConditionalEvaluatorWithMatch> = {

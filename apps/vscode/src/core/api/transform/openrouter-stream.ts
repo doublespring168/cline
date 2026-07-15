@@ -212,7 +212,14 @@ export async function createOpenRouterStream(
 		...(isAdaptiveThinkingModel && adaptiveThinking?.effort ? { verbosity: adaptiveThinking.effort } : {}),
 		...(openRouterProviderSorting && !providerPreferences ? { provider: { sort: openRouterProviderSorting } } : {}),
 		...(providerPreferences ? { provider: providerPreferences } : {}),
-		...(isClaude1m ? { provider: { order: ["anthropic", "google-vertex/global"], allow_fallbacks: false } } : {}),
+		...(isClaude1m
+			? {
+					provider: {
+						order: ["anthropic", "google-vertex/global"],
+						allow_fallbacks: false,
+					},
+				}
+			: {}),
 		...getOpenAIToolParams(tools, !!enableParallelToolCalling),
 	}
 

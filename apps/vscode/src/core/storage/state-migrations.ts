@@ -121,18 +121,6 @@ export async function migrateTaskHistoryToFile(context: vscode.ExtensionContext)
 	}
 }
 
-export async function migrateMcpMarketplaceEnableSetting(mcpMarketplaceEnabledRaw: boolean | undefined): Promise<boolean> {
-	const config = vscode.workspace.getConfiguration("cline")
-	const mcpMarketplaceEnabled = config.get<boolean>("mcpMarketplace.enabled")
-	if (mcpMarketplaceEnabled !== undefined) {
-		// Remove from VSCode configuration
-		await config.update("mcpMarketplace.enabled", undefined, true)
-
-		return !mcpMarketplaceEnabled
-	}
-	return mcpMarketplaceEnabledRaw ?? true
-}
-
 export async function migrateEnableCheckpointsSetting(enableCheckpointsSettingRaw: boolean | undefined): Promise<boolean> {
 	const config = vscode.workspace.getConfiguration("cline")
 	const enableCheckpoints = config.get<boolean>("enableCheckpoints")
@@ -640,25 +628,6 @@ export async function migrateWelcomeViewCompleted(context: vscode.ExtensionConte
 	} catch (error) {
 		Logger.error("Failed to migrate welcomeViewCompleted:", error)
 		// Continue execution - migration failure shouldn't break extension startup
-	}
-}
-
-export async function cleanupMcpMarketplaceCatalogFromGlobalState(context: vscode.ExtensionContext) {
-	try {
-		// Check if mcpMarketplaceCatalog exists in global state
-		const mcpMarketplaceCatalog = await context.globalState.get("mcpMarketplaceCatalog")
-
-		if (mcpMarketplaceCatalog !== undefined) {
-			Logger.log("Cleaning up mcpMarketplaceCatalog from global state...")
-
-			// Delete it from global state
-			await context.globalState.update("mcpMarketplaceCatalog", undefined)
-
-			Logger.log("Successfully removed mcpMarketplaceCatalog from global state")
-		}
-	} catch (error) {
-		Logger.error("Failed to cleanup mcpMarketplaceCatalog from global state:", error)
-		// Continue execution - cleanup failure shouldn't break extension startup
 	}
 }
 

@@ -98,6 +98,8 @@ message Secrets {
 // in src/shared/storage/state-keys.ts and use the scripts/generate-state-proto.mjs
 // script to regenerate this list.
 message Settings {
+  reserved 144, 182, 183;
+  reserved "cline_web_tools_enabled", "show_feature_tips", "lazy_teammate_mode_enabled";
   optional string lite_llm_base_url = 1;
   optional bool lite_llm_use_prompt_cache = 2;
   optional string anthropic_base_url = 4;
@@ -238,7 +240,6 @@ message Settings {
   optional bool strict_plan_mode_enabled = 141;
   optional bool yolo_mode_toggled = 142;
   optional bool use_auto_condense = 143;
-  optional bool cline_web_tools_enabled = 144;
   optional string preferred_language = 145;
   optional PlanActMode mode = 147;
   optional FocusChainSettings focus_chain_settings = 149;
@@ -255,8 +256,6 @@ message Settings {
   optional OpenRouterModelInfo plan_mode_cline_model_info = 179;
   optional string act_mode_cline_model_id = 180;
   optional OpenRouterModelInfo act_mode_cline_model_info = 181;
-  optional bool show_feature_tips = 182;
-  optional bool lazy_teammate_mode_enabled = 183;
   optional bool plan_mode_vertex_custom_model_selected = 184;
   optional OpenRouterModelInfo plan_mode_vertex_custom_model_info = 185;
   optional bool act_mode_vertex_custom_model_selected = 186;
@@ -345,15 +344,13 @@ message UpdateTaskSettingsRequest {
 
 // Message for updating settings
 message UpdateSettingsRequest {
-  reserved 15; // was openai_reasoning_effort (moved to mode-scoped reasoning effort)
-  reserved 23; // was dictation_settings (dictation removed)
-  reserved 38; // was skills_enabled (removed - now always enabled)
+  reserved 6, 15, 23, 33, 34, 38, 42, 43;
+  reserved "mcp_marketplace_enabled", "onboarding_models", "cline_web_tools_enabled", "show_feature_tips", "lazy_teammate_mode_enabled";
 
   Metadata metadata = 1;
   optional ModelsApiConfiguration api_configuration = 2;
   optional bool plan_act_separate_models_setting = 4;
   optional bool enable_checkpoints_setting = 5;
-  optional bool mcp_marketplace_enabled = 6;
   optional int32 shell_integration_timeout = 8;
   optional bool terminal_reuse_enabled = 9;
   optional bool mcp_responses_collapsed = 10;
@@ -375,15 +372,11 @@ message UpdateSettingsRequest {
   optional int32 subagent_terminal_output_line_limit = 30;
   optional string cline_env = 31;
   optional bool native_tool_call_enabled = 32;
-  optional OnboardingModelGroup onboarding_models = 33;
-  optional bool cline_web_tools_enabled = 34;
   optional bool enable_parallel_tool_calling = 35;
   optional bool background_edit_enabled = 36;
   optional string oca_reasoning_effort = 37;
   optional bool worktrees_enabled = 40;
   optional bool double_check_completion_enabled = 41;
-  optional bool show_feature_tips = 42;
-  optional bool lazy_teammate_mode_enabled = 43;
   optional int32 chat_font_size = 44;
 }
 
@@ -404,18 +397,4 @@ message ProcessInfo {
   int32 process_id = 1;
   optional string version = 2;
   optional int64 uptime_ms = 3;
-}
-
-message OnboardingModelGroup {
-  repeated OnboardingModel models = 1;
-}
-
-message OnboardingModel {
-  string id = 1;
-  string name = 2;
-  int32 score = 3;
-  int32 latency = 4;
-  string badge = 5;
-  string group = 6;
-  OpenRouterModelInfo info = 7;
 }

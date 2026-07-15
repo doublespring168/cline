@@ -158,7 +158,13 @@ describe("Thinking Trace Preservation", () => {
 				{
 					role: "assistant",
 					content: "I'll use a tool",
-					tool_calls: [{ id: "call_123", type: "function", function: { name: "read_file", arguments: "{}" } }],
+					tool_calls: [
+						{
+							id: "call_123",
+							type: "function",
+							function: { name: "read_file", arguments: "{}" },
+						},
+					],
 					// No reasoning_details
 				},
 				{
@@ -183,7 +189,13 @@ describe("Thinking Trace Preservation", () => {
 				{
 					role: "assistant",
 					content: null,
-					tool_calls: [{ id: "call_123", type: "function", function: { name: "read_file", arguments: "{}" } }],
+					tool_calls: [
+						{
+							id: "call_123",
+							type: "function",
+							function: { name: "read_file", arguments: "{}" },
+						},
+					],
 					reasoning_details: [
 						{
 							type: "reasoning.text",
@@ -211,7 +223,13 @@ describe("Thinking Trace Preservation", () => {
 				{
 					role: "assistant",
 					content: "Using tool",
-					tool_calls: [{ id: "call_123", type: "function", function: { name: "test", arguments: "{}" } }],
+					tool_calls: [
+						{
+							id: "call_123",
+							type: "function",
+							function: { name: "test", arguments: "{}" },
+						},
+					],
 					// No reasoning_details - would be dropped for Gemini
 				},
 			]

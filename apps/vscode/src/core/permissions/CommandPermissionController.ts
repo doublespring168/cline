@@ -8,7 +8,10 @@ const COMMAND_SEPARATOR_OPERATORS = new Set(["&&", "||", "|", ";"])
 const LINE_SEPARATOR_REGEX = /[\n\r\u2028\u2029\u0085]/
 const LINE_SEPARATOR_DESCRIPTIONS: Record<string, ShellOperatorMatch> = {
 	"\n": { operator: "\\n", description: "newline (command separator)" },
-	"\r": { operator: "\\r", description: "carriage return (potential command separator)" },
+	"\r": {
+		operator: "\\r",
+		description: "carriage return (potential command separator)",
+	},
 	"\u2028": { operator: "U+2028", description: "unicode line separator" },
 	"\u2029": { operator: "U+2029", description: "unicode paragraph separator" },
 	"\u0085": { operator: "U+0085", description: "unicode next line" },
@@ -375,7 +378,10 @@ export class CommandPermissionController {
 			// Check for backticks outside SINGLE quotes only
 			// Backticks in double quotes ARE executed as command substitution in bash
 			if (char === "`" && !inSingleQuote) {
-				return { operator: "`", description: "command substitution (backtick)" }
+				return {
+					operator: "`",
+					description: "command substitution (backtick)",
+				}
 			}
 		}
 

@@ -183,7 +183,13 @@ const McpResponseDisplay: React.FC<McpResponseDisplayProps> = ({ responseText })
 
 		if (isLoading && mcpDisplayMode === "rich") {
 			return (
-				<div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50px" }}>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						height: "50px",
+					}}>
 					<VSCodeProgressRing />
 				</div>
 			)
@@ -200,7 +206,13 @@ const McpResponseDisplay: React.FC<McpResponseDisplayProps> = ({ responseText })
 		if (error) {
 			return (
 				<>
-					<div style={{ color: "var(--vscode-errorForeground)", marginBottom: "10px" }}>{error}</div>
+					<div
+						style={{
+							color: "var(--vscode-errorForeground)",
+							marginBottom: "10px",
+						}}>
+						{error}
+					</div>
 					<UrlText>{responseText}</UrlText>
 				</>
 			)
@@ -232,7 +244,10 @@ const McpResponseDisplay: React.FC<McpResponseDisplayProps> = ({ responseText })
 						Response
 					</div>
 					<DropdownContainer
-						style={{ minWidth: isExpanded ? "auto" : "0", visibility: isExpanded ? "visible" : "hidden" }}>
+						style={{
+							minWidth: isExpanded ? "auto" : "0",
+							visibility: isExpanded ? "visible" : "hidden",
+						}}>
 						<McpDisplayModeDropdown
 							onChange={handleDisplayModeChange}
 							onClick={(e) => e.stopPropagation()}

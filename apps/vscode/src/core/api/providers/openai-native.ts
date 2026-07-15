@@ -265,7 +265,9 @@ export class OpenAiNativeHandler implements ApiHandler {
 	): ApiStream {
 		const client = this.ensureClient()
 		Logger.debug(`OpenAI Responses Input (HTTP): ${JSON.stringify(params.input)}`)
-		const stream = await client.responses.create(params, { signal: this.abortController?.signal })
+		const stream = await client.responses.create(params, {
+			signal: this.abortController?.signal,
+		})
 		yield* this.processResponsesEvents(stream, modelInfo)
 	}
 
@@ -505,7 +507,11 @@ export class OpenAiNativeHandler implements ApiHandler {
 			if (chunk.type === "response.output_item.added") {
 				const item = chunk.item
 				if (item.type === "function_call" && item.id) {
-					functionCallByItemId.set(item.id, { call_id: item.call_id, name: item.name, id: item.id })
+					functionCallByItemId.set(item.id, {
+						call_id: item.call_id,
+						name: item.name,
+						id: item.id,
+					})
 					yield {
 						type: "tool_calls",
 						id: item.id,
@@ -532,7 +538,11 @@ export class OpenAiNativeHandler implements ApiHandler {
 				const item = chunk.item
 				if (item.type === "function_call") {
 					if (item.id) {
-						functionCallByItemId.set(item.id, { call_id: item.call_id, name: item.name, id: item.id })
+						functionCallByItemId.set(item.id, {
+							call_id: item.call_id,
+							name: item.name,
+							id: item.id,
+						})
 					}
 					yield {
 						type: "tool_calls",

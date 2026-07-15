@@ -261,7 +261,9 @@ export class E2ETestHelper {
 		await providerSelectorInput.click({ delay: 100 })
 		await webview.getByTestId("provider-option-cline").click({ delay: 100 })
 
-		const apiKeyInput = webview.getByRole("textbox", { name: "Cline-compatible API Key" })
+		const apiKeyInput = webview.getByRole("textbox", {
+			name: "Cline-compatible API Key",
+		})
 		await apiKeyInput.fill("test-api-key")
 		await expect(apiKeyInput).toHaveValue("test-api-key")
 		await apiKeyInput.press("Tab")
@@ -368,7 +370,9 @@ export const e2e = test
 		workspaceType: "single",
 		channel: "stable",
 	})
-	.extend<{ openVSCode: (workspacePath: string) => Promise<ElectronApplication> }>({
+	.extend<{
+		openVSCode: (workspacePath: string) => Promise<ElectronApplication>
+	}>({
 		openVSCode: async ({ userDataDir, channel }, use, testInfo) => {
 			const executablePath = await downloadAndUnzipVSCode(channel, undefined, new SilentReporter())
 
@@ -439,7 +443,11 @@ export const e2e = test
 					const entries = readdirSync(tmpDir)
 					for (const entry of entries) {
 						if (entry.startsWith("cline-e2e-")) {
-							cleanupTasks.push(E2ETestHelper.rmForRetries(path.join(tmpDir, entry), { recursive: true }))
+							cleanupTasks.push(
+								E2ETestHelper.rmForRetries(path.join(tmpDir, entry), {
+									recursive: true,
+								}),
+							)
 						}
 					}
 				} catch (error) {

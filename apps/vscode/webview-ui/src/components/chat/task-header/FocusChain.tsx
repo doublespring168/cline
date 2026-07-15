@@ -9,7 +9,11 @@ import { FileServiceClient } from "@/services/grpc-client"
 
 // Optimized interface with readonly properties to prevent accidental mutations
 interface TodoInfo {
-	readonly currentTodo: { text: string; completed: boolean; index: number } | null
+	readonly currentTodo: {
+		text: string
+		completed: boolean
+		index: number
+	} | null
 	readonly currentIndex: number
 	readonly completedCount: number
 	readonly totalCount: number
@@ -134,7 +138,13 @@ const parseCurrentTodoInfo = (text: string): TodoInfo | null => {
 		return null
 	}
 
-	const currentTodo = firstIncompleteText ? { text: firstIncompleteText, completed: false, index: firstIncompleteIndex } : null
+	const currentTodo = firstIncompleteText
+		? {
+				text: firstIncompleteText,
+				completed: false,
+				index: firstIncompleteIndex,
+			}
+		: null
 
 	const result: TodoInfo = {
 		currentTodo,

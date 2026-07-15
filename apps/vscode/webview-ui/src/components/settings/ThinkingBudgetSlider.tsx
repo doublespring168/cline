@@ -84,7 +84,10 @@ const ThinkingBudgetSlider = ({ currentMode, maxBudget, showEnableToggle = true 
 		setLocalValue(newThinkingBudgetValue)
 
 		handleModeFieldChange(
-			{ plan: "planModeThinkingBudgetTokens", act: "actModeThinkingBudgetTokens" },
+			{
+				plan: "planModeThinkingBudgetTokens",
+				act: "actModeThinkingBudgetTokens",
+			},
 			newThinkingBudgetValue,
 			currentMode,
 		)
@@ -121,7 +124,10 @@ const ThinkingBudgetSlider = ({ currentMode, maxBudget, showEnableToggle = true 
 
 	const handleSliderComplete = () => {
 		handleModeFieldChange(
-			{ plan: "planModeThinkingBudgetTokens", act: "actModeThinkingBudgetTokens" },
+			{
+				plan: "planModeThinkingBudgetTokens",
+				act: "actModeThinkingBudgetTokens",
+			},
 			localValue,
 			currentMode,
 		)
@@ -137,7 +143,8 @@ const ThinkingBudgetSlider = ({ currentMode, maxBudget, showEnableToggle = true 
 		<div className="w-full">
 			{showEnableToggle ? (
 				<VSCodeCheckbox checked={isEnabled} onClick={handleToggleChange}>
-					Enable thinking{localValue && localValue > 0 ? ` (${localValue.toLocaleString()} tokens)` : ""}
+					Enable thinking
+					{localValue && localValue > 0 ? ` (${localValue.toLocaleString()} tokens)` : ""}
 				</VSCodeCheckbox>
 			) : (
 				<p className="text-[var(--vscode-descriptionForeground)] text-sm">

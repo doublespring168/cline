@@ -16,7 +16,10 @@ const meta: Meta<typeof McpResponseDisplay> = {
 	},
 	decorators: [createStorybookDecorator()],
 	argTypes: {
-		responseText: { control: "text", description: "The response text to display" },
+		responseText: {
+			control: "text",
+			description: "The response text to display",
+		},
 	},
 }
 

@@ -16,11 +16,7 @@ const MockApp = () => {
 
 	return (
 		<HeroUIProvider>
-			{showWelcome ? (
-				<OnboardingView />
-			) : (
-				<ChatView isHidden={false} showHistoryView={() => {}} />
-			)}
+			{showWelcome ? <OnboardingView /> : <ChatView isHidden={false} showHistoryView={() => {}} />}
 		</HeroUIProvider>
 	)
 }
@@ -188,7 +184,11 @@ const mockActiveMessages: ClineMessage[] = [
 		"I'll help you create a responsive navigation component for your React application. Let me start by examining your current project structure and then create a modern, accessible navigation component.",
 	),
 	createMessage(4.3, "say", "tool", JSON.stringify({ tool: "listFilesTopLevel", path: "src/components" })),
-	createApiReqMessage(4.2, "Component creation request", { tokensIn: 12020, tokensOut: 6180, cost: 0.042 }),
+	createApiReqMessage(4.2, "Component creation request", {
+		tokensIn: 12020,
+		tokensOut: 6180,
+		cost: 0.042,
+	}),
 	createMessage(
 		4,
 		"say",
@@ -205,7 +205,11 @@ const mockActiveMessages: ClineMessage[] = [
 			content: "// Navigation component code...",
 		}),
 	),
-	createApiReqMessage(3.5, "Final response request", { tokensIn: 41550, tokensOut: 3320, cost: 0.018 }),
+	createApiReqMessage(3.5, "Final response request", {
+		tokensIn: 41550,
+		tokensOut: 3320,
+		cost: 0.018,
+	}),
 	createMessage(
 		3.3,
 		"say",
@@ -235,7 +239,6 @@ const createMockState = (overrides: any = {}) => ({
 	clineMessages: mockActiveMessages,
 	taskHistory: mockTaskHistory,
 	apiConfiguration: mockApiConfiguration,
-	onboardingModels: undefined,
 	openRouterModels: bedrockModels,
 	backgroundEditEnabled: false,
 	...overrides,
@@ -257,7 +260,13 @@ const createStoryDecorator =
 	}
 
 export const Welcome: Story = {
-	decorators: [createStoryDecorator({ welcomeViewCompleted: false, showWelcome: true, clineMessages: [] })],
+	decorators: [
+		createStoryDecorator({
+			welcomeViewCompleted: false,
+			showWelcome: true,
+			clineMessages: [],
+		}),
+	],
 	parameters: {
 		docs: {
 			description: {
@@ -297,7 +306,13 @@ export const Onboarding: Story = {
 }
 
 export const EmptyState: Story = {
-	decorators: [createStoryDecorator({ clineMessages: [], taskHistory: [], isNewUser: true })],
+	decorators: [
+		createStoryDecorator({
+			clineMessages: [],
+			taskHistory: [],
+			isNewUser: true,
+		}),
+	],
 	parameters: {
 		docs: {
 			description: {
@@ -309,7 +324,11 @@ export const EmptyState: Story = {
 
 export const ReturnUser: Story = {
 	decorators: [
-		createStoryDecorator({ clineMessages: [], taskHistory: mockTaskHistory, isNewUser: true }),
+		createStoryDecorator({
+			clineMessages: [],
+			taskHistory: mockTaskHistory,
+			isNewUser: true,
+		}),
 	],
 	parameters: {
 		docs: {
@@ -321,7 +340,12 @@ export const ReturnUser: Story = {
 }
 
 export const ActiveConversation: Story = {
-	decorators: [createStoryDecorator({ task: mockTaskHistory[0], currentTaskItem: mockTaskHistory[0] })],
+	decorators: [
+		createStoryDecorator({
+			task: mockTaskHistory[0],
+			currentTaskItem: mockTaskHistory[0],
+		}),
+	],
 	parameters: {
 		docs: {
 			description: {
@@ -354,7 +378,11 @@ const createLongMessages = (): ClineMessage[] => [
 		29.3,
 		"say",
 		"tool",
-		JSON.stringify({ tool: "newFileCreated", path: "package.json", content: "// Package.json content..." }),
+		JSON.stringify({
+			tool: "newFileCreated",
+			path: "package.json",
+			content: "// Package.json content...",
+		}),
 	),
 	createMessage(
 		29,
@@ -366,7 +394,11 @@ const createLongMessages = (): ClineMessage[] => [
 		28.7,
 		"say",
 		"tool",
-		JSON.stringify({ tool: "newFileCreated", path: "server.js", content: "// Express server code..." }),
+		JSON.stringify({
+			tool: "newFileCreated",
+			path: "server.js",
+			content: "// Express server code...",
+		}),
 	),
 	createMessage(
 		28.3,
@@ -378,7 +410,11 @@ const createLongMessages = (): ClineMessage[] => [
 		28,
 		"say",
 		"tool",
-		JSON.stringify({ tool: "newFileCreated", path: "models/Product.js", content: "// Product model code..." }),
+		JSON.stringify({
+			tool: "newFileCreated",
+			path: "models/Product.js",
+			content: "// Product model code...",
+		}),
 	),
 	createMessage(
 		27.7,
@@ -424,8 +460,24 @@ const createErrorMessages = () => [
 		"text",
 		"I can see there are TypeScript errors in your code. Let me examine the files and fix these issues.",
 	),
-	createMessage(3.3, "say", "tool", JSON.stringify({ tool: "readFile", path: "src/components/UserProfile_1.tsx" })),
-	createMessage(3.3, "say", "tool", JSON.stringify({ tool: "readFile", path: "src/components/UserProfile_2.tsx" })),
+	createMessage(
+		3.3,
+		"say",
+		"tool",
+		JSON.stringify({
+			tool: "readFile",
+			path: "src/components/UserProfile_1.tsx",
+		}),
+	),
+	createMessage(
+		3.3,
+		"say",
+		"tool",
+		JSON.stringify({
+			tool: "readFile",
+			path: "src/components/UserProfile_2.tsx",
+		}),
+	),
 	createMessage(
 		3,
 		"say",
@@ -473,14 +525,22 @@ export const AutoApprovalEnabled: Story = {
 
 const createPlanModeMessages = () => [
 	createMessage(5, "say", "task", "Help me refactor my React application to use TypeScript and improve performance"),
-	createApiReqMessage(4.9, "Planning analysis request", { tokensIn: 20000, tokensOut: 19500, cost: 0.065 }),
+	createApiReqMessage(4.9, "Planning analysis request", {
+		tokensIn: 20000,
+		tokensOut: 19500,
+		cost: 0.065,
+	}),
 	createMessage(
 		4.7,
 		"say",
 		"text",
 		"I'll help you refactor your React application to use TypeScript and improve performance. Let me create a detailed plan for this migration.",
 	),
-	createApiReqMessage(4.5, "Detailed planning request", { tokensIn: 20002, tokensOut: 12500, cost: 0.095 }),
+	createApiReqMessage(4.5, "Detailed planning request", {
+		tokensIn: 20002,
+		tokensOut: 12500,
+		cost: 0.095,
+	}),
 	createAskMessage(
 		"plan_mode_respond",
 		"Here's my comprehensive plan for refactoring your React application with TypeScript migration and performance optimization phases.\n\n\n\n\nPhase 1: TypeScript Migration\n1. Set up TypeScript in the project\n2. Rename .js files to .tsx/.ts\n3. Add type definitions for components and props\n4. Fix type errors and ensure type safety\n\nPhase 2: Performance Optimization\n1. Analyze current performance bottlenecks\n2. Implement code-splitting and lazy loading\n3. Optimize rendering with React.memo and useCallback\n4. Minimize bundle size with tree-shaking and minification\n5. Test performance improvements using profiling tools",
@@ -517,7 +577,10 @@ const createBrowserMessages = () => [
 		4,
 		"say",
 		"browser_action_result",
-		JSON.stringify({ currentUrl: "http://localhost:3000/login", logs: "Page loaded successfully" }),
+		JSON.stringify({
+			currentUrl: "http://localhost:3000/login",
+			logs: "Page loaded successfully",
+		}),
 	),
 	createMessage(
 		3.7,
@@ -677,12 +740,22 @@ export const ApiRequestActive: Story = {
 	decorators: [
 		createStoryDecorator({
 			clineMessages: [
-				createMessage(5, "say", "text", "Processing your request...", { partial: true }),
-				createApiReqMessage(4.7, "Making API request to generate response", { partial: true }),
+				createMessage(5, "say", "text", "Processing your request...", {
+					partial: true,
+				}),
+				createApiReqMessage(4.7, "Making API request to generate response", {
+					partial: true,
+				}),
 			],
 		}),
 	],
-	parameters: { docs: { description: { story: "Shows active API request state with Cancel button available." } } },
+	parameters: {
+		docs: {
+			description: {
+				story: "Shows active API request state with Cancel button available.",
+			},
+		},
+	},
 }
 export const PlanModeResponse = quickStory(
 	"Plan Mode Response",
@@ -695,15 +768,6 @@ export const CondenseConversation = quickStory(
 	"condense",
 	"Would you like me to condense the conversation to improve performance?",
 	"Shows utility action to condense conversation for better performance.",
-)
-export const ReportBug = quickStory(
-	"Report Bug",
-	"report_bug",
-	JSON.stringify({
-		steps_to_reproduce: "1. Open Cline\n2. Start a new task\n3. Observe the error",
-		what_happened: "Cline crashes unexpectedly",
-	}),
-	"Shows utility action to report bugs to the GitHub repository.",
 )
 export const ResumeCompletedTask = quickStory(
 	"Resume Completed Task type",
@@ -779,7 +843,12 @@ export const ErrorRetryInProgress: Story = {
 					4.5,
 					"say",
 					"error_retry",
-					JSON.stringify({ attempt: 2, maxAttempts: 5, delaySeconds: 10, failed: false }),
+					JSON.stringify({
+						attempt: 2,
+						maxAttempts: 5,
+						delaySeconds: 10,
+						failed: false,
+					}),
 				),
 			],
 		}),
@@ -803,7 +872,12 @@ export const ErrorRetryFailed: Story = {
 					4.5,
 					"say",
 					"error_retry",
-					JSON.stringify({ attempt: 5, maxAttempts: 5, delaySeconds: 0, failed: true }),
+					JSON.stringify({
+						attempt: 5,
+						maxAttempts: 5,
+						delaySeconds: 0,
+						failed: true,
+					}),
 				),
 			],
 		}),
@@ -922,7 +996,9 @@ export const GenerateExplanationCancelled: Story = {
 						status: "generating",
 					}),
 				),
-				createMessage(4.3, "ask", undefined, "Task was cancelled", { ask: "resume_task" }),
+				createMessage(4.3, "ask", undefined, "Task was cancelled", {
+					ask: "resume_task",
+				}),
 			],
 		}),
 	],
@@ -983,7 +1059,12 @@ const createNewFormatMultiFileMessages = () => [
 ]
 
 export const DiffEditNewFormat: Story = {
-	decorators: [createStoryDecorator({ backgroundEditEnabled: true, clineMessages: createNewFormatMultiFileMessages() })],
+	decorators: [
+		createStoryDecorator({
+			backgroundEditEnabled: true,
+			clineMessages: createNewFormatMultiFileMessages(),
+		}),
+	],
 	parameters: {
 		docs: {
 			description: {
@@ -1000,7 +1081,14 @@ export const DiffEditNewFormatStreaming: Story = {
 				createMessage(5, "say", "task", "Add TypeScript types to the user module"),
 				createMessage(4.7, "say", "text", "I'll add TypeScript types to improve type safety."),
 			])
-			const mockState = useMemo(() => createMockState({ backgroundEditEnabled: true, clineMessages: messages }), [messages])
+			const mockState = useMemo(
+				() =>
+					createMockState({
+						backgroundEditEnabled: true,
+						clineMessages: messages,
+					}),
+				[messages],
+			)
 
 			useEffect(() => {
 				// Simulate streaming: progressively add more content
@@ -1123,7 +1211,12 @@ function validateEmail(email: string): boolean {
 ]
 
 export const DiffEditReplaceDiffFormat: Story = {
-	decorators: [createStoryDecorator({ backgroundEditEnabled: true, clineMessages: createReplaceDiffFormatPatchMessages() })],
+	decorators: [
+		createStoryDecorator({
+			backgroundEditEnabled: true,
+			clineMessages: createReplaceDiffFormatPatchMessages(),
+		}),
+	],
 	parameters: {
 		docs: {
 			description: {
@@ -1140,7 +1233,14 @@ export const DiffEditReplaceDiffFormatStreaming: Story = {
 				createMessage(5, "say", "task", "Update error handling"),
 				createMessage(4.7, "say", "text", "I'll improve the error handling in the API client."),
 			])
-			const mockState = useMemo(() => createMockState({ backgroundEditEnabled: true, clineMessages: messages }), [messages])
+			const mockState = useMemo(
+				() =>
+					createMockState({
+						backgroundEditEnabled: true,
+						clineMessages: messages,
+					}),
+				[messages],
+			)
 
 			useEffect(() => {
 				const completePatch = `------- SEARCH

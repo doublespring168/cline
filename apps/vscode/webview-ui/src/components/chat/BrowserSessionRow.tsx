@@ -71,7 +71,10 @@ const paginationContainerStyle: CSSProperties = {
 	marginTop: "15px",
 	borderTop: "1px solid var(--vscode-editorGroup-border)",
 }
-const paginationButtonGroupStyle: CSSProperties = { display: "flex", gap: "4px" }
+const paginationButtonGroupStyle: CSSProperties = {
+	display: "flex",
+	gap: "4px",
+}
 const browserSessionStartedTextStyle: CSSProperties = { fontWeight: "bold" }
 const codeBlockContainerStyle: CSSProperties = {
 	borderRadius: 3,
@@ -96,7 +99,9 @@ const browseActionRowStyle: CSSProperties = {
 	wordBreak: "break-word",
 }
 const browseActionTextStyle: CSSProperties = { fontWeight: 500 }
-const chatRowContentContainerStyle: CSSProperties = { padding: "10px 0 10px 0" }
+const chatRowContentContainerStyle: CSSProperties = {
+	padding: "10px 0 10px 0",
+}
 const headerStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",

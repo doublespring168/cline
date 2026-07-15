@@ -4,7 +4,6 @@ import fs from "fs/promises"
 import { globby } from "globby"
 import * as path from "path"
 import simpleGit, { type SimpleGit } from "simple-git"
-import { telemetryService } from "@/services/telemetry"
 import { Logger } from "@/shared/services/Logger"
 import { getLfsPatterns, writeExcludesFile } from "./CheckpointExclusions"
 
@@ -104,11 +103,12 @@ export class GitOperations {
 		}
 
 		// Initial commit only on first repo creation
-		await git.commit("initial commit", { "--allow-empty": null, "--no-verify": null })
+		await git.commit("initial commit", {
+			"--allow-empty": null,
+			"--no-verify": null,
+		})
 
 		const durationMs = Math.round(performance.now() - startTime)
-		telemetryService.captureCheckpointUsage(taskId, "shadow_git_initialized", durationMs)
-
 		Logger.warn(`Shadow git initialization completed`)
 
 		return gitPath

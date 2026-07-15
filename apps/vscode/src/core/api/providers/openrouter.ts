@@ -205,7 +205,12 @@ export class OpenRouterHandler implements ApiHandler {
 		return undefined
 	}
 
-	@withRetry({ maxRetries: 4, baseDelay: 250, maxDelay: 1000, retryAllErrors: true })
+	@withRetry({
+		maxRetries: 4,
+		baseDelay: 250,
+		maxDelay: 1000,
+		retryAllErrors: true,
+	})
 	async *fetchGenerationDetails(genId: string) {
 		// Logger.log("Fetching generation details for:", genId)
 		try {

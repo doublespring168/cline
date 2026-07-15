@@ -175,53 +175,6 @@ export class ContextManager {
 	}
 
 	/**
-	 * Get telemetry data for context management decisions
-	 * Returns the token counts and context window info that drove summarization
-	 */
-	getContextTelemetryData(
-		clineMessages: ClineMessage[],
-		api: ApiHandler,
-		triggerIndex?: number,
-	): {
-		tokensUsed: number
-		maxContextWindow: number
-	} | null {
-		// Use provided triggerIndex or fallback to automatic detection
-		let targetIndex: number
-		if (triggerIndex !== undefined) {
-			targetIndex = triggerIndex
-		} else {
-			// Find all API request indices
-			const apiReqIndices = clineMessages
-				.map((msg, index) => (msg.say === "api_req_started" ? index : -1))
-				.filter((index) => index !== -1)
-
-			// We want the second-to-last API request (the one that caused summarization)
-			targetIndex = apiReqIndices.length >= 2 ? apiReqIndices[apiReqIndices.length - 2] : -1
-		}
-
-		if (targetIndex >= 0) {
-			const targetRequestText = clineMessages[targetIndex]?.text
-			if (targetRequestText) {
-				try {
-					const { tokensIn, tokensOut, cacheWrites, cacheReads }: ClineApiReqInfo = JSON.parse(targetRequestText)
-					const tokensUsed = (tokensIn || 0) + (tokensOut || 0) + (cacheWrites || 0) + (cacheReads || 0)
-
-					const { contextWindow } = getContextWindowInfo(api)
-
-					return {
-						tokensUsed,
-						maxContextWindow: contextWindow,
-					}
-				} catch (error) {
-					Logger.error("Error parsing API request info for context telemetry:", error)
-				}
-			}
-		}
-		return null
-	}
-
-	/**
 	 * primary entry point for getting up to date context
 	 */
 	async getNewContextMessagesAndMetadata(
@@ -1263,7 +1216,10 @@ export class ContextManager {
 			}
 		}
 
-		return { totalCharacters: totalCharCount, charactersSaved: totalCharactersSaved }
+		return {
+			totalCharacters: totalCharCount,
+			charactersSaved: totalCharactersSaved,
+		}
 	}
 
 	/**

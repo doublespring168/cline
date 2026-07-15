@@ -92,7 +92,14 @@ describe("ToolCallProcessor", () => {
 describe("getOpenAIToolParams", () => {
 	it("should include parallel_tool_calls when enabled", () => {
 		const tools = [
-			{ type: "function", function: { name: "read_file", description: "", parameters: { type: "object" } } },
+			{
+				type: "function",
+				function: {
+					name: "read_file",
+					description: "",
+					parameters: { type: "object" },
+				},
+			},
 		] as any
 		const params = getOpenAIToolParams(tools, true) as any
 
@@ -101,7 +108,14 @@ describe("getOpenAIToolParams", () => {
 
 	it("should include parallel_tool_calls=false when disabled by default", () => {
 		const tools = [
-			{ type: "function", function: { name: "read_file", description: "", parameters: { type: "object" } } },
+			{
+				type: "function",
+				function: {
+					name: "read_file",
+					description: "",
+					parameters: { type: "object" },
+				},
+			},
 		] as any
 		const params = getOpenAIToolParams(tools, false) as any
 

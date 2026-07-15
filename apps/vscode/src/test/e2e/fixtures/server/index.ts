@@ -60,7 +60,10 @@ export class ClineApiServerMock {
 
 			const handleRequest = async () => {
 				if ((path === "/health/" || path === "/health/ping") && method === "GET") {
-					return sendJson({ status: "ok", timestamp: new Date().toISOString() })
+					return sendJson({
+						status: "ok",
+						timestamp: new Date().toISOString(),
+					})
 				}
 				if (path === "/api/v1/ai/cline/recommended-models" && method === "GET") {
 					return sendJson(E2E_MOCK_CLINE_RECOMMENDED_MODELS)
@@ -97,8 +100,18 @@ export class ClineApiServerMock {
 						object: "chat.completion",
 						created: Math.floor(Date.now() / 1000),
 						model,
-						choices: [{ index: 0, message: { role: "assistant", content: responseText }, finish_reason: "stop" }],
-						usage: { prompt_tokens: 140, completion_tokens: responseText.length, total_tokens: 140 + responseText.length },
+						choices: [
+							{
+								index: 0,
+								message: { role: "assistant", content: responseText },
+								finish_reason: "stop",
+							},
+						],
+						usage: {
+							prompt_tokens: 140,
+							completion_tokens: responseText.length,
+							total_tokens: 140 + responseText.length,
+						},
 					})
 				}
 
@@ -121,7 +134,9 @@ export class ClineApiServerMock {
 								choices: [
 									{
 										index: 0,
-										delta: { content: chunks[chunkIndex] + (chunkIndex < chunks.length - 1 ? " " : "") },
+										delta: {
+											content: chunks[chunkIndex] + (chunkIndex < chunks.length - 1 ? " " : ""),
+										},
 										finish_reason: null,
 									},
 								],

@@ -11,7 +11,6 @@ import type { ChatContent } from "@shared/ChatContent"
 import type { ExtensionState, Platform } from "@shared/ExtensionMessage"
 import { DEFAULT_FOCUS_CHAIN_SETTINGS } from "@shared/FocusChainSettings"
 import type { HistoryItem } from "@shared/HistoryItem"
-import type { McpMarketplaceCatalog, McpMarketplaceItem } from "@shared/mcp"
 import { type Settings } from "@shared/storage/state-keys"
 import type { Mode } from "@shared/storage/types"
 import { fileExistsAtPath } from "@utils/fs"
@@ -25,7 +24,6 @@ import { HostProvider } from "@/hosts/host-provider"
 import { ExtensionRegistryInfo } from "@/registry"
 import { OcaAuthService } from "@/services/auth/oca/OcaAuthService"
 import { LogoutReason } from "@/services/auth/types"
-import { telemetryService } from "@/services/telemetry"
 import { ClineExtensionContext } from "@/shared/cline"
 import { getAxiosSettings } from "@/shared/net"
 import { ShowMessageType } from "@/shared/proto/host/window"
@@ -38,12 +36,9 @@ import {
 	ensureMcpServersDirectoryExists,
 	ensureSettingsDirectoryExists,
 	GlobalFileNames,
-	writeMcpMarketplaceCatalogToCache,
 } from "../storage/disk"
 import { type PersistenceErrorEvent, StateManager } from "../storage/StateManager"
 import { Task } from "../task"
-import { sendMcpMarketplaceCatalogEvent } from "./mcp/subscribeToMcpMarketplaceCatalog"
-import { getClineOnboardingModels } from "./models/getClineOnboardingModels"
 import { appendClineStealthModels } from "./models/refreshOpenRouterModels"
 import { sendStateUpdate } from "./state/subscribeToState"
 import { sendChatButtonClickedEvent } from "./ui/subscribeToChatButtonClicked"
@@ -108,7 +103,6 @@ export class Controller {
 			() => ensureMcpServersDirectoryExists(),
 			() => ensureSettingsDirectoryExists(),
 			ExtensionRegistryInfo.version,
-			telemetryService,
 		)
 
 		// Clean up legacy checkpoints
@@ -261,8 +255,6 @@ export class Controller {
 		this.stateManager.setGlobalState("mode", modeToSwitchTo)
 
 		// Capture mode switch telemetry | Capture regardless of if we know the taskId
-		telemetryService.captureModeSwitch(this.task?.ulid ?? "0", modeToSwitchTo)
-
 		// Update API handler with new mode (buildApiHandler now selects provider based on mode)
 		if (this.task) {
 			const apiConfiguration = this.stateManager.getApiConfiguration()
@@ -432,56 +424,6 @@ export class Controller {
 		await this.initTask(prompt)
 	}
 
-	// MCP Marketplace
-	private async fetchMcpMarketplaceFromApi(): Promise<McpMarketplaceCatalog> {
-		const response = await axios.get(`${ClineEnv.config().mcpBaseUrl}/marketplace`, {
-			headers: {
-				"Content-Type": "application/json",
-				"User-Agent": "cline-vscode-extension",
-			},
-			...getAxiosSettings(),
-		})
-
-		if (!response.data) {
-			throw new Error("Invalid response from MCP marketplace API")
-		}
-
-		// Get allowlist from remote config
-		const allowedMCPServers = this.stateManager.getRemoteConfigSettings().allowedMCPServers
-
-		let items: McpMarketplaceItem[] = (response.data || []).map((item: McpMarketplaceItem) => ({
-			...item,
-			githubStars: item.githubStars ?? 0,
-			downloadCount: item.downloadCount ?? 0,
-			tags: item.tags ?? [],
-		}))
-
-		// Filter by allowlist if configured
-		if (allowedMCPServers) {
-			const allowedIds = new Set(allowedMCPServers.map((server) => server.id))
-			items = items.filter((item: McpMarketplaceItem) => allowedIds.has(item.mcpId))
-		}
-
-		const catalog: McpMarketplaceCatalog = { items }
-
-		// Store in cache file
-		await writeMcpMarketplaceCatalogToCache(catalog)
-		return catalog
-	}
-
-	async refreshMcpMarketplace(sendCatalogEvent: boolean): Promise<McpMarketplaceCatalog | undefined> {
-		try {
-			const catalog = await this.fetchMcpMarketplaceFromApi()
-			if (catalog && sendCatalogEvent) {
-				await sendMcpMarketplaceCatalogEvent(catalog)
-			}
-			return catalog
-		} catch (error) {
-			Logger.error("Failed to refresh MCP marketplace:", error)
-			return undefined
-		}
-	}
-
 	// OpenRouter
 
 	async handleOpenRouterCallback(code: string) {
@@ -640,7 +582,6 @@ export class Controller {
 
 	async getStateToPostToWebview(): Promise<ExtensionState> {
 		// Get API configuration from cache for immediate access
-		const onboardingModels = getClineOnboardingModels()
 		const apiConfiguration = this.stateManager.getApiConfiguration()
 		const taskHistory = this.stateManager.getGlobalStateKey("taskHistory")
 		const autoApprovalSettings = this.stateManager.getGlobalSettingsKey("autoApprovalSettings")
@@ -653,7 +594,6 @@ export class Controller {
 		const yoloModeToggled = this.stateManager.getGlobalSettingsKey("yoloModeToggled")
 		const useAutoCondense = this.stateManager.getGlobalSettingsKey("useAutoCondense")
 		const subagentsEnabled = this.stateManager.getGlobalSettingsKey("subagentsEnabled")
-		const mcpMarketplaceEnabled = this.stateManager.getGlobalStateKey("mcpMarketplaceEnabled")
 		const mcpDisplayMode = this.stateManager.getGlobalStateKey("mcpDisplayMode")
 		const planActSeparateModelsSetting = this.stateManager.getGlobalSettingsKey("planActSeparateModelsSetting")
 		const enableCheckpointsSetting = this.stateManager.getGlobalSettingsKey("enableCheckpointsSetting")
@@ -661,8 +601,6 @@ export class Controller {
 		const globalWorkflowToggles = this.stateManager.getGlobalSettingsKey("globalWorkflowToggles")
 		const globalSkillsToggles = this.stateManager.getGlobalSettingsKey("globalSkillsToggles")
 		const localSkillsToggles = this.stateManager.getWorkspaceStateKey("localSkillsToggles")
-		const remoteRulesToggles = this.stateManager.getGlobalStateKey("remoteRulesToggles")
-		const remoteWorkflowToggles = this.stateManager.getGlobalStateKey("remoteWorkflowToggles")
 		const shellIntegrationTimeout = this.stateManager.getGlobalSettingsKey("shellIntegrationTimeout")
 		const terminalReuseEnabled = this.stateManager.getGlobalStateKey("terminalReuseEnabled")
 		const defaultTerminalProfile = this.stateManager.getGlobalSettingsKey("defaultTerminalProfile")
@@ -676,8 +614,6 @@ export class Controller {
 		const maxConsecutiveMistakes = this.stateManager.getGlobalSettingsKey("maxConsecutiveMistakes")
 		const favoritedModelIds = this.stateManager.getGlobalStateKey("favoritedModelIds")
 		const doubleCheckCompletionEnabled = this.stateManager.getGlobalSettingsKey("doubleCheckCompletionEnabled")
-		const lazyTeammateModeEnabled = this.stateManager.getGlobalSettingsKey("lazyTeammateModeEnabled")
-		const showFeatureTips = this.stateManager.getGlobalSettingsKey("showFeatureTips")
 
 		const localClineRulesToggles = this.stateManager.getWorkspaceStateKey("localClineRulesToggles")
 		const localWindsurfRulesToggles = this.stateManager.getWorkspaceStateKey("localWindsurfRulesToggles")
@@ -721,7 +657,6 @@ export class Controller {
 			yoloModeToggled,
 			useAutoCondense,
 			subagentsEnabled,
-			mcpMarketplaceEnabled,
 			mcpDisplayMode,
 			planActSeparateModelsSetting,
 			enableCheckpointsSetting: enableCheckpointsSetting ?? true,
@@ -736,14 +671,11 @@ export class Controller {
 			globalWorkflowToggles: globalWorkflowToggles || {},
 			globalSkillsToggles: globalSkillsToggles || {},
 			localSkillsToggles: localSkillsToggles || {},
-			remoteRulesToggles: remoteRulesToggles,
-			remoteWorkflowToggles: remoteWorkflowToggles,
 			shellIntegrationTimeout,
 			terminalReuseEnabled,
 			defaultTerminalProfile,
 			isNewUser,
 			welcomeViewCompleted,
-			onboardingModels,
 			mcpResponsesCollapsed,
 			terminalOutputLineLimit,
 			maxConsecutiveMistakes,
@@ -757,20 +689,14 @@ export class Controller {
 			multiRootSetting: {
 				user: this.stateManager.getGlobalStateKey("multiRootEnabled"),
 			},
-			clineWebToolsEnabled: {
-				user: this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled"),
-			},
 			worktreesEnabled: {
 				user: this.stateManager.getGlobalSettingsKey("worktreesEnabled"),
 			},
 			hooksEnabled: getHooksEnabledSafe(this.stateManager.getGlobalSettingsKey("hooksEnabled")),
-			remoteConfigSettings: this.stateManager.getRemoteConfigSettings(),
 			nativeToolCallSetting: this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.stateManager.getGlobalSettingsKey("enableParallelToolCalling"),
 			backgroundEditEnabled: this.stateManager.getGlobalSettingsKey("backgroundEditEnabled"),
 			doubleCheckCompletionEnabled,
-			lazyTeammateModeEnabled,
-			showFeatureTips,
 			openAiCodexIsAuthenticated,
 		}
 	}
