@@ -29,7 +29,7 @@ Provider transform（Anthropic/OpenAI/Gemini/Responses/Bedrock 等）
 
 在 `Task.initiateTaskLoop`/`recursivelyMakeClineRequests` 中，每轮大致执行：
 
-1. **定位上一请求。**从 `clineMessages` 找到上一个 `api_req_started`，读取其 `tokensIn`、`tokensOut`、`cacheWrites`、`cacheReads`，作为上下文管理的遥测依据。
+1. **定位上一请求。**从 `clineMessages` 找到上一个 `api_req_started`，读取其 `tokensIn`、`tokensOut`、`cacheWrites`、`cacheReads`，作为本地 Token/Cost 统计和上下文管理依据。
 2. **取得模型和 Provider 信息。**`api.getModel().info.contextWindow`、模型族、自动压缩设置、当前 mode 等决定后续策略。
 3. **判断是否需要优化或压缩。**`ContextManager.shouldCompactContextWindow`/`getNewContextMessagesAndMetadata` 依据上一请求 token 总量和有效上限选择文件读取去重、half/quarter 或自动 summary。
 4. **加载当前上下文。**`loadContext` 处理用户 mentions、slash commands、工具反馈 tags、当前 workspace 环境；首轮还加入文件树、workspace 配置和 CLI 工具信息。
@@ -64,7 +64,7 @@ system prompt、规则、skills、MCP 工具 schema 和工具描述在每次请�
 
 | 内容 | 处理 | 原因 |
 | --- | --- | --- |
-| `api_req_started` 的 UI 状态、成本卡片 | 留在 `clineMessages` | UI/遥测，不是模型消息正文 |
+| `api_req_started` 的 UI 状态、成本卡片 | 留在 `clineMessages` | UI 状态和本地指标，不是模型消息正文 |
 | Hook status/stream、通知、进度、checkpoint 哈希 | 多数仅 UI/TaskState | 防止把内部状态当用户指令 |
 | `TaskState` 的锁、retry、abort、ask 原始按钮对象 | 内存或 UI 投影 | 运行控制信息 |
 | `conversationHistoryDeletedRange` 覆盖的旧消息 | 逻辑上不发送 | JSON 文件可能仍保留原文 |

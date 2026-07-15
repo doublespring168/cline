@@ -16,7 +16,7 @@ describe("shouldUseMultiRoot", () => {
 		return {} as unknown as StateManager
 	}
 
-	it("returns true when feature flag is on, checkpoints enabled, and more than one root exists", () => {
+	it("returns true when the local setting is on, checkpoints enabled, and more than one root exists", () => {
 		const wr = makeWr([{ path: "/r1" }, { path: "/r2" }])
 		const result = shouldUseMultiRoot({
 			multiRootEnabledOverride: true,
@@ -27,7 +27,7 @@ describe("shouldUseMultiRoot", () => {
 		expect(result).to.equal(true)
 	})
 
-	it("returns false when feature flag is off", () => {
+	it("returns false when the local setting is off", () => {
 		const wr = makeWr([{ path: "/r1" }, { path: "/r2" }])
 		const result = shouldUseMultiRoot({
 			multiRootEnabledOverride: false,

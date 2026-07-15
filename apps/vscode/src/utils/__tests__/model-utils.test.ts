@@ -58,7 +58,6 @@ describe("supportsReasoningEffortForModel", () => {
 		for (const modelId of [
 			"zai/glm-5.2",
 			"z-ai/glm-5.2",
-			"cline-pass/glm-5.2",
 			"moonshotai/kimi-k2-thinking",
 			"kimi-k2-thinking",
 			"accounts/fireworks/models/kimi-k2p6",

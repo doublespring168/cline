@@ -453,12 +453,6 @@ describe("State Keys Type Safety", () => {
 			expect(isLocalStateKey("")).to.be.false
 		})
 
-		it("should handle keys with special characters", () => {
-			// The cline:clineAccountId key has a colon
-			expect(SecretKeys).to.include("cline:clineAccountId")
-			expect(isSecretKey("cline:clineAccountId")).to.be.true
-		})
-
 		it("should not have keys that could cause prototype pollution", () => {
 			const dangerousKeys = ["__proto__", "constructor", "prototype"]
 

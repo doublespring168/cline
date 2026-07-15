@@ -15,17 +15,14 @@
 import { setTimeout as setTimeoutPromise } from "node:timers/promises"
 import { formatResponse } from "@core/prompts/responses"
 import { processFilesIntoText } from "@integrations/misc/extract-text"
-import { TerminalHangStage, TerminalUserInterventionAction, telemetryService } from "@services/telemetry"
 import { ClineTempManager } from "@services/temp"
 import { COMMAND_CANCEL_TOKEN } from "@shared/ExtensionMessage"
 import * as fs from "fs"
 import { Logger } from "@/shared/services/Logger"
 import {
-	BUFFER_STUCK_TIMEOUT_MS,
 	CHUNK_BYTE_SIZE,
 	CHUNK_DEBOUNCE_MS,
 	CHUNK_LINE_COUNT,
-	COMPLETION_TIMEOUT_MS,
 	MAX_BYTES_BEFORE_FILE,
 	MAX_LINES_BEFORE_FILE,
 	SUMMARY_LINES_TO_KEEP,
@@ -57,7 +54,6 @@ export async function orchestrateCommandExecution(
 	const {
 		timeoutSeconds,
 		showShellIntegrationSuggestion,
-		terminalType = "vscode",
 		suppressUserInteraction = false,
 	} = options
 
@@ -113,8 +109,6 @@ export async function orchestrateCommandExecution(
 	let outputBufferSize = 0
 	let chunkTimer: NodeJS.Timeout | null = null
 
-	// Track if buffer gets stuck
-	let bufferStuckTimer: NodeJS.Timeout | null = null
 	let commandOutputAskSequence = 0
 	let pendingCommandOutputAskId: number | null = null
 	let releasePendingCommandOutputAsk: (() => void) | null = null
@@ -147,12 +141,6 @@ export async function orchestrateCommandExecution(
 		outputBufferSize = 0
 
 		if (!didContinue) {
-			// Start timer to detect if buffer gets stuck
-			bufferStuckTimer = setTimeout(() => {
-				telemetryService.captureTerminalHang(TerminalHangStage.BUFFER_STUCK, terminalType)
-				bufferStuckTimer = null
-			}, BUFFER_STUCK_TIMEOUT_MS)
-
 			try {
 				// Use ask() to present output and wait for user response
 				// This enables "Proceed While Running" button functionality
@@ -192,11 +180,6 @@ export async function orchestrateCommandExecution(
 				const { response, text, images, files } = interaction
 
 				if (response === "yesButtonClicked") {
-					// Track when user clicks "Proceed While Running"
-					telemetryService.captureTerminalUserIntervention(
-						TerminalUserInterventionAction.PROCESS_WHILE_RUNNING,
-						terminalType,
-					)
 					// Proceed while running - but still capture user feedback if provided
 					if (text || (images && images.length > 0) || (files && files.length > 0)) {
 						userFeedback = { text, images, files }
@@ -205,7 +188,6 @@ export async function orchestrateCommandExecution(
 
 					process.continue()
 				} else if (response === "noButtonClicked" && text === COMMAND_CANCEL_TOKEN) {
-					telemetryService.captureTerminalUserIntervention(TerminalUserInterventionAction.CANCELLED, terminalType)
 					// Set flags BEFORE resuming the process to prevent new lines from being processed
 					didCancelViaUi = true
 					userFeedback = undefined
@@ -229,11 +211,7 @@ export async function orchestrateCommandExecution(
 			} catch {
 				Logger.error("Error while asking for command output")
 			} finally {
-				// Clear the stuck timer
-				if (bufferStuckTimer) {
-					clearTimeout(bufferStuckTimer)
-					bufferStuckTimer = null
-				}
+				// Interaction cleanup is handled by clearPendingCommandOutputAsk.
 			}
 		} else {
 			// After "Proceed While Running": stream output directly to UI
@@ -370,26 +348,11 @@ export async function orchestrateCommandExecution(
 
 	let completed = false
 	let completionDetails: TerminalCompletionDetails | undefined
-	let completionTimer: NodeJS.Timeout | null = null
-
-	// Start timer to detect if waiting for completion takes too long
-	completionTimer = setTimeout(() => {
-		if (!completed) {
-			telemetryService.captureTerminalHang(TerminalHangStage.WAITING_FOR_COMPLETION, terminalType)
-			completionTimer = null
-		}
-	}, COMPLETION_TIMEOUT_MS)
-
 	process.once("completed", async (details?: TerminalCompletionDetails) => {
 		completed = true
 		completionDetails = details
 		// If command completed while command_output ask was pending, release it.
 		releaseAnyPendingCommandOutputAsk()
-		// Clear the completion timer
-		if (completionTimer) {
-			clearTimeout(completionTimer)
-			completionTimer = null
-		}
 		// Flush any remaining buffered output
 		if (!didContinue && outputBuffer.length > 0) {
 			if (chunkTimer) {
@@ -434,10 +397,6 @@ export async function orchestrateCommandExecution(
 						clearTimeout(chunkTimer)
 						chunkTimer = null
 					}
-					if (completionTimer) {
-						clearTimeout(completionTimer)
-						completionTimer = null
-					}
 
 					// Continue the VS Code terminal process and return a timeout result.
 					process.continue()
@@ -461,12 +420,6 @@ export async function orchestrateCommandExecution(
 			// No timeout - wait for process to complete
 			await process
 		}
-	}
-
-	// Clear timer if process completes normally
-	if (completionTimer) {
-		clearTimeout(completionTimer)
-		completionTimer = null
 	}
 
 	// Wait for a short delay to ensure all messages are sent to the webview

@@ -1,9 +1,6 @@
 import "should"
 import { openRouterDefaultModelInfo } from "@shared/api"
 import sinon from "sinon"
-import { ClineAccountService } from "@/services/account/ClineAccountService"
-import { AuthService } from "@/services/auth/AuthService"
-import { ClineError, ClineErrorType } from "@/services/error/ClineError"
 import { ClineHandler } from "../cline"
 
 describe("ClineHandler", () => {
@@ -18,8 +15,6 @@ describe("ClineHandler", () => {
 	})
 
 	const createHandler = (options: ConstructorParameters<typeof ClineHandler>[0]) => {
-		sinon.stub(ClineAccountService, "getInstance").returns({} as any)
-		sinon.stub(AuthService, "getInstance").returns({} as any)
 		return new ClineHandler(options)
 	}
 
@@ -165,33 +160,4 @@ describe("ClineHandler", () => {
 		payload.messages[1].content[0].cache_control.should.deepEqual({ type: "ephemeral" })
 	})
 
-	it("propagates a pre-stream 403 entitlement error so it classifies as Entitlement", async () => {
-		const handler = createHandler({})
-		// A 403 from ValidateModelEntitlement rejects completions.create() before streaming,
-		// matching the OpenAI SDK APIError shape (status + code + error body).
-		const apiError = Object.assign(new Error("403 the user is not subscribed to required model plan"), {
-			status: 403,
-			code: "ENTITLEMENT_ERROR",
-			error: {
-				code: "ENTITLEMENT_ERROR",
-				message: "Error 403: the user is not subscribed to required model plan",
-			},
-		})
-		const fakeClient = { chat: { completions: { create: sinon.stub().rejects(apiError) } } }
-		sinon.stub(handler as any, "ensureClient").resolves(fakeClient as any)
-		sinon.stub(handler as any, "getFreeModelIdSet").resolves(new Set())
-		sinon.stub(handler, "getModel").returns({ id: "cline-pass/glm-5.2", info: openRouterDefaultModelInfo })
-
-		let thrown: unknown
-		try {
-			for await (const _chunk of handler.createMessage("system", [{ role: "user", content: "hi" }])) {
-				// drain
-			}
-		} catch (e) {
-			thrown = e
-		}
-
-		const clineError = ClineError.transform(thrown, "cline-pass/glm-5.2", "cline-pass")
-		clineError.isErrorType(ClineErrorType.Entitlement).should.be.true()
-	})
 })

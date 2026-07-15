@@ -7,12 +7,12 @@
  *
  * Current Status:
  * - The infrastructure is complete and ready
- * - The feature flag for multi-root is disabled by default
+ * - The local multi-root setting is disabled by default
  * - The checkpoint factory (src/integrations/checkpoints/factory.ts) will
  *   instantiate this manager when multi-root is enabled
  *
  * Follow-up Implementation Required:
- * 1. Enable the multi-root feature flag in StateManager
+ * 1. Enable the local multi-root setting in StateManager
  * 2. Update the checkpoint factory to use this manager when appropriate
  * 3. Test thoroughly with multiple workspace roots
  * 4. Add proper restoration logic for all workspace roots (not just primary)
@@ -33,7 +33,7 @@ import { ICheckpointManager } from "./types"
 
 /**
  * Manages checkpoints across multiple workspace roots.
- * Only created when multiple roots are detected and feature flag is enabled.
+ * Only created when multiple roots are detected and the local setting is enabled.
  *
  * This implementation follows Option B: Simple All-Workspace Approach
  * - Creates checkpoints instance for each input workspace root

@@ -1,5 +1,4 @@
-import { ApiConfiguration, clinePassDefaultModelId, clinePassModels, ModelInfo, openRouterDefaultModelId } from "@shared/api"
-import { CLINE_RECOMMENDED_MODELS_FALLBACK } from "@shared/cline/recommended-models"
+import { ApiConfiguration, ModelInfo, openRouterDefaultModelId } from "@shared/api"
 import { Mode } from "@shared/storage/types"
 import { getModeSpecificFields } from "@/components/settings/utils/providerUtils"
 
@@ -72,7 +71,9 @@ export function validateApiConfiguration(currentMode: Mode, apiConfiguration?: A
 				}
 				break
 			case "cline":
-			case "cline-pass":
+				if (!apiConfiguration.clineApiKey) {
+					return "You must provide a valid API key or choose a different provider."
+				}
 				break
 			case "openai-codex":
 				// Authentication is handled via OAuth, not API key
@@ -210,24 +211,6 @@ export function validateModelId(
 					return "You must provide a model ID."
 				}
 				if (clineModels && !Object.keys(clineModels).includes(clineResolvedModelId)) {
-					return "The model ID you provided is not available. Please choose a different model."
-				}
-				break
-			}
-			case "cline-pass": {
-				const clinePassModelId =
-					currentMode === "plan" ? apiConfiguration.planModeClinePassModelId : apiConfiguration.actModeClinePassModelId
-				const clinePassResolvedModelId = clinePassModelId || clinePassDefaultModelId
-				if (!clinePassResolvedModelId) {
-					return "You must provide a model ID."
-				}
-				if (
-					!Object.keys(clinePassModels).includes(clinePassResolvedModelId) &&
-					!clinePassResolvedModelId.startsWith("cline-pass/") &&
-					// ClinePass users may also select Cline free models (OpenRouter-style ids)
-					!(clineModels && Object.keys(clineModels).includes(clinePassResolvedModelId)) &&
-					!CLINE_RECOMMENDED_MODELS_FALLBACK.free.some((model) => model.id === clinePassResolvedModelId)
-				) {
 					return "The model ID you provided is not available. Please choose a different model."
 				}
 				break

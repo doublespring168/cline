@@ -1,34 +1,3 @@
-export const E2E_REGISTERED_MOCK_ENDPOINTS = {
-	"/api/v1": {
-		GET: [
-			"/generation",
-			"/ai/cline/models",
-			"/ai/cline/recommended-models",
-			"/organizations/{orgId}/balance",
-			"/organizations/{orgId}/members/{memberId}/usages",
-			"/organizations/{orgId}/api-keys",
-			"/organizations/{orgId}/remote-config",
-			"/users/me",
-			"/users/me/featurebase-token",
-			"/users/{userId}/balance",
-			"/users/{userId}/usages",
-			"/users/{userId}/payments",
-		],
-		POST: ["/chat/completions", "/auth/token", "/users/me/budget/request"],
-		PUT: ["/users/active-account"],
-	},
-	"/.test": {
-		GET: [],
-		POST: ["/auth", "/setUserBalance", "/setUserHasOrganization", "/setOrgBalance", "/setSpendLimitExceeded"],
-		PUT: [],
-	},
-	"/health": {
-		POST: [],
-		GET: ["/", "/ping"],
-		PUT: [],
-	},
-}
-
 const replace_in_file = `I successfully replaced "john" with "cline" in the test.ts file. The change has been completed and the file now contains:
 
 \`\`\`typescript

@@ -13,7 +13,7 @@ type DetectRoots = () => Promise<WorkspaceRoot[]>
 
 /**
  * Initializes and persists the WorkspaceRootManager (multi-root or single-root),
- * emits telemetry, and handles fallback on error.
+ * records local state and handles fallback on error.
  *
  * The caller injects detectRoots to avoid tight coupling to Controller.
  */
@@ -30,7 +30,7 @@ export async function setupWorkspaceManager({
 	const multiRootEnabled = isMultiRootEnabled(stateManager)
 	try {
 		let manager: WorkspaceRootManager
-		// Multi-root mode condition - requires both feature flag and user setting to be enabled
+		// Multi-root mode is controlled by the local user setting.
 		if (multiRootEnabled) {
 			// Multi-root: detect workspace folders
 			const roots = await detectRoots()

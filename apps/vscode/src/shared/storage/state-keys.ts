@@ -16,10 +16,7 @@ import { DEFAULT_MCP_DISPLAY_MODE, McpDisplayMode } from "@shared/McpDisplayMode
 import { WorkspaceRoot } from "@shared/multi-root/types"
 import { GlobalInstructionsFile } from "@shared/remote-config/schema"
 import { Mode } from "@shared/storage/types"
-import { TelemetrySetting } from "@shared/TelemetrySetting"
-import { UserInfo } from "@shared/UserInfo"
 import { LanguageModelChatSelector } from "vscode"
-import { type BlobStoreSettings } from "./types"
 
 // ============================================================================
 // SINGLE SOURCE OF TRUTH FOR STORAGE KEYS
@@ -58,19 +55,12 @@ const REMOTE_CONFIG_EXTRA_FIELDS = {
 	remoteGlobalWorkflows: { default: undefined as GlobalInstructionsFile[] | undefined },
 	remoteGlobalSkills: { default: undefined as GlobalInstructionsFile[] | undefined },
 	blockPersonalRemoteMCPServers: { default: false as boolean },
-	openTelemetryOtlpHeaders: { default: undefined as Record<string, string> | undefined },
-	otlpMetricsHeaders: { default: undefined as Record<string, string> | undefined },
-	otlpLogsHeaders: { default: undefined as Record<string, string> | undefined },
-	blobStoreConfig: { default: undefined as BlobStoreSettings | undefined },
 	configuredApiKeys: { default: {} as ConfiguredAPIKeys | undefined },
 } satisfies FieldDefinitions
 
 const GLOBAL_STATE_FIELDS = {
-	clineVersion: { default: undefined as string | undefined },
 	"cline.generatedMachineId": { default: undefined as string | undefined }, // Note, distinctId reads/writes this directly from/to StorageContext before StateManager is initialized.
-	lastShownAnnouncementId: { default: undefined as string | undefined },
 	taskHistory: { default: [] as HistoryItem[], isAsync: true },
-	userInfo: { default: undefined as UserInfo | undefined },
 	favoritedModelIds: { default: [] as string[] },
 	mcpMarketplaceEnabled: { default: true as boolean },
 	mcpResponsesCollapsed: { default: false as boolean },
@@ -81,13 +71,10 @@ const GLOBAL_STATE_FIELDS = {
 	workspaceRoots: { default: undefined as WorkspaceRoot[] | undefined },
 	primaryRootIndex: { default: 0 as number },
 	multiRootEnabled: { default: true as boolean },
-	lastDismissedInfoBannerVersion: { default: 0 as number },
-	lastDismissedModelBannerVersion: { default: 0 as number },
 	nativeToolCallEnabled: { default: true as boolean },
 	remoteRulesToggles: { default: {} as ClineRulesToggles },
 	remoteWorkflowToggles: { default: {} as ClineRulesToggles },
 	remoteSkillsToggles: { default: {} as ClineRulesToggles },
-	dismissedBanners: { default: [] as Array<{ bannerId: string; dismissedAt: number }> },
 	// Path to worktree that should auto-open Cline sidebar when launched
 	worktreeAutoOpenPath: { default: undefined as string | undefined },
 } satisfies FieldDefinitions
@@ -155,8 +142,6 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	planModeOpenRouterModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeClineModelId: { default: undefined as string | undefined },
 	planModeClineModelInfo: { default: undefined as ModelInfo | undefined },
-	planModeClinePassModelId: { default: undefined as string | undefined },
-	planModeClinePassModelInfo: { default: undefined as ModelInfo | undefined },
 	planModeOpenAiModelId: { default: undefined as string | undefined },
 	planModeOpenAiModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
 	planModeOllamaModelId: { default: undefined as string | undefined },
@@ -203,8 +188,6 @@ const API_HANDLER_SETTINGS_FIELDS = {
 	actModeOpenRouterModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeClineModelId: { default: undefined as string | undefined },
 	actModeClineModelInfo: { default: undefined as ModelInfo | undefined },
-	actModeClinePassModelId: { default: undefined as string | undefined },
-	actModeClinePassModelInfo: { default: undefined as ModelInfo | undefined },
 	actModeOpenAiModelId: { default: undefined as string | undefined },
 	actModeOpenAiModelInfo: { default: undefined as OpenAiCompatibleModelInfo | undefined },
 	actModeOllamaModelId: { default: undefined as string | undefined },
@@ -257,7 +240,6 @@ const USER_SETTINGS_FIELDS = {
 		default: DEFAULT_BROWSER_SETTINGS as BrowserSettings,
 		transform: (v: any) => ({ ...DEFAULT_BROWSER_SETTINGS, ...v }),
 	},
-	telemetrySetting: { default: "unset" as TelemetrySetting },
 	planActSeparateModelsSetting: { default: false as boolean, isComputed: true },
 	enableCheckpointsSetting: { default: true as boolean },
 	shellIntegrationTimeout: { default: 4000 as number },
@@ -278,26 +260,9 @@ const USER_SETTINGS_FIELDS = {
 	focusChainSettings: { default: DEFAULT_FOCUS_CHAIN_SETTINGS as FocusChainSettings },
 	customPrompt: { default: undefined as "compact" | undefined },
 	backgroundEditEnabled: { default: false as boolean },
-	optOutOfRemoteConfig: { default: false as boolean },
 	doubleCheckCompletionEnabled: { default: false as boolean },
 	lazyTeammateModeEnabled: { default: false as boolean },
 	showFeatureTips: { default: true as boolean },
-
-	// OpenTelemetry configuration
-	openTelemetryEnabled: { default: true as boolean },
-	openTelemetryMetricsExporter: { default: undefined as string | undefined },
-	openTelemetryLogsExporter: { default: undefined as string | undefined },
-	openTelemetryOtlpProtocol: { default: "http/json" as string | undefined },
-	openTelemetryOtlpEndpoint: { default: "http://localhost:4318" as string | undefined },
-	openTelemetryOtlpMetricsProtocol: { default: undefined as string | undefined },
-	openTelemetryOtlpMetricsEndpoint: { default: undefined as string | undefined },
-	openTelemetryOtlpLogsProtocol: { default: undefined as string | undefined },
-	openTelemetryOtlpLogsEndpoint: { default: undefined as string | undefined },
-	openTelemetryMetricExportInterval: { default: 60000 as number | undefined },
-	openTelemetryOtlpInsecure: { default: false as boolean | undefined },
-	openTelemetryLogBatchSize: { default: 512 as number | undefined },
-	openTelemetryLogBatchTimeout: { default: 5000 as number | undefined },
-	openTelemetryLogMaxQueueSize: { default: 2048 as number | undefined },
 } satisfies FieldDefinitions
 
 const SETTINGS_FIELDS = { ...API_HANDLER_SETTINGS_FIELDS, ...USER_SETTINGS_FIELDS }
@@ -311,8 +276,6 @@ const GLOBAL_STATE_AND_SETTINGS_FIELDS = { ...GLOBAL_STATE_FIELDS, ...SETTINGS_F
 const SECRETS_KEYS = [
 	"apiKey",
 	"clineApiKey",
-	"clineAccountId", // Cline Account ID for Firebase
-	"cline:clineAccountId",
 	"openRouterApiKey",
 	"awsAccessKey",
 	"awsSecretKey",

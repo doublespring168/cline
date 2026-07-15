@@ -569,7 +569,6 @@ export async function migrateWelcomeViewCompleted(context: vscode.ExtensionConte
 			// Fetch API keys directly from secrets
 			const apiKey = await context.secrets.get("apiKey")
 			const openRouterApiKey = await context.secrets.get("openRouterApiKey")
-			const clineAccountId = await context.secrets.get("clineAccountId")
 			const openAiApiKey = await context.secrets.get("openAiApiKey")
 			const ollamaApiKey = await context.secrets.get("ollamaApiKey")
 			const liteLlmApiKey = await context.secrets.get("liteLlmApiKey")
@@ -624,7 +623,6 @@ export async function migrateWelcomeViewCompleted(context: vscode.ExtensionConte
 				mistralApiKey,
 				planModeVsCodeLmModelSelector,
 				actModeVsCodeLmModelSelector,
-				clineAccountId,
 				asksageApiKey,
 				xaiApiKey,
 				sambanovaApiKey,

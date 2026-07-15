@@ -17,10 +17,10 @@ export function getConfiguredProviders(
 	const configured: ApiProvider[] = []
 
 	if (!apiConfiguration) {
-		return ["cline"] // Cline is always available
+		return ["cline"] // Cline-compatible API-key setup is always available
 	}
 
-	// Cline - always available (uses account-based auth)
+	// Cline-compatible API-key setup is always available in the provider selector.
 	configured.push("cline")
 
 	// Anthropic - requires API key

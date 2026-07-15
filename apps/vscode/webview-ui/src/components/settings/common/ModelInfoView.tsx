@@ -189,7 +189,7 @@ export const ModelInfoView = ({
 	const [advancedExpanded, setAdvancedExpanded] = useState(false)
 
 	const isGemini = Object.keys(geminiModels).includes(selectedModelId)
-	const hidePricing = selectedModelId.trim().toLowerCase().startsWith("cline-pass/")
+	const hidePricing = false
 	const hasThinkingConfig = hasThinkingBudget(modelInfo)
 	const hasTiers = !hidePricing && !!modelInfo.tiers && modelInfo.tiers.length > 0
 

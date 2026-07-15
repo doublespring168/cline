@@ -5,10 +5,10 @@ import { Logger } from "@/shared/services/Logger"
 /**
  * Checks if the current workspace has multiple root folders open.
  * This is a lightweight check that only counts workspace folders,
- * independent of feature flags or internal multi-root implementation status.
+ * independent of local UI settings or internal multi-root implementation status.
  *
- * Use this when you need to know the actual workspace state (e.g., for telemetry,
- * headers, or UI display), not whether multi-root features are enabled.
+ * Use this when you need to know the actual workspace state (e.g., for headers
+ * or UI display), not whether multi-root features are enabled.
  *
  * @returns true if 2 or more workspace folders are open, false otherwise
  * @example

@@ -5,7 +5,6 @@ import { detectWorkspaceRoots } from "@core/workspace/detection"
 import { setupWorkspaceManager } from "@core/workspace/setup"
 import type { WorkspaceRootManager } from "@core/workspace/WorkspaceRootManager"
 import { cleanupLegacyCheckpoints } from "@integrations/checkpoints/CheckpointMigration"
-import { ClineAccountService } from "@services/account/ClineAccountService"
 import { McpHub } from "@services/mcp/McpHub"
 import type { ApiProvider, ModelInfo } from "@shared/api"
 import type { ChatContent } from "@shared/ChatContent"
@@ -15,8 +14,6 @@ import type { HistoryItem } from "@shared/HistoryItem"
 import type { McpMarketplaceCatalog, McpMarketplaceItem } from "@shared/mcp"
 import { type Settings } from "@shared/storage/state-keys"
 import type { Mode } from "@shared/storage/types"
-import type { TelemetrySetting } from "@shared/TelemetrySetting"
-import type { UserInfo } from "@shared/UserInfo"
 import { fileExistsAtPath } from "@utils/fs"
 import axios from "axios"
 import fs from "fs/promises"
@@ -26,19 +23,14 @@ import * as path from "path"
 import { ClineEnv } from "@/config"
 import { HostProvider } from "@/hosts/host-provider"
 import { ExtensionRegistryInfo } from "@/registry"
-import { AuthService } from "@/services/auth/AuthService"
 import { OcaAuthService } from "@/services/auth/oca/OcaAuthService"
 import { LogoutReason } from "@/services/auth/types"
-import { BannerService } from "@/services/banner/BannerService"
-import { featureFlagsService } from "@/services/feature-flags"
-import { getDistinctId } from "@/services/logging/distinctId"
 import { telemetryService } from "@/services/telemetry"
 import { ClineExtensionContext } from "@/shared/cline"
 import { getAxiosSettings } from "@/shared/net"
 import { ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
 import { Session } from "@/shared/services/Session"
-import { getLatestAnnouncementId } from "@/utils/announcements"
 import { getCwd, getDesktopDir } from "@/utils/path"
 import { PromptRegistry } from "../prompts/system-prompt"
 import {
@@ -48,8 +40,6 @@ import {
 	GlobalFileNames,
 	writeMcpMarketplaceCatalogToCache,
 } from "../storage/disk"
-import { fetchRemoteConfig } from "../storage/remote-config/fetch"
-import { clearRemoteConfig } from "../storage/remote-config/utils"
 import { type PersistenceErrorEvent, StateManager } from "../storage/StateManager"
 import { Task } from "../task"
 import { sendMcpMarketplaceCatalogEvent } from "./mcp/subscribeToMcpMarketplaceCatalog"
@@ -68,8 +58,6 @@ export class Controller {
 	task?: Task
 
 	mcpHub: McpHub
-	accountService: ClineAccountService
-	authService: AuthService
 	ocaAuthService: OcaAuthService
 	readonly stateManager: StateManager
 
@@ -78,9 +66,6 @@ export class Controller {
 
 	// Flag to prevent duplicate cancellations from spam clicking
 	private cancelInProgress = false
-
-	// Timer for periodic remote config fetching
-	private remoteConfigTimer?: NodeJS.Timeout
 
 	// Public getter for workspace manager with lazy initialization - To get workspaces when task isn't initialized (Used by file mentions)
 	async ensureWorkspaceManager(): Promise<WorkspaceRootManager | undefined> {
@@ -102,17 +87,6 @@ export class Controller {
 		return this.workspaceManager
 	}
 
-	/**
-	 * Starts the periodic remote config fetching timer
-	 * Fetches immediately and then every hour
-	 */
-	private startRemoteConfigTimer() {
-		// Initial fetch
-		fetchRemoteConfig(this)
-		// Set up 1-hour interval
-		this.remoteConfigTimer = setInterval(() => fetchRemoteConfig(this), 3600000) // 1 hour
-	}
-
 	constructor(readonly context: ClineExtensionContext) {
 		Session.reset() // Reset session on controller initialization
 		PromptRegistry.getInstance() // Ensure prompts and tools are registered
@@ -128,14 +102,7 @@ export class Controller {
 				await this.postStateToWebview()
 			},
 		})
-		this.authService = AuthService.getInstance(this)
 		this.ocaAuthService = OcaAuthService.initialize(this)
-		this.accountService = ClineAccountService.getInstance()
-		BannerService.initialize(this)
-
-		this.authService.restoreRefreshTokenAndRetrieveAuthInfo().then(() => {
-			this.startRemoteConfigTimer()
-		})
 
 		this.mcpHub = new McpHub(
 			() => ensureMcpServersDirectoryExists(),
@@ -158,45 +125,10 @@ export class Controller {
 	- https://github.com/microsoft/vscode-extension-samples/blob/main/webview-sample/src/extension.ts
 	*/
 	async dispose() {
-		// Clear the remote config timer
-		if (this.remoteConfigTimer) {
-			clearInterval(this.remoteConfigTimer)
-			this.remoteConfigTimer = undefined
-		}
-
 		await this.clearTask()
 		this.mcpHub.dispose()
 
 		Logger.error("Controller disposed")
-	}
-
-	// Auth methods
-	async handleSignOut() {
-		try {
-			// AuthService now handles its own storage cleanup in handleDeauth()
-			this.stateManager.setGlobalState("userInfo", undefined)
-			clearRemoteConfig()
-
-			// Update API providers through cache service
-			const apiConfiguration = this.stateManager.getApiConfiguration()
-			const updatedConfig = {
-				...apiConfiguration,
-				planModeApiProvider: "openrouter" as ApiProvider,
-				actModeApiProvider: "openrouter" as ApiProvider,
-			}
-			this.stateManager.setApiConfiguration(updatedConfig)
-
-			await this.postStateToWebview()
-			HostProvider.window.showMessage({
-				type: ShowMessageType.INFORMATION,
-				message: "Successfully logged out of Cline",
-			})
-		} catch (_error) {
-			HostProvider.window.showMessage({
-				type: ShowMessageType.INFORMATION,
-				message: "Logout failed",
-			})
-		}
 	}
 
 	// Oca Auth methods
@@ -216,10 +148,6 @@ export class Controller {
 		}
 	}
 
-	async setUserInfo(info?: UserInfo) {
-		this.stateManager.setGlobalState("userInfo", info)
-	}
-
 	async initTask(
 		task?: string,
 		images?: string[],
@@ -227,15 +155,6 @@ export class Controller {
 		historyItem?: HistoryItem,
 		taskSettings?: Partial<Settings>,
 	) {
-		// Fire-and-forget: We intentionally don't await fetchRemoteConfig here.
-		// Remote config is already fetched in startRemoteConfigTimer() which runs in the constructor,
-		// so enterprise policies (yoloModeAllowed, allowedMCPServers, etc.) are already applied.
-		// This call just ensures we have the latest state, but we shouldn't block the UI for it.
-		// getGlobalSettingsKey() reads from remoteConfigCache on each call, so any updates
-		// will apply as soon as this fetch completes. The function also calls postStateToWebview()
-		// when done and catches all errors internally.
-		fetchRemoteConfig(this)
-
 		await this.clearTask() // ensures that an existing task doesn't exist before starting a new one, although this shouldn't be possible since user must clear task before starting a new one
 
 		const autoApprovalSettings = this.stateManager.getGlobalSettingsKey("autoApprovalSettings")
@@ -262,7 +181,7 @@ export class Controller {
 			this.stateManager.setGlobalState("autoApprovalSettings", updatedAutoApprovalSettings)
 		}
 
-		// Initialize and persist the workspace manager (multi-root or single-root) with telemetry + fallback
+		// Initialize and persist the workspace manager (multi-root or single-root) with local fallback handling.
 		this.workspaceManager = await setupWorkspaceManager({
 			stateManager: this.stateManager,
 			detectRoots: detectWorkspaceRoots,
@@ -312,28 +231,6 @@ export class Controller {
 		if (history) {
 			await this.initTask(undefined, undefined, undefined, history.historyItem)
 		}
-	}
-
-	async updateTelemetrySetting(telemetrySetting: TelemetrySetting) {
-		// Get previous setting to detect state changes
-		const previousSetting = this.stateManager.getGlobalSettingsKey("telemetrySetting")
-		const wasOptedIn = previousSetting !== "disabled"
-		const isOptedIn = telemetrySetting !== "disabled"
-
-		// Capture opt-out event BEFORE updating (so it gets sent while telemetry is still enabled)
-		if (wasOptedIn && !isOptedIn) {
-			telemetryService.captureUserOptOut()
-		}
-
-		this.stateManager.setGlobalState("telemetrySetting", telemetrySetting)
-		telemetryService.updateTelemetryState(isOptedIn)
-
-		// Capture opt-in event AFTER updating (so telemetry is enabled to receive it)
-		if (!wasOptedIn && isOptedIn) {
-			telemetryService.captureUserOptIn()
-		}
-
-		await this.postStateToWebview()
 	}
 
 	async toggleActModeForYoloMode(): Promise<boolean> {
@@ -459,64 +356,6 @@ export class Controller {
 		} finally {
 			// Always clear the flag, even if cancellation fails
 			this.cancelInProgress = false
-		}
-	}
-
-	async handleAuthCallback(customToken: string, provider: string | null = null) {
-		try {
-			await this.authService.handleAuthCallback(customToken, provider ? provider : "google")
-
-			// Get current settings to determine how to update providers
-			const planActSeparateModelsSetting = this.stateManager.getGlobalSettingsKey("planActSeparateModelsSetting")
-
-			const currentMode = this.stateManager.getGlobalSettingsKey("mode")
-
-			// Get current API configuration from cache
-			const currentApiConfiguration = this.stateManager.getApiConfiguration()
-
-			// On login we route the user to the managed "cline" provider, but preserve a
-			// "cline-pass" selection made during onboarding (otherwise it would be clobbered).
-			// Non-ClinePass logins are unaffected because they do not persist "cline-pass".
-			const planProvider: ApiProvider =
-				currentApiConfiguration.planModeApiProvider === "cline-pass" ? "cline-pass" : "cline"
-			const actProvider: ApiProvider = currentApiConfiguration.actModeApiProvider === "cline-pass" ? "cline-pass" : "cline"
-
-			const updatedConfig = { ...currentApiConfiguration }
-
-			if (planActSeparateModelsSetting) {
-				// Only update the current mode's provider
-				if (currentMode === "plan") {
-					updatedConfig.planModeApiProvider = planProvider
-				} else {
-					updatedConfig.actModeApiProvider = actProvider
-				}
-			} else {
-				// Update both modes to keep them in sync
-				updatedConfig.planModeApiProvider = planProvider
-				updatedConfig.actModeApiProvider = actProvider
-			}
-
-			// Update the API configuration through cache service
-			this.stateManager.setApiConfiguration(updatedConfig)
-
-			// Mark welcome view as completed since user has successfully logged in
-			this.stateManager.setGlobalState("welcomeViewCompleted", true)
-
-			await fetchRemoteConfig(this)
-
-			if (this.task) {
-				this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
-			}
-
-			await this.postStateToWebview()
-		} catch (error) {
-			Logger.error("Failed to handle auth callback:", error)
-			HostProvider.window.showMessage({
-				type: ShowMessageType.ERROR,
-				message: "Failed to log in to Cline",
-			})
-			// Even on login failure, we preserve any existing tokens
-			// Only clear tokens on explicit logout
 		}
 	}
 
@@ -732,7 +571,6 @@ export class Controller {
 		this.stateManager.setApiConfiguration(updatedConfig)
 
 		await this.postStateToWebview()
-		this.accountService
 		if (this.task) {
 			this.task.api = buildApiHandler({ ...updatedConfig, ulid: this.task.ulid }, currentMode)
 		}
@@ -804,7 +642,6 @@ export class Controller {
 		// Get API configuration from cache for immediate access
 		const onboardingModels = getClineOnboardingModels()
 		const apiConfiguration = this.stateManager.getApiConfiguration()
-		const lastShownAnnouncementId = this.stateManager.getGlobalStateKey("lastShownAnnouncementId")
 		const taskHistory = this.stateManager.getGlobalStateKey("taskHistory")
 		const autoApprovalSettings = this.stateManager.getGlobalSettingsKey("autoApprovalSettings")
 		const browserSettings = this.stateManager.getGlobalSettingsKey("browserSettings")
@@ -816,10 +653,8 @@ export class Controller {
 		const yoloModeToggled = this.stateManager.getGlobalSettingsKey("yoloModeToggled")
 		const useAutoCondense = this.stateManager.getGlobalSettingsKey("useAutoCondense")
 		const subagentsEnabled = this.stateManager.getGlobalSettingsKey("subagentsEnabled")
-		const userInfo = this.stateManager.getGlobalStateKey("userInfo")
 		const mcpMarketplaceEnabled = this.stateManager.getGlobalStateKey("mcpMarketplaceEnabled")
 		const mcpDisplayMode = this.stateManager.getGlobalStateKey("mcpDisplayMode")
-		const telemetrySetting = this.stateManager.getGlobalSettingsKey("telemetrySetting")
 		const planActSeparateModelsSetting = this.stateManager.getGlobalSettingsKey("planActSeparateModelsSetting")
 		const enableCheckpointsSetting = this.stateManager.getGlobalSettingsKey("enableCheckpointsSetting")
 		const globalClineRulesToggles = this.stateManager.getGlobalSettingsKey("globalClineRulesToggles")
@@ -840,9 +675,6 @@ export class Controller {
 		const terminalOutputLineLimit = this.stateManager.getGlobalSettingsKey("terminalOutputLineLimit")
 		const maxConsecutiveMistakes = this.stateManager.getGlobalSettingsKey("maxConsecutiveMistakes")
 		const favoritedModelIds = this.stateManager.getGlobalStateKey("favoritedModelIds")
-		const lastDismissedInfoBannerVersion = this.stateManager.getGlobalStateKey("lastDismissedInfoBannerVersion") || 0
-		const lastDismissedModelBannerVersion = this.stateManager.getGlobalStateKey("lastDismissedModelBannerVersion") || 0
-		const dismissedBanners = this.stateManager.getGlobalStateKey("dismissedBanners")
 		const doubleCheckCompletionEnabled = this.stateManager.getGlobalSettingsKey("doubleCheckCompletionEnabled")
 		const lazyTeammateModeEnabled = this.stateManager.getGlobalSettingsKey("lazyTeammateModeEnabled")
 		const showFeatureTips = this.stateManager.getGlobalSettingsKey("showFeatureTips")
@@ -863,15 +695,10 @@ export class Controller {
 			.sort((a, b) => b.ts - a.ts)
 			.slice(0, 100) // for now we're only getting the latest 100 tasks, but a better solution here is to only pass in 3 for recent task history, and then get the full task history on demand when going to the task history view (maybe with pagination?)
 
-		const latestAnnouncementId = getLatestAnnouncementId()
-		const shouldShowAnnouncement = lastShownAnnouncementId !== latestAnnouncementId
 		const platform = process.platform as Platform
-		const distinctId = getDistinctId()
 		const version = ExtensionRegistryInfo.version
 		const clineConfig = ClineEnv.config()
 		const environment = clineConfig.environment
-		const banners = BannerService.get().getActiveBanners() ?? []
-		const welcomeBanners = BannerService.get().getWelcomeBanners() ?? []
 
 		// Check OpenAI Codex authentication status
 		const { openAiCodexOAuthManager } = await import("@/integrations/openai-codex/oauth")
@@ -894,15 +721,12 @@ export class Controller {
 			yoloModeToggled,
 			useAutoCondense,
 			subagentsEnabled,
-			userInfo,
 			mcpMarketplaceEnabled,
 			mcpDisplayMode,
-			telemetrySetting,
 			planActSeparateModelsSetting,
 			enableCheckpointsSetting: enableCheckpointsSetting ?? true,
 			platform,
 			environment,
-			distinctId,
 			globalClineRulesToggles: globalClineRulesToggles || {},
 			localClineRulesToggles: localClineRulesToggles || {},
 			localWindsurfRulesToggles: localWindsurfRulesToggles || {},
@@ -925,7 +749,6 @@ export class Controller {
 			maxConsecutiveMistakes,
 			customPrompt,
 			taskHistory: processedTaskHistory,
-			shouldShowAnnouncement,
 			favoritedModelIds,
 			// NEW: Add workspace information
 			workspaceRoots: this.workspaceManager?.getRoots() ?? [],
@@ -933,30 +756,21 @@ export class Controller {
 			isMultiRootWorkspace: (this.workspaceManager?.getRoots().length ?? 0) > 1,
 			multiRootSetting: {
 				user: this.stateManager.getGlobalStateKey("multiRootEnabled"),
-				featureFlag: true, // Multi-root workspace is now always enabled
 			},
 			clineWebToolsEnabled: {
 				user: this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled"),
-				featureFlag: featureFlagsService.getWebtoolsEnabled(),
 			},
 			worktreesEnabled: {
 				user: this.stateManager.getGlobalSettingsKey("worktreesEnabled"),
-				featureFlag: featureFlagsService.getWorktreesEnabled(),
 			},
 			hooksEnabled: getHooksEnabledSafe(this.stateManager.getGlobalSettingsKey("hooksEnabled")),
-			lastDismissedInfoBannerVersion,
-			lastDismissedModelBannerVersion,
 			remoteConfigSettings: this.stateManager.getRemoteConfigSettings(),
-			dismissedBanners,
 			nativeToolCallSetting: this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.stateManager.getGlobalSettingsKey("enableParallelToolCalling"),
 			backgroundEditEnabled: this.stateManager.getGlobalSettingsKey("backgroundEditEnabled"),
-			optOutOfRemoteConfig: this.stateManager.getGlobalSettingsKey("optOutOfRemoteConfig"),
 			doubleCheckCompletionEnabled,
 			lazyTeammateModeEnabled,
 			showFeatureTips,
-			banners,
-			welcomeBanners,
 			openAiCodexIsAuthenticated,
 		}
 	}

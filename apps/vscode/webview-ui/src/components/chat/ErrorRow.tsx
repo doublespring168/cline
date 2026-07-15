@@ -1,18 +1,6 @@
 import type { ClineMessage } from "@shared/ExtensionMessage";
-import { isClineProvider } from "@shared/utils/cline";
 import { memo } from "react";
-import ClinePassLimitError from "@/components/chat/ClinePassLimitError";
-import CreditLimitError from "@/components/chat/CreditLimitError";
-import EntitlementError from "@/components/chat/EntitlementError";
-import OrgClinePassRestrictionError from "@/components/chat/OrgClinePassRestrictionError";
-import SpendLimitError from "@/components/chat/SpendLimitError";
-import { Button } from "@/components/ui/button";
-import { useClineAuth, useClineSignIn } from "@/context/ClineAuthContext";
-import {
-	ClineError,
-	ClineErrorType,
-	extractClinePassLimitMessage,
-} from "../../../../src/services/error/ClineError";
+import { ClineError, ClineErrorType } from "../../../../src/services/error/ClineError";
 
 const _errorColor = "var(--vscode-errorForeground)";
 
@@ -34,10 +22,7 @@ const ErrorRow = memo(
 		apiRequestFailedMessage,
 		apiReqStreamingFailedMessage,
 	}: ErrorRowProps) => {
-		const { clineUser } = useClineAuth();
 		const rawApiError = apiRequestFailedMessage || apiReqStreamingFailedMessage;
-
-		const { isLoginLoading, handleSignIn } = useClineSignIn();
 
 		const renderErrorContent = () => {
 			switch (errorType) {
@@ -54,63 +39,12 @@ const ErrorRow = memo(
 							clineError?.providerId || clineError?._error?.providerId;
 						const errorCode = clineError?._error?.code;
 
-						if (clineError?.isErrorType(ClineErrorType.Balance)) {
-							const errorDetails = clineError._error?.details;
-							return (
-								<CreditLimitError
-									buyCreditsUrl={errorDetails?.buy_credits_url}
-									currentBalance={errorDetails?.current_balance}
-									message={errorDetails?.message}
-									totalPromotions={errorDetails?.total_promotions}
-									totalSpent={errorDetails?.total_spent}
-								/>
-							);
-						}
-
-						if (clineError?.isErrorType(ClineErrorType.SpendLimit)) {
-							const d = clineError._error?.details;
-							return (
-								<SpendLimitError
-									budgetPeriod={d?.budget_period}
-									limitUsd={d?.limit_usd}
-									message={d?.message || errorMessage}
-									resetsAt={d?.resets_at}
-									spentUsd={d?.spent_usd}
-								/>
-							);
-						}
-
-						if (clineError?.isErrorType(ClineErrorType.Entitlement)) {
-							const detailMessage =
-								clineError?._error?.details?.message || errorMessage;
-							return <EntitlementError message={detailMessage} />;
-						}
-
-						if (
-							clineError?.isErrorType(ClineErrorType.OrgClinePassRestriction)
-						) {
-							return <OrgClinePassRestrictionError />;
-						}
-
-						// Gated on the ClinePass provider: users already on usage-based
-						// billing shouldn't be offered a switch to what they're on.
-						if (
-							clineError?.isErrorType(ClineErrorType.ClinePassLimit) &&
-							providerId === "cline-pass"
-						) {
-							const detailMessage =
-								clineError?._error?.details?.message || errorMessage;
-							const limitMessage =
-								extractClinePassLimitMessage(detailMessage) ?? detailMessage;
-							return <ClinePassLimitError message={limitMessage} />;
-						}
-
 						if (clineError?.isErrorType(ClineErrorType.RateLimit)) {
 							return (
-								<p className="m-0 whitespace-pre-wrap text-error wrap-anywhere">
+								<div className="m-0 whitespace-pre-wrap text-error wrap-anywhere">
 									{errorMessage}
 									{requestId && <div>Request ID: {requestId}</div>}
-								</p>
+								</div>
 							);
 						}
 
@@ -124,41 +58,8 @@ const ErrorRow = memo(
 							);
 						}
 
-						if (
-							clineError?.isErrorType(ClineErrorType.Auth) &&
-							isClineProvider(providerId)
-						) {
-							return !clineUser ? (
-								// User is using Cline provider and is not logged in
-								<div className="flex flex-col gap-3">
-									<div className="flex items-center justify-center rounded border border-neutral-500/30 bg-vscode-editor-background p-6 text-center text-vscode-foreground">
-										Whoops looks like you're logged out – click below to sign in
-									</div>
-									<Button
-										className="w-full"
-										disabled={isLoginLoading}
-										onClick={handleSignIn}
-									>
-										Sign in to Cline
-										{isLoginLoading && (
-											<span className="ml-1 animate-spin">
-												<span className="codicon codicon-refresh" />
-											</span>
-										)}
-									</Button>
-								</div>
-							) : (
-								// Don't show sign in button after the user has logged in, just ask them to retry
-								<div className="mt-4">
-									<span className="text-description">
-										(Click "Retry" below)
-									</span>
-								</div>
-							);
-						}
-
 						return (
-							<p className="m-0 whitespace-pre-wrap text-error wrap-anywhere flex flex-col gap-3">
+							<div className="m-0 whitespace-pre-wrap text-error wrap-anywhere flex flex-col gap-3">
 								{/* Display the well-formatted error extracted from the ClineError instance */}
 
 								<header>
@@ -193,7 +94,7 @@ const ErrorRow = memo(
 										(Click "Retry" below)
 									</span>
 								</div>
-							</p>
+							</div>
 						);
 					}
 

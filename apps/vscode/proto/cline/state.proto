@@ -21,18 +21,9 @@ service StateService {
   rpc updateAutoApprovalSettings(AutoApprovalSettingsRequest) returns (Empty);
   rpc updateSettings(UpdateSettingsRequest) returns (Empty);
   rpc updateTaskSettings(UpdateTaskSettingsRequest) returns (Empty);
-  rpc updateTelemetrySetting(TelemetrySettingRequest) returns (Empty);
-  rpc captureOnboardingProgress(OnboardingProgressRequest) returns (Empty);
   rpc setWelcomeViewCompleted(BooleanRequest) returns (Empty);
-  rpc updateInfoBannerVersion(Int64Request) returns (Empty);
-  rpc updateModelBannerVersion(Int64Request) returns (Empty);
-  rpc dismissBanner(StringRequest) returns (Empty);
-  rpc trackBannerEvent(TrackBannerEventRequest) returns (Empty);
   rpc getProcessInfo(EmptyRequest) returns (ProcessInfo);
   rpc flushPendingState(EmptyRequest) returns (Empty);
-  rpc refreshRemoteConfig(EmptyRequest) returns (Empty);
-  rpc testOtelConnection(EmptyRequest) returns (TestConnectionResult);
-  rpc testPromptUploading(EmptyRequest) returns (TestConnectionResult);
 }
 
 message AutoApprovalActions {
@@ -57,7 +48,6 @@ message AutoApprovalSettings {
 // and use the scripts/generate-state-proto.mjs script to regenerate this list.
 message Secrets {
   optional string api_key = 1;
-  optional string cline_account_id = 2;
   optional string open_router_api_key = 3;
   optional string aws_access_key = 4;
   optional string aws_secret_key = 5;
@@ -239,7 +229,6 @@ message Settings {
   optional string global_workflow_toggles = 130;
   optional string global_skills_toggles = 131;
   optional BrowserSettings browser_settings = 132;
-  optional string telemetry_setting = 133;
   optional bool plan_act_separate_models_setting = 134;
   optional bool enable_checkpoints_setting = 135;
   optional int32 shell_integration_timeout = 136;
@@ -258,21 +247,6 @@ message Settings {
   optional bool subagents_enabled = 153;
   optional bool enable_parallel_tool_calling = 154;
   optional bool background_edit_enabled = 155;
-  optional bool opt_out_of_remote_config = 157;
-  optional bool open_telemetry_enabled = 158;
-  optional string open_telemetry_metrics_exporter = 159;
-  optional string open_telemetry_logs_exporter = 160;
-  optional string open_telemetry_otlp_protocol = 161;
-  optional string open_telemetry_otlp_endpoint = 162;
-  optional string open_telemetry_otlp_metrics_protocol = 163;
-  optional string open_telemetry_otlp_metrics_endpoint = 164;
-  optional string open_telemetry_otlp_logs_protocol = 165;
-  optional string open_telemetry_otlp_logs_endpoint = 166;
-  optional int32 open_telemetry_metric_export_interval = 167;
-  optional bool open_telemetry_otlp_insecure = 168;
-  optional int32 open_telemetry_log_batch_size = 169;
-  optional int32 open_telemetry_log_batch_timeout = 170;
-  optional int32 open_telemetry_log_max_queue_size = 171;
   optional bool worktrees_enabled = 172;
   optional bool auto_approve_all_toggled = 174;
   optional bool double_check_completion_enabled = 176;
@@ -287,10 +261,6 @@ message Settings {
   optional OpenRouterModelInfo plan_mode_vertex_custom_model_info = 185;
   optional bool act_mode_vertex_custom_model_selected = 186;
   optional OpenRouterModelInfo act_mode_vertex_custom_model_info = 187;
-  optional string plan_mode_cline_pass_model_id = 188;
-  optional OpenRouterModelInfo plan_mode_cline_pass_model_info = 189;
-  optional string act_mode_cline_pass_model_id = 190;
-  optional OpenRouterModelInfo act_mode_cline_pass_model_info = 191;
   optional int32 chat_font_size = 192;
 }
 
@@ -357,17 +327,6 @@ message AutoApprovalSettingsRequest {
   bool enable_notifications = 4;
 }
 
-enum TelemetrySettingEnum {
-  UNSET = 0;
-  ENABLED = 1;
-  DISABLED = 2;
-}
-
-message TelemetrySettingRequest {
-  Metadata metadata = 1;
-  TelemetrySettingEnum setting = 2;
-}
-
 // Browser settings for UpdateSettingsRequest
 message BrowserSettingsUpdate {
   optional Viewport viewport = 1;
@@ -392,7 +351,6 @@ message UpdateSettingsRequest {
 
   Metadata metadata = 1;
   optional ModelsApiConfiguration api_configuration = 2;
-  optional string telemetry_setting = 3;
   optional bool plan_act_separate_models_setting = 4;
   optional bool enable_checkpoints_setting = 5;
   optional bool mcp_marketplace_enabled = 6;
@@ -422,7 +380,6 @@ message UpdateSettingsRequest {
   optional bool enable_parallel_tool_calling = 35;
   optional bool background_edit_enabled = 36;
   optional string oca_reasoning_effort = 37;
-  optional bool opt_out_of_remote_config = 39;
   optional bool worktrees_enabled = 40;
   optional bool double_check_completion_enabled = 41;
   optional bool show_feature_tips = 42;
@@ -449,13 +406,6 @@ message ProcessInfo {
   optional int64 uptime_ms = 3;
 }
 
-message OnboardingProgressRequest {
-  int32 step = 1;
-  optional string action = 2;
-  optional bool completed = 3;
-  optional string model_selected = 4;
-}
-
 message OnboardingModelGroup {
   repeated OnboardingModel models = 1;
 }
@@ -468,16 +418,4 @@ message OnboardingModel {
   string badge = 5;
   string group = 6;
   OpenRouterModelInfo info = 7;
-}
-
-message TrackBannerEventRequest {
-  string banner_id = 1;
-  string event_type = 2;
-}
-
-// Result of a connection test (OTEL, prompt uploading, etc.)
-message TestConnectionResult {
-  bool success = 1;
-  optional string message = 2;
-  optional string error = 3;
 }

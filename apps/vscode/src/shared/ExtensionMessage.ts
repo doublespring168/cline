@@ -7,7 +7,6 @@ import { AutoApprovalSettings } from "./AutoApprovalSettings"
 import { ApiConfiguration } from "./api"
 import { BrowserSettings } from "./BrowserSettings"
 import { ClineFeatureSetting } from "./ClineFeatureSetting"
-import { BannerCardData } from "./cline/banner"
 import { ClineRulesToggles } from "./cline-rules"
 import { FocusChainSettings } from "./FocusChainSettings"
 import { HistoryItem } from "./HistoryItem"
@@ -15,8 +14,6 @@ import { McpDisplayMode } from "./McpDisplayMode"
 import { ClineMessageModelInfo } from "./messages"
 import { OnboardingModelGroup } from "./proto/cline/state"
 import { Mode } from "./storage/types"
-import { TelemetrySetting } from "./TelemetrySetting"
-import { UserInfo } from "./UserInfo"
 // webview will hold state
 export interface ExtensionMessage {
 	type: "grpc_response" // New type for gRPC responses
@@ -57,18 +54,14 @@ export interface ExtensionState {
 	enableCheckpointsSetting?: boolean
 	platform: Platform
 	environment?: Environment
-	shouldShowAnnouncement: boolean
 	taskHistory: HistoryItem[]
-	telemetrySetting: TelemetrySetting
 	shellIntegrationTimeout: number
 	terminalReuseEnabled?: boolean
 	terminalOutputLineLimit: number
 	maxConsecutiveMistakes: number
 	defaultTerminalProfile?: string
 	lastCompletedCommandTs?: number
-	userInfo?: UserInfo
 	version: string
-	distinctId: string
 	globalClineRulesToggles: ClineRulesToggles
 	localClineRulesToggles: ClineRulesToggles
 	localWorkflowToggles: ClineRulesToggles
@@ -93,9 +86,6 @@ export interface ExtensionState {
 	primaryRootIndex: number
 	isMultiRootWorkspace: boolean
 	multiRootSetting: ClineFeatureSetting
-	lastDismissedInfoBannerVersion: number
-	lastDismissedModelBannerVersion: number
-	dismissedBanners?: Array<{ bannerId: string; dismissedAt: number }>
 	hooksEnabled?: boolean
 	remoteConfigSettings?: Partial<RemoteConfigFields>
 	globalSkillsToggles?: Record<string, boolean>
@@ -103,12 +93,9 @@ export interface ExtensionState {
 	nativeToolCallSetting?: boolean
 	enableParallelToolCalling?: boolean
 	backgroundEditEnabled?: boolean
-	optOutOfRemoteConfig?: boolean
 	doubleCheckCompletionEnabled?: boolean
 	lazyTeammateModeEnabled?: boolean
 	showFeatureTips?: boolean
-	banners?: BannerCardData[]
-	welcomeBanners?: BannerCardData[]
 	openAiCodexIsAuthenticated?: boolean
 }
 

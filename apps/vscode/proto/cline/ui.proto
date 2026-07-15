@@ -237,9 +237,6 @@ service UiService {
   // Scrolls to a specific settings section in the settings view
   rpc scrollToSettings(StringRequest) returns (KeyValuePair);
 
-  // Marks the current announcement as shown and returns whether an announcement should still be shown
-  rpc onDidShowAnnouncement(EmptyRequest) returns (Boolean);
-
   // Subscribe to addToInput events (when user adds content via context menu)
   rpc subscribeToAddToInput(EmptyRequest) returns (stream String);
 
@@ -251,9 +248,6 @@ service UiService {
 
   // Subscribe to chat button clicked events (when the chat button is clicked in VSCode)
   rpc subscribeToChatButtonClicked(EmptyRequest) returns (stream Empty);
-
-  // Subscribe to account button click events
-  rpc subscribeToAccountButtonClicked(EmptyRequest) returns (stream Empty);
 
   // Subscribe to settings button clicked events
   rpc subscribeToSettingsButtonClicked(EmptyRequest) returns (stream Empty);

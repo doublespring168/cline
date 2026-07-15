@@ -45,13 +45,6 @@ describe("refreshClineRecommendedModels", () => {
 					},
 				],
 				free: [{ id: "z-ai/glm-5", description: "Remote free" }],
-				clinePass: [
-					{
-						id: "cline-pass/glm-5",
-						description: "Remote ClinePass",
-						tags: ["CLINE_PASS"],
-					},
-				],
 			},
 		});
 
@@ -73,14 +66,6 @@ describe("refreshClineRecommendedModels", () => {
 					name: "z-ai/glm-5",
 					description: "Remote free",
 					tags: [],
-				},
-			],
-			clinePass: [
-				{
-					id: "cline-pass/glm-5",
-					name: "cline-pass/glm-5",
-					description: "Remote ClinePass",
-					tags: ["CLINE_PASS"],
 				},
 			],
 		});
@@ -109,13 +94,6 @@ describe("refreshClineRecommendedModels", () => {
 						id: "minimax/minimax-m2.5",
 						description: "Remote free",
 						tags: ["FREE"],
-					},
-				],
-				clinePass: [
-					{
-						id: "cline-pass/glm-5",
-						description: "Remote ClinePass",
-						tags: ["CLINE_PASS"],
 					},
 				],
 			},
@@ -194,32 +172,4 @@ describe("refreshClineRecommendedModels", () => {
 		expect(result.recommended.map((model) => model.name)).to.deep.equal(["z-ai/glm-5.2"]);
 	});
 
-	it("prefers canonical ClinePass Z.ai IDs when aliases are also present", async () => {
-		sandbox.stub(ClineEnv, "config").returns({
-			environment: Environment.production,
-			appBaseUrl: "https://app.cline-mock.bot",
-			apiBaseUrl: "https://api.cline-mock.bot",
-			mcpBaseUrl: "https://api.cline-mock.bot/v1/mcp",
-		});
-		sandbox.stub(disk, "ensureCacheDirectoryExists").resolves("/tmp");
-		sandbox.stub(fs, "writeFile").resolves();
-		sandbox.stub(axios, "get").resolves({
-			data: {
-				clinePass: [
-					{
-						id: "cline-pass/z-ai/glm-5.2",
-						description: "OpenRouter alias",
-					},
-					{
-						id: "cline-pass/zai/glm-5.2",
-						description: "Canonical ID",
-					},
-				],
-			},
-		});
-
-		const result = await refreshClineRecommendedModels();
-
-		expect(result.clinePass.map((model) => model.id)).to.deep.equal(["cline-pass/zai/glm-5.2"]);
-	});
 });

@@ -127,7 +127,8 @@ message ClineRecommendedModel {
 message ClineRecommendedModelsResponse {
   repeated ClineRecommendedModel recommended = 1;
   repeated ClineRecommendedModel free = 2;
-  repeated ClineRecommendedModel cline_pass = 3;
+  reserved 3;
+  reserved "cline_pass";
 }
 
 // Request for fetching OpenAI models
@@ -161,6 +162,8 @@ message SapAiCoreModelsResponse {
 
 // API secrets (credentials, API keys)
 message ModelsApiSecrets {
+  reserved 28;
+  reserved "cline_account_id";
   optional string api_key = 1;
   optional string cline_api_key = 2;
   optional string lite_llm_api_key = 3;
@@ -188,7 +191,6 @@ message ModelsApiSecrets {
   optional string sap_ai_core_client_id = 25;
   optional string sap_ai_core_client_secret = 26;
   optional string moonshot_api_key = 27;
-  optional string cline_account_id = 28;
   optional string groq_api_key = 29;
   optional string hugging_face_api_key = 30;
   optional string huawei_cloud_maas_api_key = 31;
@@ -204,6 +206,8 @@ message ModelsApiSecrets {
 
 // API configuration options (non-secret settings)
 message ModelsApiOptions {
+  reserved 137, 138, 237, 238;
+  reserved "plan_mode_cline_pass_model_id", "plan_mode_cline_pass_model_info", "act_mode_cline_pass_model_id", "act_mode_cline_pass_model_info";
   // Global configuration fields (not mode-specific)
   optional string ulid = 1;
   optional string lite_llm_base_url = 2;
@@ -288,8 +292,6 @@ message ModelsApiOptions {
   optional OpenAiCompatibleModelInfo plan_mode_aihubmix_model_info = 134;
   optional string plan_mode_cline_model_id = 135;
   optional OpenRouterModelInfo plan_mode_cline_model_info = 136;
-  optional string plan_mode_cline_pass_model_id = 137;
-  optional OpenRouterModelInfo plan_mode_cline_pass_model_info = 138;
 
   // Act mode configurations
   optional ApiProvider act_mode_api_provider = 200;
@@ -329,8 +331,6 @@ message ModelsApiOptions {
   optional OpenAiCompatibleModelInfo act_mode_aihubmix_model_info = 234;
   optional string act_mode_cline_model_id = 235;
   optional OpenRouterModelInfo act_mode_cline_model_info = 236;
-  optional string act_mode_cline_pass_model_id = 237;
-  optional OpenRouterModelInfo act_mode_cline_pass_model_info = 238;
   optional bool plan_mode_vertex_custom_model_selected = 239;
   optional OpenRouterModelInfo plan_mode_vertex_custom_model_info = 240;
   optional bool act_mode_vertex_custom_model_selected = 241;
@@ -406,7 +406,7 @@ message OcaModelInfo {
   optional string survey_content = 14;
   // Identifier for the survey associated with this model
   optional string survey_id = 15;
-  // Optional banner content (e.g., deprecation or promotion notes)
+  // Optional provider notice (for example, deprecation or compliance guidance)
   optional string banner = 16;
   // Canonical model identifier as reported by OCA
   string model_name = 17;
@@ -428,6 +428,8 @@ message OcaCompatibleModelInfo {
 
 // API Provider enumeration
 enum ApiProvider {
+  reserved 42;
+  reserved "CLINE_PASS";
   ANTHROPIC = 0;
   OPENROUTER = 1;
   BEDROCK = 2;
@@ -470,7 +472,6 @@ enum ApiProvider {
   NOUSRESEARCH = 39;
   OPENAI_CODEX = 40;
   WANDB = 41;
-  CLINE_PASS = 42;
 }
 
 enum ApiFormat {
@@ -522,6 +523,10 @@ message LiteLLMModelInfo {
 
 // Main ApiConfiguration message
 message ModelsApiConfiguration {
+  reserved 142, 143, 242, 243;
+  reserved "plan_mode_cline_pass_model_id", "plan_mode_cline_pass_model_info", "act_mode_cline_pass_model_id", "act_mode_cline_pass_model_info";
+  reserved 60;
+  reserved "cline_account_id";
   // Global configuration fields (not mode-specific)
   optional string api_key = 1;
   optional string cline_api_key = 2;
@@ -582,7 +587,6 @@ message ModelsApiConfiguration {
   optional string moonshot_api_line = 57;
   optional string aws_authentication = 58;
   optional string aws_bedrock_api_key = 59;
-  optional string cline_account_id = 60;
   optional string groq_api_key = 61;
   optional string hugging_face_api_key = 62;
   optional string huawei_cloud_maas_api_key = 63;
@@ -654,8 +658,6 @@ message ModelsApiConfiguration {
   optional string gemini_plan_mode_thinking_level = 139;
   optional string plan_mode_cline_model_id = 140;
   optional OpenRouterModelInfo plan_mode_cline_model_info = 141;
-  optional string plan_mode_cline_pass_model_id = 142;
-  optional OpenRouterModelInfo plan_mode_cline_pass_model_info = 143;
 
   // Act mode configurations
   optional ApiProvider act_mode_api_provider = 200;
@@ -700,8 +702,6 @@ message ModelsApiConfiguration {
   optional string gemini_act_mode_thinking_level = 239;
   optional string act_mode_cline_model_id = 240;
   optional OpenRouterModelInfo act_mode_cline_model_info = 241;
-  optional string act_mode_cline_pass_model_id = 242;
-  optional OpenRouterModelInfo act_mode_cline_pass_model_info = 243;
   optional bool plan_mode_vertex_custom_model_selected = 244;
   optional OpenRouterModelInfo plan_mode_vertex_custom_model_info = 245;
   optional bool act_mode_vertex_custom_model_selected = 246;

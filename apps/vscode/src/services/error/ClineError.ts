@@ -1,16 +1,11 @@
 import { serializeError } from "serialize-error";
-import { CLINE_ACCOUNT_AUTH_ERROR_MESSAGE } from "../../shared/ClineAccount";
+import { CLINE_API_KEY_ERROR_MESSAGE } from "../../shared/ClineApi";
 
 export enum ClineErrorType {
 	Auth = "auth",
 	Network = "network",
 	RateLimit = "rateLimit",
-	Balance = "balance",
-	SpendLimit = "spendLimit",
 	QuotaExceeded = "quotaExceeded",
-	Entitlement = "entitlement",
-	OrgClinePassRestriction = "orgClinePassRestriction",
-	ClinePassLimit = "clinePassLimit",
 }
 
 interface ErrorDetails {
@@ -53,51 +48,6 @@ const RATE_LIMIT_PATTERNS = [
 	/quota exceeded/i,
 	/resource exhausted/i,
 ];
-const ORG_CLINE_PASS_RESTRICTION_MESSAGE =
-	"organization accounts cannot use individual model inference subscriptions";
-const ORG_CLINE_PASS_RESTRICTION_USER_MESSAGE =
-	"organization accounts cannot use clinepass subscriptions";
-
-// The ClinePass period limit message is dynamic ("weekly"/"5-hour" period, "7d"/"12h"
-// reset), so it is matched by its fixed prefix/suffix with the ClinePass marker in
-// between. Plain indexOf scanning — no regex, so no backtracking on hostile input.
-const CLINE_PASS_LIMIT_PREFIX = "you have reached your";
-const CLINE_PASS_LIMIT_MARKER = "clinepass limit";
-const CLINE_PASS_LIMIT_SUFFIX = "please try again later.";
-
-function findClinePassLimitMessageBounds(
-	text: string,
-): { start: number; end: number } | undefined {
-	const normalized = text.toLowerCase();
-	const start = normalized.indexOf(CLINE_PASS_LIMIT_PREFIX);
-	if (start === -1) {
-		return undefined;
-	}
-
-	const suffixStart = normalized.indexOf(CLINE_PASS_LIMIT_SUFFIX, start);
-	if (suffixStart === -1) {
-		return undefined;
-	}
-
-	const end = suffixStart + CLINE_PASS_LIMIT_SUFFIX.length;
-	if (!normalized.slice(start, end).includes(CLINE_PASS_LIMIT_MARKER)) {
-		return undefined;
-	}
-
-	return { start, end };
-}
-
-export function isClinePassLimitMessage(text: string): boolean {
-	return findClinePassLimitMessageBounds(text) !== undefined;
-}
-
-export function extractClinePassLimitMessage(
-	text: string,
-): string | undefined {
-	const bounds = findClinePassLimitMessageBounds(text);
-	return bounds ? text.slice(bounds.start, bounds.end) : undefined;
-}
-
 export class ClineError extends Error {
 	readonly title = "ClineError";
 	readonly _error: ErrorDetails;
@@ -199,61 +149,12 @@ export class ClineError extends Error {
 	 * This is useful for determining how to handle the error in the UI or logic.
 	 */
 	static getErrorType(err: ClineError): ClineErrorType | undefined {
-		const { code, status, details } = err._error;
+		const { code, status } = err._error;
 		const message = (
 			err._error?.message ||
 			err.message ||
 			JSON.stringify(err._error)
 		)?.toLowerCase();
-
-		// Check balance error first (most specific)
-		if (
-			code === "insufficient_credits" &&
-			typeof details?.current_balance === "number"
-		) {
-			return ClineErrorType.Balance;
-		}
-
-		// Check spend limit exceeded (org-enforced budget cap, 429 SPEND_LIMIT_EXCEEDED)
-		// Must be checked before the generic rate-limit check since both use 429
-		if (
-			code === "SPEND_LIMIT_EXCEEDED" ||
-			details?.code === "SPEND_LIMIT_EXCEEDED"
-		) {
-			return ClineErrorType.SpendLimit;
-		}
-
-		// ClinePass entitlement errors are user-actionable and should not fall through to generic 403 auth.
-		// The organization-account variant gets separate copy because subscribing is not the right action.
-		const isEntitlementCode =
-			code === "ENTITLEMENT_ERROR" || details?.code === "ENTITLEMENT_ERROR";
-		const entitlementText =
-			`${message ?? ""} ${details?.message ?? ""}`.toLowerCase();
-		if (
-			isEntitlementCode &&
-			(entitlementText.includes(ORG_CLINE_PASS_RESTRICTION_MESSAGE) ||
-				entitlementText.includes(ORG_CLINE_PASS_RESTRICTION_USER_MESSAGE))
-		) {
-			return ClineErrorType.OrgClinePassRestriction;
-		}
-		if (
-			isEntitlementCode &&
-			entitlementText.includes("not subscribed to required model plan")
-		) {
-			return ClineErrorType.Entitlement;
-		}
-
-		// ClinePass period limits (weekly/5-hour) are user-actionable (switch to
-		// usage-based billing) and must not fall through to the generic 403 auth
-		// handling below or the 429 rate-limit patterns.
-		const detailMessage =
-			typeof details?.message === "string" ? details.message : undefined;
-		if (
-			isClinePassLimitMessage(detailMessage ?? "") ||
-			isClinePassLimitMessage(message ?? "")
-		) {
-			return ClineErrorType.ClinePassLimit;
-		}
 
 		// Check auth errors
 		const isAuthStatus = status !== undefined && status > 400 && status < 429;
@@ -277,7 +178,7 @@ export class ClineError extends Error {
 				/unauthorized/i,
 			];
 			if (
-				message?.includes(CLINE_ACCOUNT_AUTH_ERROR_MESSAGE) ||
+				message?.includes(CLINE_API_KEY_ERROR_MESSAGE) ||
 				authErrorRegex.some((regex) => regex.test(message))
 			) {
 				return ClineErrorType.Auth;

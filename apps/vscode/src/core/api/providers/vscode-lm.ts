@@ -258,7 +258,7 @@ export class VsCodeLmHandler implements ApiHandler, SingleCompletionHandler {
 		 * Consequences:
 		 *  - This is not model-accurate and can under/over-estimate tokens, especially with tool/function calls.
 		 *  - It is “good enough” for budgeting/context checks, and we accept the inaccuracy by design.
-		 * If precise accounting becomes a requirement, reintroduce a tokenizer behind a feature flag or backend-only path.
+		 * If precise accounting becomes a requirement, reintroduce a tokenizer behind an explicit local setting or backend-only path.
 		 */
 		const textContent = typeof text === "string" ? text : this.extractTextFromMessage(text)
 		return Math.ceil((textContent || "").length / 4)

@@ -1,8 +1,7 @@
 import type { OnboardingModel } from "../proto/cline/state"
 
 /**
- * The list of models available to new users during the onboarding flow.
- * NOTE: Can be overridden by feature flag onboarding models payload.
+ * Fallback model metadata retained for the local model-picker onboarding flow.
  */
 export const CLINE_ONBOARDING_MODELS: OnboardingModel[] = [
 	{

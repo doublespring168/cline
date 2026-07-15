@@ -100,7 +100,7 @@ const ApiOptions = ({
 	// Use full context state for immediate save payload
 	const { apiConfiguration, remoteConfigSettings } = useExtensionState()
 
-	const { selectedProvider } = normalizeApiConfiguration(apiConfiguration, currentMode, { isClinePassEnabled: true })
+	const { selectedProvider } = normalizeApiConfiguration(apiConfiguration, currentMode)
 
 	const { handleModeFieldChange } = useApiConfigurationHandlers()
 
@@ -150,19 +150,13 @@ const ApiOptions = ({
 		// Filter by remote config if remoteConfiguredProviders is set
 		const remoteProviders: string[] = remoteConfigSettings?.remoteConfiguredProviders || []
 		if (remoteProviders.length > 0) {
-			const effectiveRemoteProviders =
-				remoteProviders.includes("cline-pass") && !remoteProviders.includes("cline")
-					? [...remoteProviders, "cline"]
-					: remoteProviders
-			providers = providers.filter((option) => effectiveRemoteProviders.includes(option.value))
+			providers = providers.filter((option) => remoteProviders.includes(option.value))
 		}
 
 		return providers
 	}, [remoteConfigSettings])
 
-	const getProviderDisplayLabel = useCallback((option: (typeof PROVIDERS.list)[number]) => {
-		return option.value === "cline" ? "Cline Usage-Billing" : option.label
-	}, [])
+	const getProviderDisplayLabel = useCallback((option: (typeof PROVIDERS.list)[number]) => option.label, [])
 
 	const currentProviderLabel = useMemo(() => {
 		const selectedOption = providerOptions.find((option) => option.value === selectedProvider)
@@ -180,12 +174,7 @@ const ApiOptions = ({
 		return providerOptions.map((option) => ({
 			value: option.value,
 			html: getProviderDisplayLabel(option),
-			searchText:
-				option.value === "cline"
-					? "Cline Usage Billing usage based pay as you go"
-					: option.value === "cline-pass"
-						? "ClinePass subscription included models"
-						: option.label,
+			searchText: option.value === "cline" ? "Cline API key" : option.label,
 		}))
 	}, [getProviderDisplayLabel, providerOptions])
 
@@ -374,13 +363,11 @@ const ApiOptions = ({
 				<HicapProvider currentMode={currentMode} isPopup={isPopup} showModelOptions={showModelOptions} />
 			)}
 
-			{apiConfiguration && (selectedProvider === "cline" || selectedProvider === "cline-pass") && (
+			{apiConfiguration && selectedProvider === "cline" && (
 				<ClineProvider
 					currentMode={currentMode}
 					initialModelTab={initialModelTab}
-					isClinePassEnabled={true}
 					isPopup={isPopup}
-					selectedProvider={selectedProvider}
 					showModelOptions={showModelOptions}
 				/>
 			)}

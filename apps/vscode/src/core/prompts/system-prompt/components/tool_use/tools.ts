@@ -19,7 +19,7 @@ export async function getToolUseToolsSection(variant: PromptVariant, context: Sy
 	// (TODO tool is now dynamically added when focusChainEnabled is true)
 	const shouldIncludeTaskProgress = focusChainEnabled
 
-	// Define multi-root hint based on feature flag
+	// Define multi-root hint based on the local setting.
 	const multiRootHint = context.isMultiRootEnabled ? MULTI_ROOT_HINT : ""
 	return new TemplateEngine().resolve(template, context, {
 		TASK_PROGRESS: shouldIncludeTaskProgress ? TASK_PROGRESS : "",

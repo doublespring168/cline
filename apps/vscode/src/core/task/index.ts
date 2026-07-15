@@ -64,7 +64,6 @@ import { showSystemNotification } from "@integrations/notifications";
 import type { ITerminalManager } from "@integrations/terminal/types";
 import { BrowserSession } from "@services/browser/BrowserSession";
 import { UrlContentFetcher } from "@services/browser/UrlContentFetcher";
-import { featureFlagsService } from "@services/feature-flags";
 import { listFiles } from "@services/glob/list-files";
 import type { McpHub } from "@services/mcp/McpHub";
 import type { ApiConfiguration } from "@shared/api";
@@ -113,7 +112,7 @@ import {
 	type CommandExecutorCallbacks,
 	type FullCommandExecutorConfig,
 } from "@/integrations/terminal";
-import { ClineError, ClineErrorType, ErrorService } from "@/services/error";
+import { ClineError, ClineErrorType } from "@/services/error";
 import { telemetryService } from "@/services/telemetry";
 import type {
 	ClineAssistantContent,
@@ -2256,8 +2255,7 @@ export class Task {
 			subagentsEnabled:
 				this.stateManager.getGlobalSettingsKey("subagentsEnabled"),
 			clineWebToolsEnabled:
-				this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled") &&
-				featureFlagsService.getWebtoolsEnabled(),
+				this.stateManager.getGlobalSettingsKey("clineWebToolsEnabled"),
 			isMultiRootEnabled: multiRootEnabled,
 			workspaceRoots,
 			isSubagentRun: false,
@@ -2325,14 +2323,12 @@ export class Task {
 			const isContextWindowExceededError =
 				checkContextWindowExceededError(error);
 			const { model, providerId } = this.getCurrentProviderInfo();
-			const clineError = ErrorService.get().toClineError(
+			const clineError = ClineError.transform(
 				error,
 				model.id,
 				providerId,
 			);
-
-			// Capture provider failure telemetry using clineError
-			ErrorService.get().logMessage(clineError.message);
+			Logger.error("Model request failed before the first response chunk", clineError);
 
 			if (
 				isContextWindowExceededError &&
@@ -2386,53 +2382,17 @@ export class Task {
 					// this.ask will trigger postStateToWebview, so this change should be picked up.
 				}
 
-				const isAuthError = clineError.isErrorType(ClineErrorType.Auth);
-				const isSpendLimitError = clineError.isErrorType(
-					ClineErrorType.SpendLimit,
-				);
-				const quotaExceeded = clineError.isErrorType(
-					ClineErrorType.QuotaExceeded,
-				);
-				const isEntitlementError = clineError.isErrorType(
-					ClineErrorType.Entitlement,
-				);
-				const isOrgClinePassRestrictionError = clineError.isErrorType(
-					ClineErrorType.OrgClinePassRestriction,
-				);
-				// ClinePass period limits reset in hours/days — auto-retrying is
-				// pointless and only delays the actionable error UI.
-				const isClinePassLimitError = clineError.isErrorType(
-					ClineErrorType.ClinePassLimit,
-				);
+					const isAuthError = clineError.isErrorType(ClineErrorType.Auth);
+					const quotaExceeded = clineError.isErrorType(
+						ClineErrorType.QuotaExceeded,
+					);
 
-				// Check if this is a Cline provider insufficient credits error - don't auto-retry these
-				const isClineProviderInsufficientCredits = (() => {
-					if (providerId !== "cline") {
-						return false;
-					}
-					try {
-						const parsedError = ClineError.transform(
-							error,
-							model.id,
-							providerId,
-						);
-						return parsedError.isErrorType(ClineErrorType.Balance);
-					} catch {
-						return false;
-					}
-				})();
-
-				let response: ClineAskResponse;
-				// Skip auto-retry for Cline provider insufficient credits, auth errors, or spend limit errors
-				const shouldRetry =
-					!isClineProviderInsufficientCredits &&
-					!isAuthError &&
-					!isSpendLimitError &&
-					!quotaExceeded &&
-					!isEntitlementError &&
-					!isOrgClinePassRestrictionError &&
-					!isClinePassLimitError &&
-					this.taskState.autoRetryAttempts < 3;
+					let response: ClineAskResponse;
+					// Authentication and quota failures require user action and are not retried.
+					const shouldRetry =
+						!isAuthError &&
+						!quotaExceeded &&
+						this.taskState.autoRetryAttempts < 3;
 				if (shouldRetry) {
 					// Auto-retry enabled with max 3 attempts: automatically approve the retry
 					this.taskState.autoRetryAttempts++;
@@ -2488,15 +2448,10 @@ export class Task {
 
 					await setTimeoutPromise(delay);
 				} else {
-					// Show error_retry with failed flag to indicate all retries exhausted (but not for insufficient credits or spend limit)
+					// Show error_retry after transient retries are exhausted.
 					const showRetry =
-						!isClineProviderInsufficientCredits &&
 						!isAuthError &&
-						!isSpendLimitError &&
-						!quotaExceeded &&
-						!isEntitlementError &&
-						!isOrgClinePassRestrictionError &&
-						!isClinePassLimitError;
+						!quotaExceeded;
 					if (showRetry) {
 						await this.say(
 							"error_retry",
@@ -3508,19 +3463,12 @@ export class Task {
 				await streamCoordinator?.stop();
 				// abandoned happens when extension is no longer waiting for the cline instance to finish aborting (error is thrown here when any function in the for loop throws due to this.abort)
 				if (!this.taskState.abandoned) {
-					const clineError = ErrorService.get().toClineError(
+					const clineError = ClineError.transform(
 						error,
 						this.api.getModel().id,
 					);
 					const errorMessage = clineError.serialize();
-					const isStreamingSpendLimitError = clineError.isErrorType(
-						ClineErrorType.SpendLimit,
-					);
-					// Auto-retry for streaming failures (skip for spend limit errors)
-					if (
-						!isStreamingSpendLimitError &&
-						this.taskState.autoRetryAttempts < 3
-					) {
+						if (this.taskState.autoRetryAttempts < 3) {
 						this.taskState.autoRetryAttempts++;
 
 						// Calculate exponential backoff for streaming failures: 2s, 4s, 8s
@@ -3551,10 +3499,7 @@ export class Task {
 								);
 							}
 						});
-					} else if (
-						!isStreamingSpendLimitError &&
-						this.taskState.autoRetryAttempts >= 3
-					) {
+						} else if (this.taskState.autoRetryAttempts >= 3) {
 						// Show error_retry with failed flag to indicate all retries exhausted
 						await this.say(
 							"error_retry",

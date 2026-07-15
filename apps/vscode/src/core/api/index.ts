@@ -1,10 +1,7 @@
 import {
 	ApiConfiguration,
-	buildModelInfoNameMap,
-	clinePassDefaultModelId,
 	ModelInfo,
 	QwenApiRegions,
-	resolveClinePassModelInfo,
 } from "@shared/api"
 import { Mode } from "@shared/storage/types"
 import { ClineStorageMessage } from "@/shared/messages/content"
@@ -277,35 +274,6 @@ function createHandlerForProvider(
 				(mode === "plan" ? options.planModeOpenRouterModelInfo : options.actModeOpenRouterModelInfo)
 			return new ClineHandler({
 				onRetryAttempt: options.onRetryAttempt,
-				clineAccountId: options.clineAccountId,
-				clineApiKey: options.clineApiKey,
-				ulid: options.ulid,
-				reasoningEffort: mode === "plan" ? options.planModeReasoningEffort : options.actModeReasoningEffort,
-				thinkingBudgetTokens:
-					mode === "plan" ? options.planModeThinkingBudgetTokens : options.actModeThinkingBudgetTokens,
-				openRouterProviderSorting: options.openRouterProviderSorting,
-				openRouterModelId: clineModelId,
-				openRouterModelInfo: clineModelInfo,
-				enableParallelToolCalling: options.enableParallelToolCalling,
-			})
-		}
-		case "cline-pass": {
-			const configuredClinePassModelId =
-				mode === "plan" ? options.planModeClinePassModelId : options.actModeClinePassModelId
-			const configuredClinePassModelInfo =
-				mode === "plan" ? options.planModeClinePassModelInfo : options.actModeClinePassModelInfo
-			// ClinePass users may also select Cline free models (OpenRouter-style ids without
-			// the cline-pass/ prefix), so pass any configured id through to the Cline API.
-			const clineModelId = configuredClinePassModelId || clinePassDefaultModelId
-			const clineModelInfo = resolveClinePassModelInfo(
-				clineModelId,
-				configuredClinePassModelInfo
-					? buildModelInfoNameMap({ [clineModelId]: configuredClinePassModelInfo })
-					: undefined,
-			)
-			return new ClineHandler({
-				onRetryAttempt: options.onRetryAttempt,
-				clineAccountId: options.clineAccountId,
 				clineApiKey: options.clineApiKey,
 				ulid: options.ulid,
 				reasoningEffort: mode === "plan" ? options.planModeReasoningEffort : options.actModeReasoningEffort,

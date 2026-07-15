@@ -179,11 +179,11 @@ describe("createOpenRouterStream", () => {
 		}
 	})
 
-	it("does not send reasoning effort for ClinePass requests when unset", async () => {
+	it("does not send reasoning effort for Cline requests when unset", async () => {
 		const { client, create } = createClient()
 
 		await createOpenRouterStream(client as any, "system prompt", [{ role: "user", content: "hello" }] as any, {
-			id: "cline-pass/glm-5.2",
+			id: "z-ai/glm-5.2",
 			info: createModelInfo(131_072),
 		})
 
@@ -192,7 +192,7 @@ describe("createOpenRouterStream", () => {
 		payload.should.not.have.property("reasoning")
 	})
 
-	it("sends the selected reasoning effort for ClinePass requests", async () => {
+	it("sends the selected reasoning effort for Cline requests", async () => {
 		const { client, create } = createClient()
 
 		await createOpenRouterStream(
@@ -200,7 +200,7 @@ describe("createOpenRouterStream", () => {
 			"system prompt",
 			[{ role: "user", content: "hello" }] as any,
 			{
-				id: "cline-pass/glm-5.2",
+				id: "z-ai/glm-5.2",
 				info: createModelInfo(131_072),
 			},
 			"high",

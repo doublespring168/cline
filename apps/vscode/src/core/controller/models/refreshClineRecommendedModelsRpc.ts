@@ -25,13 +25,5 @@ export async function refreshClineRecommendedModelsRpc(
 				tags: model.tags,
 			}),
 		),
-		clinePass: models.clinePass.map((model) =>
-			ClineRecommendedModel.create({
-				id: model.id,
-				name: model.name,
-				description: model.description,
-				tags: model.tags,
-			}),
-		),
 	})
 }

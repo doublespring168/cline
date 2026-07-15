@@ -1,4 +1,4 @@
-import { type ApiConfiguration, buildModelInfoNameMap, CLAUDE_SONNET_1M_SUFFIX, type ModelInfo } from "@shared/api"
+import { type ApiConfiguration, CLAUDE_SONNET_1M_SUFFIX, type ModelInfo } from "@shared/api"
 import { CLINE_RECOMMENDED_MODELS_FALLBACK } from "@shared/cline/recommended-models"
 import { EmptyRequest, StringRequest } from "@shared/proto/cline/common"
 import { type ClineRecommendedModel, ClineRecommendedModelsResponse } from "@shared/proto/cline/models"
@@ -63,9 +63,8 @@ export interface ClineModelPickerProps {
 	modelIdFieldPair?: { plan: keyof ApiConfiguration; act: keyof ApiConfiguration }
 	modelInfoFieldPair?: { plan: keyof ApiConfiguration; act: keyof ApiConfiguration }
 	models?: Record<string, ModelInfo>
-	isClinePassEnabled?: boolean
 	showFeaturedModels?: boolean
-	// Custom featured tabs (e.g. ClinePass "Subscribed"/"Free") shown instead of the
+	// Custom featured tabs shown instead of the
 	// built-in Recommended/Free tabs
 	featuredTabs?: FeaturedModelTab[]
 }
@@ -74,7 +73,7 @@ export interface FeaturedModelCardEntry {
 	id: string
 	description: string
 	label: string
-	// Shown on the card instead of the id (e.g. ClinePass ids without their prefix)
+	// Shown on the card instead of the id.
 	displayName?: string
 }
 
@@ -119,7 +118,6 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 	modelIdFieldPair = { plan: "planModeClineModelId", act: "actModeClineModelId" },
 	modelInfoFieldPair = { plan: "planModeClineModelInfo", act: "actModeClineModelInfo" },
 	models,
-	isClinePassEnabled = true,
 	showFeaturedModels = true,
 	featuredTabs,
 }) => {
@@ -127,14 +125,9 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 	const { apiConfiguration, favoritedModelIds, clineModels, openRouterModels, refreshClineModels } = useExtensionState()
 	const modeFields = getModeSpecificFields(apiConfiguration, currentMode)
 	const resolvedModels = models ?? clineModels
-	const openRouterModelsByName = useMemo(() => buildModelInfoNameMap(openRouterModels), [openRouterModels])
 	const normalizedSelection = useMemo(
-		() =>
-			normalizeApiConfiguration(apiConfiguration, currentMode, {
-				isClinePassEnabled,
-				clinePassModelInfoByName: openRouterModelsByName,
-			}),
-		[apiConfiguration, currentMode, isClinePassEnabled, openRouterModelsByName],
+		() => normalizeApiConfiguration(apiConfiguration, currentMode),
+		[apiConfiguration, currentMode],
 	)
 	const configuredModelId = apiConfiguration?.[modelIdFieldPair[currentMode]] as string | undefined
 	const selectedOrDefaultModelId = defaultModelId ?? normalizedSelection.selectedModelId
@@ -261,7 +254,7 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 	const dropdownListRef = useRef<HTMLDivElement>(null)
 
 	const handleModelChange = (rawModelId: string) => {
-		// When a fixed models map is provided (ClinePass), only ids in the map may be
+		// When a fixed models map is provided, only ids in the map may be
 		// stored — otherwise the host would send arbitrary typed text to the API.
 		const newModelId = models && !(rawModelId in models) ? resolveModelId(rawModelId) : rawModelId
 		setSearchTerm(newModelId)
@@ -475,7 +468,7 @@ const ClineModelPicker: React.FC<ClineModelPickerProps> = ({
 
 				{showFeaturedModels && featuredTabs && (
 					<>
-						{/* Custom Tabs (e.g. ClinePass Subscribed/Free) */}
+						{/* Custom featured tabs */}
 						<TabsContainer style={{ marginTop: 4 }}>
 							{featuredTabs.map((tab, index) => (
 								<Tab

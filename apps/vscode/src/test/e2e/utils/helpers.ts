@@ -254,23 +254,20 @@ export class E2ETestHelper {
 		}
 	}
 
-	public async signin(webview: Frame): Promise<void> {
-		await webview.getByRole("button", { name: "Login to Cline" }).click({ delay: 100 })
+	public async completeOnboarding(webview: Frame): Promise<void> {
+		await expect(webview.getByText("Configure a model provider")).toBeVisible()
 
-		// Verify start up page is no longer visible
-		await expect(webview.getByRole("button", { name: "Login to Cline" })).not.toBeVisible()
+		const providerSelectorInput = webview.getByTestId("provider-selector-input")
+		await providerSelectorInput.click({ delay: 100 })
+		await webview.getByTestId("provider-option-cline").click({ delay: 100 })
 
-		const closeButton = webview.getByRole("button", { name: "Close" })
-		let shouldCloseModal = false
-		try {
-			await closeButton.waitFor({ state: "visible", timeout: 5_000 })
-			shouldCloseModal = true
-		} catch {
-			// No blocking modal appeared after sign-in.
-		}
-		if (shouldCloseModal) {
-			await closeButton.click({ delay: 50 })
-		}
+		const apiKeyInput = webview.getByRole("textbox", { name: "Cline-compatible API Key" })
+		await apiKeyInput.fill("test-api-key")
+		await expect(apiKeyInput).toHaveValue("test-api-key")
+		await apiKeyInput.press("Tab")
+
+		await webview.getByRole("button", { name: "Continue" }).click()
+		await expect(webview.getByTestId("chat-input")).toBeVisible()
 	}
 
 	public static async openClineSidebar(page: Page): Promise<void> {
@@ -378,11 +375,16 @@ export const e2e = test
 			await use(async (workspacePath: string) => {
 				// Create isolated Cline data directory for this test
 				const clineTestDir = mkdtempSync(path.join(os.tmpdir(), "cline-e2e-"))
+				const launchEnv = { ...process.env }
+				// Commands started from an Extension Host inherit this flag. Passing it
+				// to the nested VS Code process makes Electron start in Node mode and
+				// reject normal desktop arguments such as --user-data-dir.
+				delete launchEnv.ELECTRON_RUN_AS_NODE
 
 				const app = await _electron.launch({
 					executablePath,
 					env: {
-						...process.env,
+						...launchEnv,
 						TEMP_PROFILE: "true",
 						E2E_TEST: "true",
 						CLINE_ENVIRONMENT: "local",

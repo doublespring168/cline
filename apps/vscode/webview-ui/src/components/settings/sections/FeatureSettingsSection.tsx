@@ -220,7 +220,6 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		clineWebToolsEnabled,
 		worktreesEnabled,
 		focusChainSettings,
-		remoteConfigSettings,
 		nativeToolCallSetting,
 		enableParallelToolCalling,
 		backgroundEditEnabled,
@@ -235,8 +234,6 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		},
 		[focusChainSettings],
 	)
-
-	const isYoloRemoteLocked = remoteConfigSettings?.yoloModeToggled !== undefined
 
 	// State lookup for mapped features
 	const featureState: Record<string, boolean | undefined> = {
@@ -254,14 +251,11 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 		backgroundEditEnabled,
 		doubleCheckCompletionEnabled,
 		lazyTeammateModeEnabled,
-		yoloModeToggled: isYoloRemoteLocked ? remoteConfigSettings?.yoloModeToggled : yoloModeToggled,
+		yoloModeToggled,
 	}
 
-	// Visibility lookup for features with feature flags
-	const featureVisibility: Record<string, boolean | undefined> = {
-		clineWebToolsEnabled: clineWebToolsEnabled?.featureFlag,
-		worktreesEnabled: worktreesEnabled?.featureFlag,
-	}
+	// Reserved for local visibility overrides.
+	const featureVisibility: Record<string, boolean | undefined> = {}
 
 	// Handler for feature toggle changes, supports nested settings like focusChainSettings
 	const handleFeatureChange = useCallback(
@@ -350,13 +344,10 @@ const FeatureSettingsSection = ({ renderSectionHeader }: FeatureSettingsSectionP
 								<FeatureRow
 									checked={featureState[feature.stateKey]}
 									description={feature.description}
-									disabled={feature.id === "yolo" && isYoloRemoteLocked}
-									isRemoteLocked={feature.id === "yolo" && isYoloRemoteLocked}
 									isVisible={featureVisibility[feature.stateKey] ?? true}
 									key={feature.id}
 									label={feature.label}
 									onChange={(checked) => handleFeatureChange(feature, checked)}
-									remoteTooltip="This setting is managed by your organization's remote configuration"
 								/>
 							))}
 						</div>

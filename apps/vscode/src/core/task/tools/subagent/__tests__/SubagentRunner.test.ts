@@ -461,17 +461,13 @@ describe("SubagentRunner", () => {
 		assert.match(result.error || "", /stream_initialization_failed/i)
 	})
 
-	it("does not retry initial ClinePass entitlement errors", async () => {
+	it("does not retry initial authentication errors", async () => {
 		const createMessage = sinon.stub()
 		createMessage.onFirstCall().callsFake(async function* () {
 			yield* []
-			throw Object.assign(new Error("403 the user is not subscribed to required model plan"), {
-				status: 403,
-				code: "ENTITLEMENT_ERROR",
-				error: {
-					code: "ENTITLEMENT_ERROR",
-					message: "Error 403: the user is not subscribed to required model plan",
-				},
+			throw Object.assign(new Error("401 invalid API key"), {
+				status: 401,
+				code: "UNAUTHORIZED",
 			})
 		})
 
@@ -490,7 +486,7 @@ describe("SubagentRunner", () => {
 
 		assert.equal(result.status, "failed")
 		assert.equal(createMessage.callCount, 1)
-		assert.match(result.error || "", /not subscribed to required model plan/i)
+		assert.match(result.error || "", /invalid API key/i)
 	})
 
 	it("fails context window errors", async () => {

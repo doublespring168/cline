@@ -7,11 +7,9 @@ import { MessageEvent as UndiciMessageEvent, WebSocket as UndiciWebSocket } from
 import { v7 as uuidv7 } from "uuid"
 import { openAiCodexOAuthManager } from "@/integrations/openai-codex/oauth"
 import { buildExternalBasicHeaders } from "@/services/EnvUtils"
-import { featureFlagsService } from "@/services/feature-flags"
 import { ClineStorageMessage } from "@/shared/messages/content"
 import { fetch } from "@/shared/net"
 import { ApiFormat } from "@/shared/proto/cline/models"
-import { FeatureFlag } from "@/shared/services/feature-flags/feature-flags"
 import { Logger } from "@/shared/services/Logger"
 import { ApiHandler, CommonApiHandlerOptions } from "../"
 import { convertToOpenAIResponsesInput } from "../transform/openai-response-format"
@@ -143,9 +141,7 @@ export class OpenAiCodexHandler implements ApiHandler {
 	}
 
 	private useWebsocketMode(apiFormat?: ApiFormat): boolean {
-		if (featureFlagsService.getBooleanFlagEnabled(FeatureFlag.OPENAI_RESPONSES_WEBSOCKET_MODE)) {
-			return apiFormat === ApiFormat.OPENAI_RESPONSES_WEBSOCKET_MODE
-		}
+		void apiFormat
 		return false
 	}
 

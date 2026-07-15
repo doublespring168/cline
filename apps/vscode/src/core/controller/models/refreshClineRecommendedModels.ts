@@ -19,13 +19,9 @@ export interface ClineRecommendedModelData {
 export interface ClineRecommendedModelsData {
 	recommended: ClineRecommendedModelData[];
 	free: ClineRecommendedModelData[];
-	clinePass: ClineRecommendedModelData[];
 }
 
 const RECOMMENDED_MODELS_CACHE_TTL_MS = 60 * 60 * 1000;
-const CLINE_PASS_MODEL_ID_ALIAS_RULES = [
-	{ canonicalPrefix: "cline-pass/zai/", aliasPrefix: "cline-pass/z-ai/" },
-] as const;
 
 function normalizeClineProviderRecommendedModelId(modelId: string): string {
 	const zaiPrefix = "zai/";
@@ -54,26 +50,6 @@ let inMemoryCache: {
 	data: ClineRecommendedModelsData;
 	timestamp: number;
 } | null = null;
-
-function preferCanonicalRecommendedModels(
-	models: ClineRecommendedModelData[],
-): ClineRecommendedModelData[] {
-	const modelIds = new Set(models.map((model) => model.id));
-	return models.filter((model) => {
-		for (const rule of CLINE_PASS_MODEL_ID_ALIAS_RULES) {
-			if (!model.id.startsWith(rule.aliasPrefix)) {
-				continue;
-			}
-
-			const canonicalModelId = `${rule.canonicalPrefix}${model.id.slice(rule.aliasPrefix.length)}`;
-			if (modelIds.has(canonicalModelId)) {
-				return false;
-			}
-		}
-
-		return true;
-	});
-}
 
 function normalizeRecommendedModel(
 	raw: unknown,
@@ -110,8 +86,7 @@ function normalizeRecommendedModelsResponse(
 	const data = raw as Record<string, unknown>;
 	if (
 		(data.recommended !== undefined && !Array.isArray(data.recommended)) ||
-		(data.free !== undefined && !Array.isArray(data.free)) ||
-		(data.clinePass !== undefined && !Array.isArray(data.clinePass))
+		(data.free !== undefined && !Array.isArray(data.free))
 	) {
 		return null;
 	}
@@ -120,7 +95,6 @@ function normalizeRecommendedModelsResponse(
 		? data.recommended
 		: [];
 	const freeRaw = Array.isArray(data.free) ? data.free : [];
-	const clinePassRaw = Array.isArray(data.clinePass) ? data.clinePass : [];
 
 	const recommended = recommendedRaw
 		.map((model) => normalizeRecommendedModel(model))
@@ -130,14 +104,9 @@ function normalizeRecommendedModelsResponse(
 		.map((model) => normalizeRecommendedModel(model))
 		.filter((model): model is ClineRecommendedModelData => model !== null);
 
-	const clinePass = clinePassRaw
-		.map((model) => normalizeRecommendedModel(model))
-		.filter((model): model is ClineRecommendedModelData => model !== null);
-
 	return {
 		recommended: normalizeClineProviderRecommendedModels(recommended),
 		free: normalizeClineProviderRecommendedModels(free),
-		clinePass: preferCanonicalRecommendedModels(clinePass),
 	};
 }
 
@@ -177,7 +146,6 @@ async function fetchAndCacheClineRecommendedModels(): Promise<ClineRecommendedMo
 	let result: ClineRecommendedModelsData = {
 		recommended: [],
 		free: [],
-		clinePass: [],
 	};
 
 	try {
@@ -226,9 +194,7 @@ async function fetchAndCacheClineRecommendedModels(): Promise<ClineRecommendedMo
 
 	// Avoid pinning empty results in memory for the full TTL after a transient API/cache miss.
 	if (
-		result.recommended.length > 0 ||
-		result.free.length > 0 ||
-		result.clinePass.length > 0
+		result.recommended.length > 0 || result.free.length > 0
 	) {
 		inMemoryCache = { data: result, timestamp: Date.now() };
 	}

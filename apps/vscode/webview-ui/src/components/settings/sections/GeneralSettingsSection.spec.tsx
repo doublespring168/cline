@@ -7,7 +7,6 @@ const mockUpdateSetting = vi.fn()
 vi.mock("@/context/ExtensionStateContext", () => ({
 	useExtensionState: vi.fn(() => ({
 		chatFontSize: 15,
-		telemetrySetting: "disabled",
 		preferredLanguage: "English",
 		remoteConfigSettings: {},
 	})),

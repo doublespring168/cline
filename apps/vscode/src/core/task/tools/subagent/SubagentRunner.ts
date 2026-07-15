@@ -865,23 +865,11 @@ export class SubagentRunner {
 		providerId: string,
 		modelId: string,
 	): boolean {
-		// Mirror main loop behavior: do not auto-retry auth/balance failures.
+		// Authentication failures require user action and are not retried.
 		const parsedError = ClineError.transform(error, modelId, providerId);
 		const isAuthError = parsedError.isErrorType(ClineErrorType.Auth);
-		const isBalanceError = parsedError.isErrorType(ClineErrorType.Balance);
-		const isEntitlementError = parsedError.isErrorType(
-			ClineErrorType.Entitlement,
-		);
-		const isOrgClinePassRestrictionError = parsedError.isErrorType(
-			ClineErrorType.OrgClinePassRestriction,
-		);
 
-		if (
-			isAuthError ||
-			isBalanceError ||
-			isEntitlementError ||
-			isOrgClinePassRestrictionError
-		) {
+		if (isAuthError) {
 			return false;
 		}
 

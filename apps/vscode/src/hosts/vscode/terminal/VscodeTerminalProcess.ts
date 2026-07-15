@@ -1,4 +1,3 @@
-import { TerminalOutputFailureReason, telemetryService } from "@services/telemetry"
 import { EventEmitter } from "events"
 import * as vscode from "vscode"
 import { stripAnsi } from "@/hosts/vscode/terminal/ansiUtils"
@@ -213,18 +212,7 @@ export class VscodeTerminalProcess extends EventEmitter<TerminalProcessEvents> i
 			// the command process is finished, let's check the output to see if we need to use the terminal capture fallback
 			if (!this.fullOutput.trim()) {
 				// No output captured via shell integration, trying fallback
-				telemetryService.captureTerminalOutputFailure(TerminalOutputFailureReason.TIMEOUT, "vscode")
 				await returnCurrentTerminalContents()
-				// Check if fallback worked
-				const terminalSnapshot = await getLatestTerminalOutput()
-				if (terminalSnapshot && terminalSnapshot.trim()) {
-					telemetryService.captureTerminalExecution(true, "vscode", "clipboard")
-				} else {
-					telemetryService.captureTerminalExecution(false, "vscode", "none")
-				}
-			} else {
-				// Shell integration worked
-				telemetryService.captureTerminalExecution(true, "vscode", "shell_integration")
 			}
 
 			// for now we don't want this delaying requests since we don't send diagnostics automatically anymore (previous: "even though the command is finished, we still want to consider it 'hot' in case so that api request stalls to let diagnostics catch up")
@@ -238,7 +226,6 @@ export class VscodeTerminalProcess extends EventEmitter<TerminalProcessEvents> i
 			this.emit("continue")
 		} else {
 			// no shell integration detected, we'll fallback to running the command and capturing the terminal's output after some time
-			telemetryService.captureTerminalOutputFailure(TerminalOutputFailureReason.NO_SHELL_INTEGRATION, "vscode")
 			terminal.sendText(command, true)
 
 			// wait 3 seconds for the command to run
@@ -246,13 +233,6 @@ export class VscodeTerminalProcess extends EventEmitter<TerminalProcessEvents> i
 
 			// For terminals without shell integration, also try to capture terminal content
 			await returnCurrentTerminalContents()
-			// Check if clipboard fallback worked
-			const terminalSnapshot = await getLatestTerminalOutput()
-			if (terminalSnapshot && terminalSnapshot.trim()) {
-				telemetryService.captureTerminalExecution(true, "vscode", "clipboard")
-			} else {
-				telemetryService.captureTerminalExecution(false, "vscode", "none")
-			}
 			// For terminals without shell integration, we can't know when the command completes
 			// So we'll just emit the continue event after a delay
 			this.emit("completed", this.getCompletionDetails())

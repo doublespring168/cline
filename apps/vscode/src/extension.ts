@@ -5,7 +5,6 @@ import assert from "node:assert"
 import { DIFF_VIEW_URI_SCHEME } from "@hosts/vscode/VscodeDiffViewProvider"
 import * as vscode from "vscode"
 import { Logger } from "@/shared/services/Logger"
-import { sendAccountButtonClickedEvent } from "./core/controller/ui/subscribeToAccountButtonClicked"
 import { sendChatButtonClickedEvent } from "./core/controller/ui/subscribeToChatButtonClicked"
 import { sendHistoryButtonClickedEvent } from "./core/controller/ui/subscribeToHistoryButtonClicked"
 import { sendMcpButtonClickedEvent } from "./core/controller/ui/subscribeToMcpButtonClicked"
@@ -50,8 +49,6 @@ import { VscodeDiffViewProvider } from "./hosts/vscode/VscodeDiffViewProvider"
 import { VscodeWebviewProvider } from "./hosts/vscode/VscodeWebviewProvider"
 import { exportVSCodeStorageToSharedFiles } from "./hosts/vscode/vscode-to-file-migration"
 import { ExtensionRegistryInfo } from "./registry"
-import { AuthService } from "./services/auth/AuthService"
-import { LogoutReason } from "./services/auth/types"
 import { telemetryService } from "./services/telemetry"
 import { LG_TASK_URI_PATH, SharedUriHandler, TASK_URI_PATH } from "./services/uri/SharedUriHandler"
 import { ShowMessageType } from "./shared/proto/host/window"
@@ -135,7 +132,6 @@ export async function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand(commands.McpButton, () => sendMcpButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.SettingsButton, () => sendSettingsButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.HistoryButton, () => sendHistoryButtonClickedEvent()))
-	context.subscriptions.push(vscode.commands.registerCommand(commands.AccountButton, () => sendAccountButtonClickedEvent()))
 	context.subscriptions.push(vscode.commands.registerCommand(commands.WorktreesButton, () => sendWorktreesButtonClickedEvent()))
 
 	/*
@@ -524,25 +520,6 @@ ${ctx.cellJson || "{}"}
 		}),
 	)
 
-	// Listen for secrets changes (e.g., cross-window login/logout sync)
-	const unsubSecrets = storageContext.secrets.onDidChange((event) => {
-		if (event.key === "cline:clineAccountId") {
-			const secretValue = storageContext.secrets.get<string>(event.key)
-			const activeWebview = WebviewProvider.getVisibleInstance()
-			const controller = activeWebview?.controller
-
-			const authService = AuthService.getInstance(controller)
-			if (secretValue) {
-				// Secret was added or updated - restore auth info (login from another window)
-				authService?.restoreRefreshTokenAndRetrieveAuthInfo()
-			} else {
-				// Secret was removed - handle logout for all windows
-				authService?.handleDeauth(LogoutReason.CROSS_WINDOW_SYNC)
-			}
-		}
-	})
-	context.subscriptions.push({ dispose: unsubSecrets })
-
 	Logger.log(`[Cline] extension activated in ${performance.now() - activationStartTime} ms`)
 
 	return createClineAPI(webview.controller)
@@ -724,8 +701,8 @@ if (IS_DEV) {
 async function cleanupLegacyVSCodeStorage(context: ExtensionContext): Promise<void> {
 	try {
 		await cleanupOldApiKey(context)
-		// Migrate is not done if the new storage does not have the lastShownAnnouncementId flag
-		const hasMigrated = context.globalState.get("lastShownAnnouncementId")
+		const migrationKey = "cline.localStorageMigrationComplete"
+		const hasMigrated = context.globalState.get(migrationKey)
 		if (hasMigrated !== undefined) {
 			return
 		}
@@ -747,8 +724,7 @@ async function cleanupLegacyVSCodeStorage(context: ExtensionContext): Promise<vo
 		// Clean up MCP marketplace catalog from global state (moved to disk cache)
 		await cleanupMcpMarketplaceCatalogFromGlobalState(context)
 
-		// lastShownAnnouncementId will be set when announcement is shown
-		// after activation so we don't need to set it here.
+		await context.globalState.update(migrationKey, true)
 
 		Logger.info("[VS Code Storage Migrations] Completed")
 	} catch (error) {

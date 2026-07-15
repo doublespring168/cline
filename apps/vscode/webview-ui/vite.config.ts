@@ -133,36 +133,6 @@ export default defineConfig(({ mode }) => {
 			"process.env.IS_DEV": JSON.stringify(env.IS_DEV),
 			"process.env.IS_TEST": JSON.stringify(env.IS_TEST),
 			"process.env.CI": JSON.stringify(env.CI),
-			// PostHog environment variables
-			"process.env.TELEMETRY_SERVICE_API_KEY": JSON.stringify(
-				env.TELEMETRY_SERVICE_API_KEY,
-			),
-			"process.env.ERROR_SERVICE_API_KEY": JSON.stringify(
-				env.ERROR_SERVICE_API_KEY,
-			),
-			"process.env.ENABLE_ERROR_AUTOCAPTURE": JSON.stringify(
-				env.ENABLE_ERROR_AUTOCAPTURE,
-			),
-			// OpenTelemetry environment variables
-			"process.env.OTEL_TELEMETRY_ENABLED": JSON.stringify(
-				env.OTEL_TELEMETRY_ENABLED,
-			),
-			"process.env.OTEL_METRICS_EXPORTER": JSON.stringify(
-				env.OTEL_METRICS_EXPORTER,
-			),
-			"process.env.OTEL_LOGS_EXPORTER": JSON.stringify(env.OTEL_LOGS_EXPORTER),
-			"process.env.OTEL_EXPORTER_OTLP_PROTOCOL": JSON.stringify(
-				env.OTEL_EXPORTER_OTLP_PROTOCOL,
-			),
-			"process.env.OTEL_EXPORTER_OTLP_ENDPOINT": JSON.stringify(
-				env.OTEL_EXPORTER_OTLP_ENDPOINT,
-			),
-			"process.env.OTEL_EXPORTER_OTLP_HEADERS": JSON.stringify(
-				env.OTEL_EXPORTER_OTLP_HEADERS,
-			),
-			"process.env.OTEL_METRIC_EXPORT_INTERVAL": JSON.stringify(
-				env.OTEL_METRIC_EXPORT_INTERVAL,
-			),
 		},
 		resolve: {
 			alias: {

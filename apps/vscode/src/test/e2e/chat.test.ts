@@ -2,8 +2,7 @@ import { expect } from "@playwright/test"
 import { e2e } from "./utils/helpers"
 
 e2e("Chat - can send messages and switch between modes", async ({ helper, sidebar }) => {
-	// Sign in
-	await helper.signin(sidebar)
+	await helper.completeOnboarding(sidebar)
 
 	// Submit a message
 	const inputbox = sidebar.getByTestId("chat-input")

@@ -10,7 +10,6 @@ export function isNextGenModelProvider(providerInfo: ApiProviderInfo): boolean {
 	const providerId = normalize(providerInfo.providerId)
 	return [
 		"cline",
-		"cline-pass",
 		"anthropic",
 		"bedrock",
 		"gemini",

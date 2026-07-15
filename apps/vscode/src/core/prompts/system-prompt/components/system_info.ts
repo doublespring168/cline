@@ -48,7 +48,7 @@ export async function getSystemInfo(variant: PromptVariant, context: SystemPromp
 	let workingDirInfo: string
 
 	if (isMultiRoot && context.workspaceRoots) {
-		// Multi-root workspace with feature flag enabled
+		// Multi-root workspace enabled by the local setting.
 		WORKSPACE_TITLE = "Workspace Roots"
 		const rootsInfo = context.workspaceRoots
 			.map((root) => {

@@ -7,43 +7,24 @@ import * as sinon from "sinon"
 import { WebviewProvider } from "@/core/webview"
 import * as webhookHooks from "@/services/lg-cns-integration/webhook-hooks"
 import { Logger } from "@/shared/services/Logger"
-import { ErrorService } from "../error"
 import { SharedUriHandler } from "./SharedUriHandler"
 
 describe("SharedUriHandler", () => {
 	let sandbox: sinon.SinonSandbox
 	let handleOpenRouterCallbackStub: sinon.SinonStub
-	let handleAuthCallbackStub: sinon.SinonStub
 	let handleTaskCreationStub: sinon.SinonStub
 
-	beforeEach(async () => {
+	beforeEach(() => {
 		sandbox = sinon.createSandbox()
 
 		// Mock Logger methods to avoid HostProvider dependency
 		sandbox.stub(Logger, "info").returns()
 		sandbox.stub(Logger, "error").returns()
-		// Mock ErrorService to avoid telemetry dependency
-		const mockErrorService = {
-			logMessage: sandbox.stub(),
-			logException: sandbox.stub(),
-			toClineError: sandbox.stub(),
-			isEnabled: sandbox.stub().returns(false),
-			getSettings: sandbox.stub().returns({ enabled: false, hostEnabled: false }),
-			getProvider: sandbox.stub(),
-			dispose: sandbox.stub().resolves(),
-		}
-		sandbox.stub(ErrorService, "initialize").resolves(mockErrorService as any)
-		sandbox.stub(ErrorService, "get").returns(mockErrorService as any)
-
-		await ErrorService.initialize()
-
 		handleOpenRouterCallbackStub = sandbox.stub().resolves()
-		handleAuthCallbackStub = sandbox.stub().resolves()
 		handleTaskCreationStub = sandbox.stub().resolves()
 		const mockWebviewProvider = {
 			controller: {
 				handleOpenRouterCallback: handleOpenRouterCallbackStub,
-				handleAuthCallback: handleAuthCallbackStub,
 				handleTaskCreation: handleTaskCreationStub,
 			},
 		} as any
@@ -79,36 +60,18 @@ describe("SharedUriHandler", () => {
 			})
 		})
 
-		describe("Auth callback handling", () => {
-			it("should successfully handle auth callback with idToken", async () => {
-				const result = await SharedUriHandler.handleUri("vscode://cline.cline/auth?idToken=jwt123&provider=google")
-
-				expect(result).to.be.true
-				sinon.assert.calledOnceWithExactly(handleAuthCallbackStub, "jwt123", "google")
-			})
-
-			it("should successfully handle auth callback without provider", async () => {
-				const result = await SharedUriHandler.handleUri("vscode://cline.cline/auth?idToken=jwt123")
-
-				expect(result).to.be.true
-				sinon.assert.calledOnceWithExactly(handleAuthCallbackStub, "jwt123", null)
-			})
-
-			it("should return false when idToken is missing", async () => {
-				const result = await SharedUriHandler.handleUri("vscode://cline.cline/auth?provider=google")
-
-				expect(result).to.be.false
-				expect(handleAuthCallbackStub.called).to.be.false
-			})
-		})
-
 		describe("Unknown path handling", () => {
 			it("should return false for unknown paths", async () => {
 				const result = await SharedUriHandler.handleUri("vscode://cline.cline/unknown?param=value")
 
 				expect(result).to.be.false
-				expect(handleAuthCallbackStub.called).to.be.false
 				expect(handleOpenRouterCallbackStub.called).to.be.false
+			})
+
+			it("should reject the removed Cline account callback", async () => {
+				const result = await SharedUriHandler.handleUri("vscode://cline.cline/auth?idToken=jwt123")
+
+				expect(result).to.be.false
 			})
 		})
 
@@ -170,36 +133,34 @@ describe("SharedUriHandler", () => {
 				const result = await SharedUriHandler.handleUri("invalid://uri")
 
 				expect(result).to.be.false
-				expect(handleAuthCallbackStub.called).to.be.false
 				expect(handleOpenRouterCallbackStub.called).to.be.false
 			})
 		})
 
 		describe("Query parameter parsing", () => {
-			it("should correctly parse multiple query parameters", async () => {
+			it("should ignore unrelated query parameters", async () => {
 				const result = await SharedUriHandler.handleUri(
-					"vscode://cline.cline/auth?idToken=jwt123&provider=github&extra=param",
+					"vscode://cline.cline/openrouter?code=test123&extra=param",
 				)
 
 				expect(result).to.be.true
-				sinon.assert.calledOnceWithExactly(handleAuthCallbackStub, "jwt123", "github")
+				sinon.assert.calledOnceWithExactly(handleOpenRouterCallbackStub, "test123")
 			})
 
 			it("should handle URL-encoded parameters", async () => {
 				const result = await SharedUriHandler.handleUri(
-					"vscode://cline.cline/auth?idToken=jwt%20with%20spaces&provider=google",
+					"vscode://cline.cline/openrouter?code=token%20with%20spaces",
 				)
 
 				expect(result).to.be.true
 				// URLSearchParams should decode %20 to spaces
-				sinon.assert.calledOnceWithExactly(handleAuthCallbackStub, "jwt with spaces", "google")
+				sinon.assert.calledOnceWithExactly(handleOpenRouterCallbackStub, "token with spaces")
 			})
 
 			it("should handle empty query string", async () => {
 				const result = await SharedUriHandler.handleUri("vscode://cline.cline/openrouter")
 
 				expect(result).to.be.false
-				expect(handleAuthCallbackStub.called).to.be.false
 				expect(handleOpenRouterCallbackStub.called).to.be.false
 			})
 		})
@@ -213,10 +174,10 @@ describe("SharedUriHandler", () => {
 			})
 
 			it("should handle HTTPS scheme URIs", async () => {
-				const result = await SharedUriHandler.handleUri("https://example.com/auth?idToken=jwt123&provider=github")
+				const result = await SharedUriHandler.handleUri("https://example.com/openrouter?code=test456")
 
 				expect(result).to.be.true
-				sinon.assert.calledOnceWithExactly(handleAuthCallbackStub, "jwt123", "github")
+				sinon.assert.calledOnceWithExactly(handleOpenRouterCallbackStub, "test456")
 			})
 		})
 	})

@@ -1,14 +1,12 @@
-import { clinePassModels, type ModelInfo, openRouterDefaultModelId, openRouterDefaultModelInfo } from "@shared/api"
+import { type ModelInfo, openRouterDefaultModelId, openRouterDefaultModelInfo } from "@shared/api"
 import { shouldSkipReasoningForModel } from "@utils/model-utils"
 import axios from "axios"
 import OpenAI from "openai"
 import type { ChatCompletionTool as OpenAITool } from "openai/resources/chat/completions"
 import { ClineEnv } from "@/config"
 import { refreshClineRecommendedModels } from "@/core/controller/models/refreshClineRecommendedModels"
-import { ClineAccountService } from "@/services/account/ClineAccountService"
-import { AuthService } from "@/services/auth/AuthService"
 import { buildClineExtraHeaders } from "@/services/EnvUtils"
-import { CLINE_ACCOUNT_AUTH_ERROR_MESSAGE } from "@/shared/ClineAccount"
+import { CLINE_API_KEY_ERROR_MESSAGE } from "@/shared/ClineApi"
 import { CLINE_RECOMMENDED_MODELS_FALLBACK } from "@/shared/cline/recommended-models"
 import type { ClineStorageMessage } from "@/shared/messages/content"
 import { fetch, getAxiosSettings } from "@/shared/net"
@@ -28,7 +26,6 @@ interface ClineHandlerOptions extends CommonApiHandlerOptions {
 	openRouterProviderSorting?: string
 	openRouterModelId?: string
 	openRouterModelInfo?: ModelInfo
-	clineAccountId?: string
 	clineApiKey?: string
 	enableParallelToolCalling?: boolean
 }
@@ -39,7 +36,6 @@ function normalizeModelId(modelId: string): string {
 
 const CLINE_FREE_MODEL_IDS = new Set([
 	...CLINE_RECOMMENDED_MODELS_FALLBACK.free.map((model) => normalizeModelId(model.id)),
-	...Object.keys(clinePassModels).map((modelId) => normalizeModelId(modelId)),
 ])
 
 function getCacheReadTokens(usage: any): number {
@@ -52,8 +48,6 @@ function getCacheWriteTokens(usage: any): number {
 
 export class ClineHandler implements ApiHandler {
 	private options: ClineHandlerOptions
-	private clineAccountService = ClineAccountService.getInstance()
-	private _authService: AuthService
 	private client: OpenAI | undefined
 	lastGenerationId?: string
 	private lastRequestId?: string
@@ -64,13 +58,12 @@ export class ClineHandler implements ApiHandler {
 
 	constructor(options: ClineHandlerOptions) {
 		this.options = options
-		this._authService = AuthService.getInstance()
 	}
 
 	private async getFreeModelIdSet(): Promise<Set<string>> {
 		try {
 			const models = await refreshClineRecommendedModels()
-			const freeModelIds = [...models.free, ...models.clinePass]
+			const freeModelIds = models.free
 				.map((model) => normalizeModelId(model.id))
 				.filter((modelId) => modelId.length > 0)
 			if (freeModelIds.length > 0) {
@@ -84,9 +77,9 @@ export class ClineHandler implements ApiHandler {
 	}
 
 	private async ensureClient(): Promise<OpenAI> {
-		const clineAccountAuthToken = this.options.clineApiKey || (await this._authService.getAuthToken())
-		if (!clineAccountAuthToken) {
-			throw new Error(CLINE_ACCOUNT_AUTH_ERROR_MESSAGE)
+		const apiKey = this.options.clineApiKey
+		if (!apiKey) {
+			throw new Error(CLINE_API_KEY_ERROR_MESSAGE)
 		}
 		if (!this.client) {
 			try {
@@ -99,7 +92,7 @@ export class ClineHandler implements ApiHandler {
 
 				this.client = new OpenAI({
 					baseURL: `${this._baseUrl}/api/v1`,
-					apiKey: clineAccountAuthToken,
+					apiKey,
 					defaultHeaders,
 					// Capture real HTTP request ID from initial streaming response headers
 					fetch: async (...args: Parameters<typeof fetch>): Promise<Awaited<ReturnType<typeof fetch>>> => {
@@ -131,8 +124,8 @@ export class ClineHandler implements ApiHandler {
 				throw new Error(`Error creating Cline client: ${error.message}`)
 			}
 		}
-		// Ensure the client is always using the latest auth token
-		this.client.apiKey = clineAccountAuthToken
+		// Ensure the client is always using the latest locally configured API key.
+		this.client.apiKey = apiKey
 		return this.client
 	}
 
@@ -280,17 +273,17 @@ export class ClineHandler implements ApiHandler {
 		if (this.lastGenerationId) {
 			try {
 				const resolvedFreeModelIds = freeModelIds || (await this.getFreeModelIdSet())
-				const clineAccountAuthToken = await this._authService.getAuthToken()
-				if (!clineAccountAuthToken) {
-					throw new Error(CLINE_ACCOUNT_AUTH_ERROR_MESSAGE)
+				const apiKey = this.options.clineApiKey
+				if (!apiKey) {
+					throw new Error(CLINE_API_KEY_ERROR_MESSAGE)
 				}
 				const headers: Record<string, string> = {
 					// Align with backend auth expectations
-					Authorization: `Bearer ${clineAccountAuthToken}`,
+					Authorization: `Bearer ${apiKey}`,
 				}
 				Object.assign(headers, await buildClineExtraHeaders())
 
-				const response = await axios.get(`${this.clineAccountService.baseUrl}/generation?id=${this.lastGenerationId}`, {
+				const response = await axios.get(`${this._baseUrl}/generation?id=${this.lastGenerationId}`, {
 					headers,
 					timeout: 15_000, // this request hangs sometimes
 					...getAxiosSettings(),

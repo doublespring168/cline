@@ -100,7 +100,7 @@ describe("setupWorkspaceManager", () => {
 		const stateManager = makeStateManager({ multiRootEnabled: true })
 		const detectRoots = sandbox.stub().resolves(defaultRoots)
 
-		// Multi-root workspace is now always enabled, no feature flag stub needed
+		// Multi-root workspace is controlled by the local setting; no remote flag stub is needed.
 
 		const manager = await setupWorkspaceManager({
 			stateManager: stateManager as any,
@@ -175,7 +175,7 @@ describe("setupWorkspaceManager", () => {
 		const stateManager = makeStateManager({ multiRootEnabled: true })
 		const detectRoots = sandbox.stub().rejects(new Error("boom"))
 
-		// Multi-root workspace is now always enabled, no feature flag stub needed
+		// Multi-root workspace is controlled by the local setting; no remote flag stub is needed.
 
 		const manager = await setupWorkspaceManager({
 			stateManager: stateManager as any,

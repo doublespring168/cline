@@ -36,7 +36,7 @@ apps/vscode/src/extension.ts::activate(context)
   ├─ 迁移并初始化存储
   ├─ initialize() 创建 Controller/Webview
   ├─ 注册 Webview、命令、Code Action、URI Handler
-  ├─ 注册 Notebook、Git、Hook Watcher、Secret 同步
+  ├─ 注册 Notebook、Git 和 Hook Watcher
   └─ 返回 ClineAPI 给其他扩展
           │
           ▼
@@ -86,7 +86,7 @@ Controller / Task / ToolExecutor
 - Activity Bar Container：`claude-dev-ActivityBar`；
 - Webview View：`claude-dev.SidebarProvider`；
 - 自定义图标：`cline-icon`；
-- 新建任务、MCP、历史、账号和设置等 View Title 按钮。
+- 新建任务、MCP、历史和设置等 View Title 按钮；账号按钮已删除。
 
 运行时由 `apps/vscode/src/extension.ts` 调用：
 
@@ -136,12 +136,11 @@ VS Code 加载 dist/extension.js
   → initialize(storageContext)
       → StateManager.initialize()
       → 创建 VscodeWebviewProvider + Controller
-      → 初始化日志、错误、遥测、同步等公共服务
+      → 初始化本地日志、MCP、Workspace、Hooks 等公共服务
   → 初始化测试模式和 HookDiscoveryCache
   → registerWebviewViewProvider()
   → 注册命令、虚拟文档 Provider、URI Handler、Code Action
   → 注册 Notebook、Walkthrough、历史重建、Git Commit 命令
-  → 监听共享 secrets 变化，进行跨窗口登录/登出同步
   → return createClineAPI(controller)
 ```
 
@@ -194,7 +193,7 @@ Proto 定义位于：
 | --- | --- |
 | `WorkspaceService` | 工作区根目录、保存 Dirty 文档、Diagnostics、打开 Problems/Explorer/Terminal/Cline、运行终端命令、打开文件夹 |
 | `WindowService` | 打开/显示文档、打开/保存对话框、消息、输入框、设置页、Open/Visible Tabs、Active Editor |
-| `EnvService` | 剪贴板、宿主版本、远程环境名、回调 URI、遥测设置、Output Channel、外部浏览器 |
+| `EnvService` | 剪贴板、宿主版本、远程环境名、回调 URI、Output Channel、外部浏览器 |
 | `DiffService` | 当前 VS Code Host 实际只支持多文件 Change View；单文件 Diff 走 `VscodeDiffViewProvider` |
 | `TestingService` | 测试所需的 Webview/宿主能力 |
 
@@ -616,7 +615,6 @@ ClineStorageMessage（Anthropic 风格内部消息）
 
 | Path | 用途 |
 | --- | --- |
-| `/auth` | Cline/Provider 登录回调 |
 | `/auth/oca` | OCA OAuth 回调 |
 | `/openrouter` | OpenRouter 授权码 |
 | `/requesty` | Requesty 授权码 |
@@ -669,7 +667,6 @@ HostBridge 把常用 VS Code UI 统一成公共服务：
 | 剪贴板 | `env.clipboard.readText/writeText` | `apps/vscode/src/hosts/vscode/hostbridge/env/` |
 | 外部浏览器 | `env.openExternal()` | `apps/vscode/src/hosts/vscode/hostbridge/env/openExternal.ts` |
 | Output Channel | `window.createOutputChannel("Cline")` | `apps/vscode/src/hosts/vscode/hostbridge/env/debugLog.ts` |
-| 遥测开关 | `env.isTelemetryEnabled`、`onDidChangeTelemetryEnabled` | `apps/vscode/src/hosts/vscode/hostbridge/env/getTelemetrySettings.ts` 等 |
 | Walkthrough | `workbench.action.openWalkthrough` | `extension.ts`、`apps/vscode/src/core/controller/ui/openWalkthrough.ts` |
 
 ## 17. 存储、ExtensionContext 和多窗口同步
@@ -701,12 +698,9 @@ HostBridge 把常用 VS Code UI 统一成公共服务：
 
 `HostProvider.globalStorageFsPath` 仍来自 `context.globalStorageUri.fsPath`。Task History 文件、Task 数据、Checkpoint 和部分缓存仍以该目录为根，尚未全部迁到 `~/.cline/data`。因此“项目已经完全脱离 VS Code 存储”也是不准确的。
 
-### 17.4 多窗口登录同步
+### 17.4 多窗口与模型凭据
 
-共享 `secrets` 文件支持变更订阅。`extension.ts` 监听 `cline:clineAccountId`：
-
-- 其他窗口写入账号 Secret：当前窗口恢复 Refresh Token 和用户信息；
-- 其他窗口删除 Secret：当前窗口触发 Cross-Window Logout。
+通用 Cline Account 的跨窗口登录/登出监听已删除。模型 API Key 仍写入共享 `secrets.json`，其他窗口在重新读取状态或重载扩展后可看到相同凭据；OCA、OpenAI Codex、OpenRouter、Requesty、HiCap 和 MCP 的专属授权流程各自管理 Token/回调，不经过 Cline Account。
 
 ## 18. 对其他 VS Code 扩展暴露的 API
 

@@ -25,8 +25,7 @@ export async function initializeDistinctId(storage: StorageContext, uuid: () => 
 	}
 	if (!distinctId) {
 		// Fallback to generating a unique ID and keeping in global storage.
-		Logger.warn("No machine ID found for telemetry, generating UUID")
-		// Add a prefix to the UUID so we can see in the telemetry how many clients are don't have a machine ID.
+		Logger.warn("No installation ID found, generating UUID")
 		distinctId = `cl-${uuid()}`
 		storage.globalState.update(_GENERATED_MACHINE_ID_KEY, distinctId)
 	}
@@ -40,7 +39,7 @@ export async function initializeDistinctId(storage: StorageContext, uuid: () => 
 
 /*
  * Get machine ID using node-machine-id package
- * This is shared by the VS Code extension's telemetry providers.
+ * This is shared by local hooks that need a stable installation identifier.
  */
 async function getMachineId(): Promise<string | undefined> {
 	try {
@@ -55,8 +54,7 @@ async function getMachineId(): Promise<string | undefined> {
 }
 
 /*
- * Set the distinct ID for logging and telemetry.
- * This is updated to Cline User ID when authenticated.
+ * Set the stable installation identifier.
  */
 export function setDistinctId(newId: string) {
 	if (_distinctId && _distinctId !== newId) {

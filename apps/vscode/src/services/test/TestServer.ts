@@ -212,11 +212,11 @@ export async function createTestServer(controller: Controller): Promise<http.Ser
 						const updatedConfig = {
 							...apiConfiguration,
 							apiProvider: "cline" as ApiProvider,
-							clineAccountId: apiKey,
+							clineApiKey: apiKey,
 						}
 
-						// Store the API key securely
-						visibleWebview.controller.stateManager.setSecret("clineAccountId", apiKey)
+							// Store the API key securely
+							visibleWebview.controller.stateManager.setSecret("clineApiKey", apiKey)
 
 						visibleWebview.controller.stateManager.setApiConfiguration(updatedConfig)
 

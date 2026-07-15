@@ -11,7 +11,6 @@ import type { OpenaiReasoningEffort } from "@shared/storage/types";
 import { buildApiHandler } from "@/core/api";
 import { Logger } from "@/shared/services/Logger";
 import type { Controller } from "../index";
-import { clearOrganizationForClinePassProviderSelection } from "./handleClinePassProviderSelection";
 
 /**
  * Updates API configuration
@@ -58,12 +57,6 @@ export async function updateApiConfigurationProto(
 			planModeClineModelInfo: protoApiConfiguration.planModeClineModelInfo
 				? fromProtobufModelInfo(protoApiConfiguration.planModeClineModelInfo)
 				: undefined,
-			planModeClinePassModelInfo:
-				protoApiConfiguration.planModeClinePassModelInfo
-					? fromProtobufModelInfo(
-							protoApiConfiguration.planModeClinePassModelInfo,
-						)
-					: undefined,
 			planModeOpenAiModelInfo: protoApiConfiguration.planModeOpenAiModelInfo
 				? fromProtobufOpenAiCompatibleModelInfo(
 						protoApiConfiguration.planModeOpenAiModelInfo,
@@ -125,9 +118,6 @@ export async function updateApiConfigurationProto(
 					: undefined,
 			actModeClineModelInfo: protoApiConfiguration.actModeClineModelInfo
 				? fromProtobufModelInfo(protoApiConfiguration.actModeClineModelInfo)
-				: undefined,
-			actModeClinePassModelInfo: protoApiConfiguration.actModeClinePassModelInfo
-				? fromProtobufModelInfo(protoApiConfiguration.actModeClinePassModelInfo)
 				: undefined,
 			actModeOpenAiModelInfo: protoApiConfiguration.actModeOpenAiModelInfo
 				? fromProtobufOpenAiCompatibleModelInfo(
@@ -194,10 +184,6 @@ export async function updateApiConfigurationProto(
 
 		// Update the API configuration in storage
 		controller.stateManager.setApiConfiguration(
-			convertedApiConfigurationFromProto,
-		);
-		await clearOrganizationForClinePassProviderSelection(
-			controller,
 			convertedApiConfigurationFromProto,
 		);
 

@@ -1,11 +1,8 @@
 import type { ExtensionMessage } from "@shared/ExtensionMessage";
-import { isClineInternalTester } from "@shared/internal/account";
 import { ResetStateRequest } from "@shared/proto/cline/state";
-import type { UserOrganization } from "@shared/proto/index.cline";
 import {
 	CheckCheck,
 	FlaskConical,
-	HardDriveDownload,
 	Info,
 	type LucideIcon,
 	SlidersHorizontal,
@@ -20,11 +17,9 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { type ClineUser, useClineAuth } from "@/context/ClineAuthContext";
 import { useExtensionState } from "@/context/ExtensionStateContext";
 import { cn } from "@/lib/utils";
 import { StateServiceClient } from "@/services/grpc-client";
-import { isAdminOrOwner } from "../account/helpers";
 import { Tab, TabContent, TabList, TabTrigger } from "../common/Tab";
 import ViewHeader from "../common/ViewHeader";
 import SectionHeader from "./SectionHeader";
@@ -34,7 +29,6 @@ import BrowserSettingsSection from "./sections/BrowserSettingsSection";
 import DebugSection from "./sections/DebugSection";
 import FeatureSettingsSection from "./sections/FeatureSettingsSection";
 import GeneralSettingsSection from "./sections/GeneralSettingsSection";
-import { RemoteConfigSection } from "./sections/RemoteConfigSection";
 import TerminalSettingsSection from "./sections/TerminalSettingsSection";
 
 const IS_DEV = process.env.IS_DEV;
@@ -47,18 +41,14 @@ type SettingsTabID =
 	| "terminal"
 	| "general"
 	| "about"
-	| "debug"
-	| "remote-config";
+	| "debug";
 interface SettingsTab {
 	id: SettingsTabID;
 	name: string;
 	tooltipText: string;
 	headerText: string;
 	icon: LucideIcon;
-	hidden?: (params?: {
-		user: ClineUser | null;
-		activeOrganization: UserOrganization | null;
-	}) => boolean;
+	hidden?: () => boolean;
 }
 
 export const SETTINGS_TABS: SettingsTab[] = [
@@ -98,16 +88,6 @@ export const SETTINGS_TABS: SettingsTab[] = [
 		icon: Wrench,
 	},
 	{
-		id: "remote-config",
-		name: "Remote Config",
-		tooltipText: "Remotely configured fields",
-		headerText: "Remote Config",
-		icon: HardDriveDownload,
-		hidden: (
-			{ activeOrganization } = { user: null, activeOrganization: null },
-		) => !activeOrganization || !isAdminOrOwner(activeOrganization),
-	},
-	{
 		id: "about",
 		name: "About",
 		tooltipText: "About Cline",
@@ -121,8 +101,7 @@ export const SETTINGS_TABS: SettingsTab[] = [
 		tooltipText: "Debug Tools",
 		headerText: "Debug",
 		icon: FlaskConical,
-		hidden: ({ user } = { user: null, activeOrganization: null }) =>
-			!IS_DEV && !isClineInternalTester(user?.email || ""),
+		hidden: () => !IS_DEV,
 	},
 ];
 
@@ -157,7 +136,6 @@ const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
 			features: FeatureSettingsSection,
 			browser: BrowserSettingsSection,
 			terminal: TerminalSettingsSection,
-			"remote-config": RemoteConfigSection,
 			about: AboutSection,
 			debug: DebugSection,
 		}),
@@ -165,7 +143,6 @@ const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
 	); // Empty deps - these imports never change
 
 	const { version, environment, settingsInitialModelTab } = useExtensionState();
-	const { activeOrganization, clineUser } = useClineAuth();
 
 	const [activeTab, setActiveTab] = useState<string>(
 		targetSection || SETTINGS_TABS[0].id,
@@ -301,9 +278,7 @@ const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
 					onValueChange={setActiveTab}
 					value={activeTab}
 				>
-					{SETTINGS_TABS.filter(
-						(tab) => !tab.hidden?.({ user: clineUser, activeOrganization }),
-					).map(renderTabItem)}
+					{SETTINGS_TABS.filter((tab) => !tab.hidden?.()).map(renderTabItem)}
 				</TabList>
 
 				<TabContent className="flex-1 overflow-auto">

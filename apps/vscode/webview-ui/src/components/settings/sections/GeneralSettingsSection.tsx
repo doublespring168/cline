@@ -9,8 +9,6 @@
  * Copyright (c) 2026 by 【 tech.darcy.zhang@outlook.com 】, All Rights Reserved.
  */
 import { DEFAULT_CHAT_FONT_SIZE, MAX_CHAT_FONT_SIZE, MIN_CHAT_FONT_SIZE } from "@shared/ChatSettings"
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import AutoApproveSettings from "../AutoApproveSettings"
 import PreferredLanguageSetting from "../PreferredLanguageSetting"
@@ -23,7 +21,7 @@ interface GeneralSettingsSectionProps {
 }
 
 const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionProps) => {
-	const { telemetrySetting, remoteConfigSettings, chatFontSize } = useExtensionState()
+	const { chatFontSize } = useExtensionState()
 
 	return (
 		<div>
@@ -46,30 +44,6 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 				</div>
 
 				<PreferredLanguageSetting />
-
-				<div className="mb-[5px]">
-					<Tooltip>
-						<TooltipContent hidden={remoteConfigSettings?.telemetrySetting === undefined}>
-							This setting is managed by your organization's remote configuration
-						</TooltipContent>
-						<TooltipTrigger asChild>
-							<div className="flex items-center gap-2 mb-[5px]">
-								<VSCodeCheckbox
-									checked={telemetrySetting !== "disabled"}
-									disabled={remoteConfigSettings?.telemetrySetting === "disabled"}
-									onChange={(e: any) => {
-										const checked = e.target.checked === true
-										updateSetting("telemetrySetting", checked ? "enabled" : "disabled")
-									}}>
-									Allow error and usage reporting
-								</VSCodeCheckbox>
-								{!!remoteConfigSettings?.telemetrySetting && (
-									<i className="codicon codicon-lock text-description text-sm" />
-								)}
-							</div>
-						</TooltipTrigger>
-					</Tooltip>
-				</div>
 
 				<AutoApproveSettings />
 			</Section>
