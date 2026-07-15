@@ -1435,6 +1435,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontFamily: "var(--vscode-font-family)",
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
+							textAlign: "left",
+							alignContent: "center",
 							borderRadius: 6,
 							padding: 9,
 						}}
@@ -1484,8 +1486,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							fontFamily: "var(--vscode-font-family)",
 							fontSize: "var(--vscode-editor-font-size)",
 							lineHeight: "var(--vscode-editor-line-height)",
-							textAlign: "center",
-							alignContent: "center",
+							textAlign: "left",
 							resize: "none",
 							overflowX: "hidden",
 							overflowY: "scroll",
@@ -1501,7 +1502,8 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 							// borderLeft: "9px solid transparent", // NOTE: react-textarea-autosize doesn't calculate correct height when using borderLeft/borderRight so we need to use horizontal padding instead
 							// Instead of using boxShadow, we use a div with a border to better replicate the behavior when the textarea is focused
 							// boxShadow: "0px 0px 0px 1px var(--vscode-input-border)",
-							padding: "9px 28px 9px 9px",
+							// The visible border is inset by 8px (left-2/right-2), so 17px keeps text 9px from both border edges.
+							padding: "9px 17px",
 							cursor: "text",
 							flex: 1,
 							zIndex: 1,
