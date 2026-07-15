@@ -2,7 +2,6 @@ import type { ClineMessage } from "@shared/ExtensionMessage"
 import { EmptyRequest, StringRequest } from "@shared/proto/cline/common"
 import { AskResponseRequest, NewTaskRequest } from "@shared/proto/cline/task"
 import { useCallback, useRef } from "react"
-import { useExtensionState } from "@/context/ExtensionStateContext"
 import { SlashServiceClient, TaskServiceClient } from "@/services/grpc-client"
 import type { ButtonActionType } from "../shared/buttonConfig"
 import type { ChatState, MessageHandlers } from "../types/chatTypes"
@@ -12,7 +11,6 @@ import type { ChatState, MessageHandlers } from "../types/chatTypes"
  * Handles sending messages, button clicks, and task management
  */
 export function useMessageHandlers(messages: ClineMessage[], chatState: ChatState): MessageHandlers {
-	const { backgroundCommandRunning } = useExtensionState()
 	const {
 		setInputValue,
 		activeQuote,
@@ -258,11 +256,6 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 					setSendingDisabled(true)
 					setEnableButtons(false)
 					try {
-						if (backgroundCommandRunning) {
-							await TaskServiceClient.cancelBackgroundCommand(EmptyRequest.create({})).catch((err) =>
-								console.error("Failed to cancel background command:", err),
-							)
-						}
 						await TaskServiceClient.cancelTask(EmptyRequest.create({}))
 					} finally {
 						cancelInFlightRef.current = false
@@ -301,7 +294,6 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 			handleSendMessage,
 			startNewTask,
 			chatState,
-			backgroundCommandRunning,
 			setSendingDisabled,
 			setEnableButtons,
 		],

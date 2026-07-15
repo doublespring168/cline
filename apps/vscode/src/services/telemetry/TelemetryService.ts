@@ -23,22 +23,14 @@ type TelemetryCategory = "checkpoints" | "browser" | "focus_chain" | "subagents"
 /**
  * Terminal type for telemetry differentiation
  */
-export type TerminalType = "vscode" | "standalone"
+export type TerminalType = "vscode"
 
 /**
  * VSCode-specific output capture methods
  */
 export type VscodeOutputMethod = "shell_integration" | "clipboard" | "none"
 
-/**
- * Standalone-specific output capture methods
- */
-export type StandaloneOutputMethod = "child_process" | "child_process_error"
-
-/**
- * Combined type for terminal output methods
- */
-export type TerminalOutputMethod = VscodeOutputMethod | StandaloneOutputMethod
+export type TerminalOutputMethod = VscodeOutputMethod
 
 /**
  * Enum for terminal output failure reasons
@@ -69,15 +61,11 @@ export enum TerminalHangStage {
 
 export type TelemetryMetadata = {
 	/**
-	 * The extension or cline-core version. JetBrains and CLI have different
-	 * versioning than the VSCode Extension, but on those platforms this will be the _cline-core version_
-	 * which uses the same as the versioning as the VSCode extension.
+	 * The VS Code extension version.
 	 */
 	extension_version: string
 	/**
-	 * The type of cline distribution, e.g VSCode Extension, JetBrains Plugin or CLI. This
-	 * is different than the `platform` because there are many variants of VSCode and JetBrains but they
-	 * all use the same extension or plugin.
+	 * The Cline distribution type, currently VS Code Extension.
 	 */
 	cline_type: string
 	/** The name of the host IDE or environment e.g. VSCode, Cursor, IntelliJ Professional Edition, etc. */
@@ -123,7 +111,7 @@ export class TelemetryService {
 		["checkpoints", true], // Checkpoints telemetry enabled
 		["browser", true], // Browser telemetry enabled
 		["focus_chain", true], // Focus Chain telemetry enabled
-		["subagents", true], // CLI Subagents telemetry enabled
+		["subagents", true],
 		["skills", true], // Skills telemetry enabled
 		["hooks", true], // Hooks telemetry enabled
 	])
@@ -305,7 +293,7 @@ export class TelemetryService {
 			MENTION_SEARCH_RESULTS: "task.mention_search_results",
 			// Multi-workspace search pattern tracking
 			WORKSPACE_SEARCH_PATTERN: "task.workspace_search_pattern",
-			// CLI Subagents telemetry events
+			// Subagent telemetry events
 			SUBAGENT_ENABLED: "task.subagent_enabled",
 			SUBAGENT_DISABLED: "task.subagent_disabled",
 			SUBAGENT_STARTED: "task.subagent_started",
@@ -1669,28 +1657,10 @@ export class TelemetryService {
 	 * @param terminalType The type of terminal ("vscode")
 	 * @param method The VSCode-specific method used to capture output
 	 */
-	public captureTerminalExecution(success: boolean, terminalType: "vscode", method: VscodeOutputMethod): void
-	/**
-	 * Records terminal command execution outcomes for standalone terminal
-	 * @param success Whether the command output was successfully captured
-	 * @param terminalType The type of terminal ("standalone")
-	 * @param method The standalone-specific method used to capture output
-	 * @param exitCode The process exit code (useful for diagnosing failure types: 1=error, 127=not found, 126=permission denied)
-	 */
 	public captureTerminalExecution(
 		success: boolean,
-		terminalType: "standalone",
-		method: StandaloneOutputMethod,
-		exitCode?: number | null,
-	): void
-	/**
-	 * Implementation of captureTerminalExecution
-	 */
-	public captureTerminalExecution(
-		success: boolean,
-		terminalType: TerminalType,
-		method: TerminalOutputMethod,
-		exitCode?: number | null,
+		terminalType: "vscode",
+		method: VscodeOutputMethod,
 	): void {
 		this.capture({
 			event: TelemetryService.EVENTS.TASK.TERMINAL_EXECUTION,
@@ -1698,8 +1668,6 @@ export class TelemetryService {
 				success,
 				terminalType,
 				method,
-				// Only include exitCode for standalone terminals when it's a meaningful value
-				...(terminalType === "standalone" && exitCode !== undefined && exitCode !== null && { exitCode }),
 			},
 		})
 	}
@@ -2046,7 +2014,7 @@ export class TelemetryService {
 	 * @param isEmpty Whether the search returned no results
 	 * @param fsContext Optional filesystem info, emitted as `fs_class` and `fs_type`.
 	 * @param searchSource Which backend served the search: `host_index` (e.g.
-	 *   JetBrains FilenameIndex) or `ripgrep` (default everywhere). Emitted as
+	 *   a host-provided native index) or `ripgrep`. Emitted as
 	 *   the `search_source` property so we can tell, for a given fs_class, how
 	 *   often the host index actually picks up the load.
 	 */
@@ -2073,10 +2041,10 @@ export class TelemetryService {
 		})
 	}
 
-	// CLI Subagents telemetry methods
+	// Subagent telemetry methods
 
 	/**
-	 * Records when CLI subagents feature is enabled/disabled by the user
+	 * Records when the subagents feature is enabled/disabled by the user
 	 * @param enabled Whether subagents was enabled (true) or disabled (false)
 	 */
 	public captureSubagentToggle(enabled: boolean) {
@@ -2094,7 +2062,7 @@ export class TelemetryService {
 	}
 
 	/**
-	 * Records when a CLI subagent is executed
+	 * Records when a subagent is executed
 	 * @param ulid Unique identifier for the task
 	 * @param durationMs Duration of the subagent execution in milliseconds
 	 * @param outputLines Number of lines of output produced by the subagent

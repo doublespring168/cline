@@ -9,7 +9,7 @@ import {
 	ClineSayTool,
 	COMPLETION_RESULT_CHANGES_FLAG,
 } from "@shared/ExtensionMessage"
-import { BooleanRequest, StringRequest } from "@shared/proto/cline/common"
+import { StringRequest } from "@shared/proto/cline/common"
 import { Mode } from "@shared/storage/types"
 import deepEqual from "fast-deep-equal"
 import {
@@ -30,7 +30,6 @@ import {
 	PencilIcon,
 	RefreshCwIcon,
 	SearchIcon,
-	SettingsIcon,
 	SquareArrowOutUpRightIcon,
 	SquareMinusIcon,
 	TerminalIcon,
@@ -78,7 +77,6 @@ interface ChatRowProps {
 	inputValue?: string
 	sendMessageFromChatRow?: (text: string, images: string[], files: string[]) => void
 	onSetQuote: (text: string) => void
-	onCancelCommand?: () => void
 	mode?: Mode
 	reasoningContent?: string
 	responseStarted?: boolean
@@ -142,7 +140,6 @@ export const ChatRowContent = memo(
 		inputValue,
 		sendMessageFromChatRow,
 		onSetQuote,
-		onCancelCommand,
 		mode,
 		isRequestInProgress,
 		reasoningContent,
@@ -153,7 +150,6 @@ export const ChatRowContent = memo(
 			mcpServers,
 			mcpMarketplaceCatalog,
 			onRelinquishControl,
-			vscodeTerminalExecutionMode,
 			clineMessages,
 			showFeatureTips,
 		} = useExtensionState()
@@ -760,13 +756,11 @@ export const ChatRowContent = memo(
 			return (
 				<CommandOutputRow
 					icon={icon}
-					isBackgroundExec={vscodeTerminalExecutionMode === "backgroundExec"}
 					isCommandCompleted={isCommandCompleted}
 					isCommandExecuting={isCommandExecuting}
 					isCommandPending={isCommandPending}
 					isOutputFullyExpanded={isOutputFullyExpanded}
 					message={message}
-					onCancelCommand={onCancelCommand}
 					setIsOutputFullyExpanded={setIsOutputFullyExpanded}
 					title={title}
 				/>
@@ -1111,38 +1105,15 @@ export const ChatRowContent = memo(
 					case "subagent":
 						return <SubagentStatusRow isLast={isLast} lastModifiedMessage={lastModifiedMessage} message={message} />
 					case "shell_integration_warning_with_suggestion":
-						const isBackgroundModeEnabled = vscodeTerminalExecutionMode === "backgroundExec"
 						return (
 							<div className="p-2 bg-link/10 border border-link/30 rounded-xs">
 								<div className="flex items-center mb-1">
 									<LightbulbIcon className="mr-1.5 size-2 text-link" />
 									<span className="font-medium text-foreground">Shell integration issues</span>
 								</div>
-								<div className="text-foreground opacity-90 mb-2">
-									Since you're experiencing repeated shell integration issues, we recommend switching to
-									Background Terminal mode for better reliability.
-								</div>
-								<button
-									className={cn(
-										"bg-button-background text-button-foreground border-0 rounded-xs py-1.5 px-3 text-[12px] flex items-center gap-1.5 cursor-pointer hover:bg-button-hover",
-										{
-											"cursor-default opacity-80 bg-success": isBackgroundModeEnabled,
-										},
-									)}
-									disabled={isBackgroundModeEnabled}
-									onClick={async () => {
-										try {
-											// Enable background terminal execution mode
-											await UiServiceClient.setTerminalExecutionMode(BooleanRequest.create({ value: true }))
-										} catch (error) {
-											console.error("Failed to enable background terminal:", error)
-										}
-									}}>
-									<SettingsIcon className="size-2" />
-									{isBackgroundModeEnabled
-										? "Background Terminal Enabled"
-										: "Enable Background Terminal (Recommended)"}
-								</button>
+							<div className="text-foreground opacity-90 mb-2">
+								Shell integration is unavailable or unstable. Commands will continue to run in the VS Code terminal.
+							</div>
 							</div>
 						)
 					case "task_progress":

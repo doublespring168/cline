@@ -791,7 +791,6 @@ export const ShellIntegrationWarningWithSuggestion: Story = {
 				createMessage(4.7, "say", "text", "I'll run the command for you."),
 				createMessage(4.5, "say", "shell_integration_warning_with_suggestion", ""),
 			],
-			vscodeTerminalExecutionMode: "integrated",
 		}),
 	],
 	parameters: {
@@ -811,7 +810,6 @@ export const ShellIntegrationWarningBackgroundEnabled: Story = {
 				createMessage(4.7, "say", "text", "I'll run the command for you."),
 				createMessage(4.5, "say", "shell_integration_warning_with_suggestion", ""),
 			],
-			vscodeTerminalExecutionMode: "backgroundExec",
 		}),
 	],
 	parameters: {

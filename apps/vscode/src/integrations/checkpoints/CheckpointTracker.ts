@@ -3,11 +3,9 @@ import fs from "fs/promises"
 import { isBinaryFile } from "isbinaryfile"
 import * as path from "path"
 import simpleGit from "simple-git"
-import type { FolderLockWithRetryResult } from "@/core/locks/types"
 import { telemetryService } from "@/services/telemetry"
 import { Logger } from "@/shared/services/Logger"
 import { GitOperations } from "./CheckpointGitOperations"
-import { releaseCheckpointLock, tryAcquireCheckpointLockWithRetry } from "./CheckpointLockUtils"
 import { getShadowGitPath, hashWorkingDir } from "./CheckpointUtils"
 
 /**
@@ -210,30 +208,10 @@ class CheckpointTracker {
 	 * - Stage or commit files
 	 */
 	public async commit(): Promise<string | undefined> {
-		let lockAcquired: boolean = false
-
 		try {
 			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_COMMIT", true)
 			Logger.info(`Creating new checkpoint commit for task ${this.taskId}`)
 			const startTime = performance.now()
-
-			const lockResult: FolderLockWithRetryResult = await tryAcquireCheckpointLockWithRetry(this.cwdHash, this.taskId)
-
-			// Locking failed due to conflicting lock
-			if (!lockResult.acquired && !lockResult.skipped) {
-				throw new Error(
-					"Failed to acquire checkpoint folder lock - another Cline instance may be performing checkpoint operations",
-				)
-			}
-
-			// Locking skipped as we are in VS Code
-			if (!lockResult.acquired && lockResult.skipped) {
-				Logger.log("Skipping Checkpoints lock - VS Code")
-			}
-
-			if (lockResult.acquired) {
-				lockAcquired = true
-			}
 
 			const gitPath = await getShadowGitPath(this.cwdHash)
 			const git = simpleGit(path.dirname(gitPath))
@@ -266,11 +244,6 @@ class CheckpointTracker {
 				error,
 			})
 			throw new Error(`Failed to create checkpoint: ${error instanceof Error ? error.message : String(error)}`)
-		} finally {
-			if (lockAcquired) {
-				Logger.info("Releasing checkpoint folder lock")
-				await releaseCheckpointLock(this.cwdHash, this.taskId)
-			}
 		}
 	}
 
@@ -334,30 +307,10 @@ class CheckpointTracker {
 	 * - Reset to target commit
 	 */
 	public async resetHead(commitHash: string): Promise<void> {
-		let lockAcquired: boolean = false
-
 		try {
 			Logger.info(`Resetting to checkpoint: ${commitHash}`)
 			const startTime = performance.now()
 			await this.sendCheckpointSubscriptionEvent("CHECKPOINT_RESTORE", true, commitHash)
-			const lockResult: FolderLockWithRetryResult = await tryAcquireCheckpointLockWithRetry(this.cwdHash, this.taskId)
-
-			// Locking failed due to conflicting lock
-			if (!lockResult.acquired && !lockResult.skipped) {
-				throw new Error(
-					"Failed to acquire checkpoint folder lock - another Cline instance may be performing checkpoint operations",
-				)
-			}
-
-			// Locking skipped as we are in VS Code
-			if (!lockResult.acquired && lockResult.skipped) {
-				Logger.log("Skipping Checkpoints lock - VS Code")
-			}
-
-			if (lockResult.acquired) {
-				lockAcquired = true
-			}
-
 			const gitPath = await getShadowGitPath(this.cwdHash)
 			const git = simpleGit(path.dirname(gitPath))
 			Logger.debug(`Using shadow git at: ${gitPath}`)
@@ -374,10 +327,6 @@ class CheckpointTracker {
 				error,
 			})
 			throw error
-		} finally {
-			if (lockAcquired) {
-				await releaseCheckpointLock(this.cwdHash, this.taskId)
-			}
 		}
 	}
 

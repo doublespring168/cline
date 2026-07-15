@@ -8,10 +8,8 @@
 .codex/**
 CLAUDE.local.md
 out/
-dist-standalone/
 node_modules/
 src/**
-standalone/**
 .gitignore
 .yarnrc
 esbuild.js
@@ -78,6 +76,8 @@ old_docs/**
 e2e-build.mjs
 e2e.vsix
 test-results/
+.nyc_output/**
+coverage/**
 
 # Ignore Storybook files
 **/*.stories.tsx

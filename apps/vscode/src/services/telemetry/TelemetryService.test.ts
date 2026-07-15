@@ -508,7 +508,7 @@ describe("Telemetry system is abstracted and can easily switch between providers
 		})
 	})
 
-	describe("CLI Subagents Telemetry", () => {
+	describe("Subagents Telemetry", () => {
 		it("should capture subagent toggle events correctly", async () => {
 			const noOpProvider = new NoOpTelemetryProvider()
 			const logSpy = sinon.spy(noOpProvider, "log")

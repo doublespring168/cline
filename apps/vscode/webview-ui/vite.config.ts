@@ -30,7 +30,7 @@ const writePortToFile = (): Plugin => {
 const isDevBuild = process.argv.includes("--dev-build");
 
 // Valid platforms, these should the keys in platform-configs.json
-const VALID_PLATFORMS = ["vscode", "standalone"];
+const VALID_PLATFORMS = ["vscode"];
 
 export default defineConfig(({ mode }) => {
 	const env = {

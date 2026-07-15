@@ -126,13 +126,6 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			controller.stateManager.setGlobalState("terminalOutputLineLimit", Number(request.terminalOutputLineLimit))
 		}
 
-		if (request.vscodeTerminalExecutionMode !== undefined && request.vscodeTerminalExecutionMode !== "") {
-			controller.stateManager.setGlobalState(
-				"vscodeTerminalExecutionMode",
-				request.vscodeTerminalExecutionMode === "backgroundExec" ? "backgroundExec" : "vscodeTerminal",
-			)
-		}
-
 		// Update max consecutive mistakes
 		if (request.maxConsecutiveMistakes !== undefined) {
 			controller.stateManager.setGlobalState("maxConsecutiveMistakes", Number(request.maxConsecutiveMistakes))
@@ -275,7 +268,7 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			// Update the terminal manager of the current task if it exists
 			if (controller.task) {
 				// Call the updated setDefaultTerminalProfile method that returns closed terminal info
-				// Use `as any` to handle type incompatibility between VSCode's TerminalInfo and standalone TerminalInfo
+					// Terminal profile updates report which terminals were closed or remain busy.
 				const result = controller.task.terminalManager.setDefaultTerminalProfile(profileId) as any
 				closedCount = result.closedCount
 				busyTerminalsCount = result.busyTerminals?.length ?? 0

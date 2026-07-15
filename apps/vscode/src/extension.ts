@@ -59,7 +59,7 @@ import { fileExistsAtPath } from "./utils/fs"
 
 // This method is called when the VS Code extension is activated.
 // NOTE: This is VS Code specific - services that should be registered
-// for all-platform should be registered in common.ts.
+// for the extension's shared lifecycle should be registered in common.ts.
 export async function activate(context: vscode.ExtensionContext) {
 	const activationStartTime = performance.now()
 
@@ -73,7 +73,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	await cleanupLegacyVSCodeStorage(context)
 
 	// 3. One-time export of VSCode's native storage to shared file-backed stores.
-	// After this, all platforms (VSCode, CLI, JetBrains) read from ~/.cline/data/.
+	// After this, the extension reads migrated state from ~/.cline/data/.
 	const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath
 	const storageContext = createStorageContext({ workspacePath })
 	await exportVSCodeStorageToSharedFiles(context, storageContext)
@@ -603,7 +603,7 @@ function setupHostProvider(context: ExtensionContext) {
 	const createCommentReview = () => getVscodeCommentReviewController()
 	const createTerminalManager = () => new VscodeTerminalManager()
 
-	const getCallbackUrl = async (path: string, _preferredPort?: number) => {
+	const getCallbackUrl = async (path: string) => {
 		const scheme = vscode.env.uriScheme || "vscode"
 		const callbackUri = vscode.Uri.parse(`${scheme}://${context.extension.id}${path}`)
 

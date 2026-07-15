@@ -10,11 +10,9 @@ import { HostProvider } from "@/hosts/host-provider"
 import { setVscodeHostProviderMock } from "@/test/host-provider-test-utils"
 import {
 	ensureStateDirectoryExists,
-	getAllHooksDirs,
 	getTaskHistoryStateFilePath,
 	getWorkspaceHooksDirs,
 	readTaskHistoryFromState,
-	setRuntimeHooksDir,
 	writeTaskHistoryToState,
 } from "../disk"
 import { StateManager } from "../StateManager"
@@ -31,7 +29,6 @@ describe("disk - hooks functionality", () => {
 
 	afterEach(async () => {
 		sandbox.restore()
-		setRuntimeHooksDir(undefined)
 		try {
 			await fs.rm(tempDir, { recursive: true, force: true })
 		} catch (error) {
@@ -203,40 +200,6 @@ describe("disk - hooks functionality", () => {
 		})
 	})
 
-	describe("getAllHooksDirs", () => {
-		it("should include the runtime hooks directory when it exists", async () => {
-			const runtimeHooksDir = path.join(tempDir, "runtime-hooks")
-			await fs.mkdir(runtimeHooksDir, { recursive: true })
-
-			sandbox.stub(os, "homedir").returns(tempDir)
-			sandbox.stub(StateManager, "get").returns({
-				getGlobalStateKey: () => [],
-			} as any)
-
-			sandbox.stub(fsUtils, "isDirectory").callsFake(async (targetPath: string) => targetPath === runtimeHooksDir)
-
-			setRuntimeHooksDir(runtimeHooksDir)
-
-			const result = await getAllHooksDirs()
-			result.should.containEql(runtimeHooksDir)
-		})
-
-		it("should not include the runtime hooks directory when it does not exist", async () => {
-			const runtimeHooksDir = path.join(tempDir, "missing-runtime-hooks")
-
-			sandbox.stub(os, "homedir").returns(tempDir)
-			sandbox.stub(StateManager, "get").returns({
-				getGlobalStateKey: () => [],
-			} as any)
-
-			sandbox.stub(fsUtils, "isDirectory").resolves(false)
-
-			setRuntimeHooksDir(runtimeHooksDir)
-
-			const result = await getAllHooksDirs()
-			result.should.not.containEql(runtimeHooksDir)
-		})
-	})
 })
 
 describe("disk - atomic writes", () => {

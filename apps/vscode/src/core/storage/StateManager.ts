@@ -39,7 +39,7 @@ export interface PersistenceErrorEvent {
  * Provides immediate reads/writes with async disk persistence.
  *
  * All persistent storage is backed by file-based stores via StorageContext.
- * This is shared across all platforms (VSCode, CLI, JetBrains).
+ * This is the authoritative state facade for the VS Code extension.
  *
  * MULTI-INSTANCE BEHAVIOR:
  * StateManager reads from disk ONLY during initialize(). After that, all reads come from

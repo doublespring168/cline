@@ -1,17 +1,17 @@
 # Cline 与 VS Code 的集成机制
 
-> 本文基于当前工作区源码，分析 Cline 怎样作为 VS Code 扩展被激活，怎样把 React 聊天界面嵌入侧边栏，以及编辑器、文件 Diff、终端、诊断、Notebook、Git、评论、模型、授权回调和存储等能力怎样调用 VS Code API。分析重点是正式扩展 `apps/vscode`；SDK、CLI 和 JetBrains 代码只在说明跨平台抽象边界时涉及。
+> 本文基于当前工作区源码，分析 Cline 怎样作为 VS Code 扩展被激活，怎样把 React 聊天界面嵌入侧边栏，以及编辑器、文件 Diff、终端、诊断、Notebook、Git、评论、模型、授权回调和存储等能力怎样调用 VS Code API。当前工程只保留 VS Code 插件形态。
 >
-> 分析日期：2026-07-14。静态扫描共找到 64 个直接导入 `vscode` 的 TypeScript/TSX 文件，其中 54 个为非测试源码；其余大多数业务代码通过 HostProvider/HostBridge 间接调用宿主能力。
+> 更新日期：2026-07-15。其余大多数业务代码通过 HostProvider/HostBridge 间接调用宿主能力。
 
 ## 1. 先给出结论
 
 1. **Cline 是标准的 VS Code Extension Host 扩展。** `apps/vscode/package.json` 声明扩展身份、激活条件、Activity Bar、Webview View、命令、菜单、快捷键和 Walkthrough；`apps/vscode/src/extension.ts` 导出 `activate()` / `deactivate()`；esbuild 最终生成 `dist/extension.js`。
 2. **聊天框不是 VS Code Chat Participant。** 它是注册在 Activity Bar 中的 `WebviewView`，前端是 React 应用，通过 `webview.postMessage()` / `onDidReceiveMessage()` 传输 Proto 风格的请求和响应。当前源码没有注册 `vscode.chat.createChatParticipant()`、`vscode.lm.registerTool()` 或自定义编辑器 Provider。
 3. **核心代码并不都直接依赖 `vscode`。** `HostProvider` 注入 VS Code 版本的 Webview、Diff、Comment、Terminal 和 HostBridge，使公共业务代码通过 `HostProvider.workspace/window/env/diff` 使用宿主能力。
-4. **HostBridge 的“gRPC”在 VS Code 扩展内不是网络 RPC。** Proto 定义提供跨宿主的类型和服务边界，VS Code 端使用生成的服务表在同一 Extension Host 进程内分发；只有 standalone core 与外部宿主组合时才需要真正的外部 gRPC 连接。
+4. **HostBridge 在 VS Code 扩展内不是网络 RPC。** Proto 定义提供类型和服务边界，VS Code 端使用生成的服务表在同一 Extension Host 进程内分发，不监听网络端口。
 5. **智能体最深的 VS Code 集成是前台文件编辑和前台命令执行。** 文件写入工具会打开可编辑 Diff、流式应用 `WorkspaceEdit`、保存文件并比较编辑前后的 Diagnostics；`execute_command` 会创建或复用 VS Code Terminal，并尽可能通过 Shell Integration 读取实时输出和退出码。
-6. **后台模式会绕开可视化 VS Code 能力。** `backgroundEditEnabled` 使用 `FileEditProvider` 直接操作文件；`backgroundExec` 使用 `StandaloneTerminalManager` 和子进程。它们不会展示 VS Code Diff 或 VS Code Terminal。
+6. **命令执行统一使用 VS Code Terminal。** `backgroundEditEnabled` 仍可让文件编辑绕开可视化 Diff，但已不存在隐藏子进程式后台终端模式。
 7. **Cline 能把 VS Code 当前状态反馈给模型。** 每轮环境上下文可包含工作区根目录、可见文件、打开的标签页、终端状态及新增输出；文件编辑后还会读取 VS Code Diagnostics，并只把本次编辑新增的 Error 反馈给模型。
 8. **Cline 也能把 VS Code 自己管理的模型作为 Provider。** `vscode.lm.selectChatModels()` 发现模型，`LanguageModelChat.sendRequest()` 发起流式请求；这条链路不同于 Anthropic/OpenAI 的 HTTP Provider。
 9. **当前持久化已从 VS Code 原生 Memento/SecretStorage 迁到共享文件。** 普通设置、工作区状态和密钥主要写到 `~/.cline/data`；但 Task、Checkpoint 等数据仍会使用 `ExtensionContext.globalStorageUri` 指向的 VS Code 托管目录。
@@ -176,7 +176,7 @@ HostProvider.env.openExternal(...)
 HostProvider.diff.openMultiFileDiff(...)
 ```
 
-这样 CLI/JetBrains 可以提供另一套实现，而 `Controller`、`Task`、规则、工具和状态逻辑不必普遍导入 `vscode`。
+这样 `Controller`、`Task`、规则、工具和状态逻辑不必普遍导入 `vscode`，也更容易进行单元测试。
 
 ### 5.2 HostBridge 服务边界
 
@@ -432,14 +432,9 @@ execute_command / attempt_completion.command
 
 剪贴板快照实现位于 `apps/vscode/src/hosts/vscode/terminal/get-latest-output.ts`，执行 `terminal.selectAll`、`copySelection`、`clearSelection`，并恢复用户原剪贴板。
 
-### 9.4 后台执行例外
+### 9.4 命令超时
 
-当设置为 `backgroundExec`，或子智能体明确要求后台执行时，`CommandExecutor` 使用 `StandaloneTerminalManager`，底层是 Node 子进程而不是 VS Code Terminal。此时：
-
-- VS Code Terminal 面板不会出现对应终端；
-- Shell Integration 不参与；
-- 输出仍由公共 Terminal 接口回传智能体；
-- Task 会复用同一个 Standalone Manager，以便环境详情能看到后台进程状态。
+命令超时时，`CommandExecutor` 返回已捕获输出并让对应 VS Code Terminal 继续运行。它不会把命令迁移到隐藏的 Node 子进程。
 
 ## 10. 工作区、标签页、文件和环境上下文
 
@@ -816,9 +811,8 @@ VS Code 在这条链路中负责 Webview 容器和消息通道；智能体循环
 | 模型列表 | `apps/vscode/src/core/controller/models/getVsCodeLmModels.ts` | 发现 VS Code 模型 |
 | 旧存储迁移 | `apps/vscode/src/core/storage/state-migrations.ts`、`apps/vscode/src/hosts/vscode/vscode-to-file-migration.ts` | 读取旧 ExtensionContext 状态和 Secrets |
 | 少量公共类型/兼容 | `apps/vscode/src/shared/vsCodeSelectorUtils.ts`、`apps/vscode/src/shared/storage/state-keys.ts`、`apps/vscode/src/utils/shell.ts` | VS Code 类型或终端配置兼容 |
-| Standalone 兼容上下文 | `apps/vscode/src/standalone/vscode-context.ts`、`vscode-context-utils.ts` | 为非扩展运行时构造兼容 Context，不代表调用真实 VS Code UI |
 
-新的宿主相关功能应优先放在 `hosts/vscode` 并通过 HostProvider/Proto 暴露。若直接在 `core` 中导入 `vscode`，CLI 和 JetBrains 会更难复用；目前 VS Code LM、Walkthrough 和遗留存储迁移属于有明确平台原因的例外。
+新的宿主相关功能应优先放在 `hosts/vscode` 并通过 HostProvider/Proto 暴露。即使当前只保留 VS Code，也不要让 `vscode` 依赖扩散到整个 Core；VS Code LM、Walkthrough 和遗留存储迁移属于有明确平台原因的例外。
 
 ## 22. 构建、打包和集成测试
 
@@ -832,7 +826,6 @@ VS Code 在这条链路中负责 Webview 容器和消息通道；智能体循环
 - `vscode` 被标记为 external，由 Extension Host 运行时提供；
 - 复制 Tree-sitter WASM；
 - 生产构建压缩，开发构建生成 Source Map；
-- standalone 构建使用另一入口和外部依赖集合。
 
 `apps/vscode/package.json` 中：
 
@@ -851,7 +844,6 @@ VSIX 由 `@vscode/vsce` 打包，安装后 VS Code 根据 `package.json.main` �
 - Integration Test 使用 `vscode-test`；
 - E2E 使用 `@vscode/test-electron` 下载/启动真实 VS Code，并安装测试 VSIX；
 - Playwright 操作实际 Extension UI；
-- HostBridge 另有外部 gRPC 测试服务，用于 standalone/跨宿主验证。
 
 涉及 Webview、菜单、命令、Diff、Terminal、Notebook 或 URI 的改造，只有 Node 单元测试通常不够，至少应在 Extension Development Host 或打包 VSIX 中验证一次。
 
@@ -860,7 +852,7 @@ VSIX 由 `@vscode/vsce` 打包，安装后 VS Code 根据 `package.json.main` �
 1. **命令和 View ID 必须多处一致。** `package.json`、`registry.ts`、运行时 `registerCommand()`、菜单 `when` 条件和测试都可能依赖同一个 ID。
 2. **不要把 Webview Proto 消息当成网络 gRPC。** 修改消息协议要重新生成前后端客户端，但 VS Code 内的传输仍是 `postMessage`。
 3. **不要直接调用未实现的 VS Code DiffService 单文件方法。** 前台文件编辑应继续走 `VscodeDiffViewProvider`，或先补齐 HostBridge 实现和生命周期管理。
-4. **后台模式不会出现 IDE 可视化。** 排查“为什么没有 Diff/Terminal”时先检查 `backgroundEditEnabled` 和 `backgroundExec`。
+4. **后台文件编辑不会出现 Diff。** 排查文件修改为何没有可视化 Diff 时检查 `backgroundEditEnabled`；命令始终使用 VS Code Terminal。
 5. **VS Code LM 不是完整替代所有 Provider。** 当前图片、工具注册、精确 Token 和价格统计都有限制。
 6. **远程开发要区分本地浏览器与远程 Extension Host。** URL 应走 `env.openExternal`；文件路径、Node 进程和终端通常运行在远程 Host。
 7. **Notebook 修改的是 JSON，同时又依赖 Jupyter 扩展渲染。** 文本 Diff、Cell Diff 和最终 `openWith` 是三个不同阶段。
@@ -897,7 +889,6 @@ VSIX 由 `@vscode/vsce` 打包，安装后 VS Code 根据 `package.json.main` �
 | Terminal Process | `apps/vscode/src/hosts/vscode/terminal/VscodeTerminalProcess.ts` |
 | Terminal Registry | `apps/vscode/src/hosts/vscode/terminal/VscodeTerminalRegistry.ts` |
 | 公共命令执行 | `apps/vscode/src/integrations/terminal/CommandExecutor.ts` |
-| 后台命令执行 | `apps/vscode/src/integrations/terminal/standalone/` |
 | Git Commit | `apps/vscode/src/hosts/vscode/commit-message-generator.ts` |
 | Comments Review | `apps/vscode/src/hosts/vscode/review/VscodeCommentReviewController.ts` |
 | Explain Changes | `apps/vscode/src/core/controller/task/explainChanges.ts`、`explainChangesShared.ts` |
@@ -926,4 +917,4 @@ VS Code 具体承担了：
 - URI/OAuth 回调、外部浏览器、剪贴板、通知和对话框；
 - ExtensionContext 提供的安装路径、Global Storage 和资源生命周期。
 
-而模型请求循环、工具审批、文件内容算法、MCP、浏览器自动化、Checkpoint、规则、Skill、Hook 和多数持久化逻辑属于 Cline 自己。改造时守住这条边界，把新的 IDE 依赖放进 `hosts/vscode` 并通过公共接口暴露，才能继续保持 VS Code、CLI 和 JetBrains 之间的可复用性。
+而模型请求循环、工具审批、文件内容算法、MCP、浏览器自动化、Checkpoint、规则、Skill、Hook 和多数持久化逻辑属于 Cline 自己。改造时守住这条边界，把新的 IDE 依赖放进 `hosts/vscode` 并通过公共接口暴露，可以保持核心代码清晰且便于测试。

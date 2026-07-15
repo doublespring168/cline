@@ -35,8 +35,7 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 	taskHistory,
 	shouldShowQuickWins,
 }) => {
-	const { lastDismissedInfoBannerVersion, lastDismissedCliBannerVersion, lastDismissedModelBannerVersion, dismissedBanners } =
-		useExtensionState()
+	const { lastDismissedInfoBannerVersion, lastDismissedModelBannerVersion, dismissedBanners } = useExtensionState()
 
 	// Track if we've shown the "What's New" modal this session
 	const [hasShownWhatsNewModal, setHasShownWhatsNewModal] = useState(false)
@@ -120,12 +119,9 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 			if (bannerId.startsWith("new-model")) {
 				return (lastDismissedModelBannerVersion ?? 0) >= 1
 			}
-			if (bannerId.startsWith("cli-")) {
-				return (lastDismissedCliBannerVersion ?? 0) >= 1
-			}
 			return false
 		},
-		[dismissedBanners, lastDismissedInfoBannerVersion, lastDismissedModelBannerVersion, lastDismissedCliBannerVersion],
+		[dismissedBanners, lastDismissedInfoBannerVersion, lastDismissedModelBannerVersion],
 	)
 
 	/**
@@ -198,12 +194,6 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 					navigateToSettings("features")
 					break
 
-				case BannerActionType.InstallCli:
-					StateServiceClient.installClineCli({}).catch((error) =>
-						console.error("Failed to initiate CLI installation:", error),
-					)
-					break
-
 				default:
 					console.warn("Unknown banner action:", action.action)
 			}
@@ -224,8 +214,6 @@ export const WelcomeSection: React.FC<WelcomeSectionProps> = ({
 			StateServiceClient.updateInfoBannerVersion({ value: 1 }).catch(console.error)
 		} else if (bannerId.startsWith("new-model")) {
 			StateServiceClient.updateModelBannerVersion({ value: 1 }).catch(console.error)
-		} else if (bannerId.startsWith("cli-")) {
-			StateServiceClient.updateCliBannerVersion({ value: 1 }).catch(console.error)
 		} else {
 			// Mark the banner as dismissed by its ID.
 			StateServiceClient.dismissBanner({ value: bannerId }).catch(console.error)

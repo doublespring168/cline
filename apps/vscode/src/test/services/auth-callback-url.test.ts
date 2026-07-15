@@ -1,6 +1,5 @@
-import { afterEach, describe, it } from "mocha"
+import { describe, it } from "mocha"
 import "should"
-import { AuthHandler } from "@/hosts/external/AuthHandler"
 
 /**
  * Regression tests for OAuth callback URL generation.
@@ -16,43 +15,6 @@ import { AuthHandler } from "@/hosts/external/AuthHandler"
  * - Web: returns asExternalUri(vscode://extension-id/path) → HTTPS web-reachable URL
  */
 describe("Auth Callback URL", () => {
-	describe("AuthHandler.getCallbackUrl (standalone/CLI)", () => {
-		let authHandler: AuthHandler
-
-		afterEach(() => {
-			authHandler?.stop()
-			// Reset singleton for test isolation
-			;(AuthHandler as any).instance = null
-		})
-
-		it("should include the path in the callback URL", async () => {
-			authHandler = AuthHandler.getInstance()
-			authHandler.setEnabled(true)
-
-			const url = await authHandler.getCallbackUrl("/auth")
-			url.should.containEql("/auth")
-			url.should.startWith("http://127.0.0.1:")
-		})
-
-		it("should include complex paths in the callback URL", async () => {
-			authHandler = AuthHandler.getInstance()
-			authHandler.setEnabled(true)
-
-			const url = await authHandler.getCallbackUrl("/mcp-auth/callback/abc123")
-			url.should.containEql("/mcp-auth/callback/abc123")
-			url.should.startWith("http://127.0.0.1:")
-		})
-
-		it("should work with empty path for backwards compatibility", async () => {
-			authHandler = AuthHandler.getInstance()
-			authHandler.setEnabled(true)
-
-			const url = await authHandler.getCallbackUrl()
-			url.should.startWith("http://127.0.0.1:")
-			url.should.match(/^http:\/\/127\.0\.0\.1:\d+$/)
-		})
-	})
-
 	describe("callback URL encoding", () => {
 		it("should preserve callback_url with query params when URL-encoded via searchParams", () => {
 			// Simulates a VS Code Web callback URL that contains its own query params

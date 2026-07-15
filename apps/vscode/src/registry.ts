@@ -55,7 +55,7 @@ export const ExtensionRegistryInfo = {
 
 export interface HostInfo {
 	/**
-	 * The name of the host platform, e.g VSCode, IntelliJ Ultimate Edition, etc.
+	 * The name of the VS Code-compatible host platform.
 	 */
 	platform: string
 	/**
@@ -63,9 +63,7 @@ export interface HostInfo {
 	 */
 	os: string
 	/**
-	 * The type of the cline host environment, e.g. 'VSCode Extension', 'Cline for JetBrains', 'CLI'
-	 * This is different from the platform because there are many JetBrains IDEs, but they all use the same
-	 * plugin.
+	 * The type of the Cline host environment, currently `VSCode Extension`.
 	 */
 	ide: string
 	/**
@@ -73,7 +71,7 @@ export interface HostInfo {
 	 */
 	distinctId: string
 	/**
-	 * The version of the host platform, e.g. 1.103.0 for VSCode, or 2025.1.1.1 for JetBrains IDEs.
+	 * The version of the VS Code-compatible host platform.
 	 */
 	hostVersion?: string
 	/**

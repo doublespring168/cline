@@ -831,7 +831,6 @@ export class SubagentRunner {
 			coordinator,
 			taskState: state,
 			isSubagentExecution: true,
-			vscodeTerminalExecutionMode: "backgroundExec",
 			callbacks: {
 				...baseCallbacks,
 				say: async () => undefined,
@@ -848,10 +847,7 @@ export class SubagentRunner {
 						return await baseCallbacks.executeCommandTool(
 							command,
 							timeoutSeconds,
-							{
-								useBackgroundExecution: true,
-								suppressUserInteraction: true,
-							},
+							{ suppressUserInteraction: true },
 						);
 					} finally {
 						this.activeCommandExecutions = Math.max(

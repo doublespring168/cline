@@ -124,7 +124,7 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	 *
 	 * IMPORTANT: When passing methods as callbacks in JavaScript/TypeScript, the method's
 	 * 'this' context can be lost. This happens because the method is passed as a
-	 * standalone function reference, detached from its original object.
+	 * function reference detached from its original object.
 	 *
 	 * The Problem:
 	 * Doing: webview.onDidReceiveMessage(this.controller.handleWebviewMessage)

@@ -43,7 +43,7 @@ export type BannerAudience = "all" | "team_admin_only" | "team_members" | "perso
  * Rules that can be evaluated for banner targeting
  */
 export interface BannerRules {
-	/** Target specific IDEs (e.g., "vscode", "jetbrains") */
+	/** Target the VS Code extension surface. */
 	ide?: string[]
 	/** Target specific auth providers (e.g., "firebase", "workos") */
 	auth?: string[]
@@ -72,7 +72,7 @@ export type BannerEventType = "dismiss"
 export interface BannerEventPayload {
 	banner_id: string
 	instance_id: string
-	surface: "vscode" | "jetbrains" | "cli"
+	surface: "vscode"
 	event_type: BannerEventType
 }
 

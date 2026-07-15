@@ -35,7 +35,7 @@ export interface SessionStats {
 
 /**
  * Session singleton for tracking current session statistics.
- * Used by CLI to display interaction summary.
+ * Used to collect interaction and resource statistics for the active extension session.
  */
 export class Session {
 	private static instance: Session | null = null

@@ -90,7 +90,7 @@ export const ActionButtons: React.FC<ActionButtonsProps> = ({ task, messages, ch
 	const isStreaming = task.partial === true
 	const canInteract = enableButtons && !isProcessing
 	// Cancellation is exposed by the input send/stop button while a task is running.
-	// Keep approval/recovery actions in this area, but do not render a standalone Cancel button.
+	// Keep approval/recovery actions in this area, but do not render a separate Cancel button.
 	const showSecondaryButton = secondaryText && secondaryAction && secondaryAction !== "cancel"
 	const hasVisibleButtons = primaryText || showSecondaryButton
 	const isResumeTaskButton = lastMessage?.type === "ask" && lastMessage.ask === "resume_task"

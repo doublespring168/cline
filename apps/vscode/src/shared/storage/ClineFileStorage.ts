@@ -14,7 +14,7 @@ export interface ClineFileStorageOptions {
 /**
  * Synchronous file-backed JSON storage.
  * Stores any JSON-serializable values with sync read and write.
- * Used for VSCode Memento compatibility and CLI environments.
+ * Used by the VS Code-compatible state layer and file-backed settings.
  */
 export class ClineFileStorage<T = any> extends ClineSyncStorage<T> {
 	protected name: string

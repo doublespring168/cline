@@ -14,7 +14,7 @@ import { getBinaryLocation } from "@/utils/fs"
 /**
  * Indicates which backend served a workspace-files search.
  *
- * - `host_index`: served by the host's native file-name index (e.g. JetBrains FilenameIndex).
+ * - `host_index`: served by a host-provided native file-name index.
  * - `ripgrep`:    served by the bundled ripgrep walker (default everywhere).
  */
 export type FileSearchSource = "host_index" | "ripgrep"
@@ -186,9 +186,8 @@ async function getActiveFiles(): Promise<Set<string>> {
 // ranked by fzf in core, so we want a comfortably wider net than `limit`.
 const HOST_INDEX_CANDIDATE_LIMIT = 5000
 
-// gRPC status code 12 — the standalone host returns this when the RPC isn't
-// registered (the in-process VS Code stub throws a plain Error, matched on
-// message instead). Treat both as silent steady-state, not failure.
+// gRPC status code 12 indicates that the host does not implement the RPC.
+// Treat it as a silent steady-state condition rather than a failure.
 const GRPC_STATUS_UNIMPLEMENTED = 12
 
 /**
@@ -250,7 +249,7 @@ async function executeHostIndexForFiles(
 		}))
 		return [...fileResults, ...dirResults]
 	} catch (err) {
-		// "Unimplemented" is the steady state on VS Code/CLI/ACP — every
+		// "Unimplemented" is a normal state on VS Code-compatible hosts — every
 		// keystroke trips it — so log at debug to keep the noise floor flat.
 		// Anything else (UNAVAILABLE during indexing, INTERNAL, transport
 		// errors) is a real degradation we want visible to operators, since

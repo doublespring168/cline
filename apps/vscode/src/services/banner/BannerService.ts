@@ -24,12 +24,6 @@ const OS_MAP: Record<string, string> = {
 	darwin: "macos",
 }
 
-const IDE_MAP: Record<string, string> = {
-	vscode: "vscode",
-	jetbrains: "jetbrains",
-	cli: "cli",
-}
-
 const PROVIDER_ALIASES: Record<string, string[]> = {
 	anthropic: ["anthropic", "claude-code"],
 	openai: ["openai", "openai-native"],
@@ -247,9 +241,6 @@ export class BannerService {
 	public async sendBannerEvent(bannerId: string, eventType: "dismiss"): Promise<void> {
 		try {
 			const url = new URL("/banners/v2/messages", ClineEnv.config().apiBaseUrl).toString()
-			const ideType = this.getIdeType()
-			const surface = ideType === "cli" ? "cli" : ideType === "jetbrains" ? "jetbrains" : "vscode"
-
 			const controller = new AbortController()
 			const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS)
 
@@ -262,7 +253,7 @@ export class BannerService {
 				body: JSON.stringify({
 					banner_id: bannerId,
 					instance_id: this.hostInfo.distinctId,
-					surface,
+					surface: "vscode",
 					event_type: eventType,
 				}),
 				signal: controller.signal,
@@ -410,9 +401,7 @@ export class BannerService {
 
 	private getIdeType(): string {
 		const ide = this.hostInfo.ide?.toLowerCase() ?? ""
-		for (const [key, value] of Object.entries(IDE_MAP)) {
-			if (ide.includes(key)) return value
-		}
+		if (ide.includes("vscode")) return "vscode"
 
 		const platform = this.hostInfo.platform?.toLowerCase() ?? ""
 		if (platform.includes("visual studio") || platform.includes("vscode")) {

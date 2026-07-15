@@ -3,8 +3,7 @@
  *
  * VSCode historically stored global state, workspace state, and secrets via the
  * ExtensionContext API (backed by SQLite under ~/.vscode/). This module migrates
- * that data to the shared file-backed stores in ~/.cline/data/ so all platforms
- * (VSCode, CLI, JetBrains) share the same persistence layer.
+ * that data to the extension's file-backed stores in ~/.cline/data/.
  *
  * ## Migration semantics
  *
@@ -15,8 +14,8 @@
  *   state is still migrated even though globals+secrets were already exported previously.
  *
  * - **Merge strategy: file-backed store wins.** If a key already exists in the
- *   file store (e.g. because CLI or JetBrains wrote it), we do NOT overwrite.
- *   This prevents the migration from clobbering newer data written by another client.
+ *   file store, we do NOT overwrite. This prevents migration from clobbering
+ *   newer data written by the current or a previous extension installation.
  *
  * - VSCode storage is NOT cleared after migration. This ensures safe downgrade:
  *   if the user rolls back to an older extension version that doesn't know about
@@ -28,8 +27,8 @@
  *   so task history is NOT yet shared across clients.
  *
  *   TODO: Migrate taskHistory.json and task data files ({globalStorageFsPath}/tasks/)
- *   to ~/.cline/data/ so that tasks created in VSCode are visible in CLI/JetBrains
- *   and vice versa. See also: checkpoints at {globalStorageFsPath}/checkpoints/.
+ *   to ~/.cline/data/ so task storage no longer depends on the extension ID.
+ *   See also: checkpoints at {globalStorageFsPath}/checkpoints/.
  */
 
 import type * as vscode from "vscode"

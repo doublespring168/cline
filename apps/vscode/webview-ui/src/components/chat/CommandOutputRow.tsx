@@ -2,7 +2,6 @@ import { COMMAND_OUTPUT_STRING, COMMAND_REQ_APP_STRING } from "@shared/combineCo
 import { ClineMessage } from "@shared/ExtensionMessage"
 import { StringRequest } from "@shared/proto/cline/common"
 import { memo, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { FileServiceClient } from "@/services/grpc-client"
 import CodeBlock from "../common/CodeBlock"
@@ -112,8 +111,6 @@ export const CommandOutputRow = memo(
 		isCommandExecuting = false,
 		isCommandPending = false,
 		isCommandCompleted = false,
-		isBackgroundExec = false, // vscodeTerminalExecutionMode === "backgroundExec"
-		onCancelCommand,
 		icon,
 		title,
 		isOutputFullyExpanded,
@@ -123,8 +120,6 @@ export const CommandOutputRow = memo(
 		isCommandExecuting?: boolean
 		isCommandPending?: boolean
 		isCommandCompleted?: boolean
-		isBackgroundExec?: boolean
-		onCancelCommand?: () => void
 		icon?: JSX.Element | null
 		title?: JSX.Element | null
 		isOutputFullyExpanded: boolean
@@ -163,8 +158,6 @@ export const CommandOutputRow = memo(
 
 		const requestsApproval = rawCommand.endsWith(COMMAND_REQ_APP_STRING)
 		const command = requestsApproval ? rawCommand.slice(0, -COMMAND_REQ_APP_STRING.length) : rawCommand
-		const showCancelButton =
-			(isCommandExecuting || isCommandPending) && typeof onCancelCommand === "function" && isBackgroundExec
 
 		const commandHeader = (
 			<div className="flex items-center gap-2.5 mb-3">
@@ -197,26 +190,6 @@ export const CommandOutputRow = memo(
 									})}>
 									{getCommandStatusText(isCommandExecuting, isCommandPending, isCommandCompleted)}
 								</span>
-							</div>
-							<div className="flex items-center gap-2 shrink-0">
-								{showCancelButton && (
-									<Button
-										onClick={(e) => {
-											e.stopPropagation()
-											if (isBackgroundExec) {
-												onCancelCommand?.()
-											} else {
-												// For regular terminal mode, show a message
-												alert(
-													"This command is running in the VSCode terminal. You can manually stop it using Ctrl+C in the terminal, or switch to Background Execution mode in settings for cancellable commands.",
-												)
-											}
-										}}
-										size="sm"
-										variant="secondary">
-										{isBackgroundExec ? "cancel" : "stop"}
-									</Button>
-								)}
 							</div>
 						</div>
 					)}

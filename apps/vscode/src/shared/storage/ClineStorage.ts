@@ -113,7 +113,7 @@ export abstract class ClineStorage {
 }
 
 // ============================================================================
-// Sync Storage - for environments requiring synchronous access (e.g., CLI)
+// Sync Storage - used by the file-backed VS Code-compatible state layer
 // ============================================================================
 
 /**

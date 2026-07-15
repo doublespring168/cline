@@ -6,10 +6,8 @@ import { HostBridgeClientProvider } from "./host-provider-types"
 /**
  * Singleton class that manages host-specific providers for dependency injection.
  *
- * This system runs on two different platforms (VSCode extension and cline-core),
- * so all the host-specific classes and properties are contained in here. The
- * rest of the codebase can use the host provider interface to access platform-specific
- * implementations in a platform-agnostic way.
+ * Host-specific VS Code services are contained here so the rest of the
+ * extension can access them through a single initialized provider.
  *
  * Usage:
  * - Initialize once: HostProvider.initialize(webviewCreator, diffCreator, hostBridge)
@@ -30,9 +28,7 @@ export class HostProvider {
 
 	// Returns a callback URL that will redirect to Cline.
 	// The path parameter specifies the route for the callback (e.g., "/auth", "/openrouter").
-	// The optional preferredPort parameter hints that the provider should try to bind
-	// this specific port first (used to preserve OAuth client registrations across sessions).
-	getCallbackUrl: (path: string, preferredPort?: number) => Promise<string>
+	getCallbackUrl: (path: string) => Promise<string>
 
 	// Returns the location of the binary `name`.
 	// Use `getBinaryLocation()` from utils/ts.ts instead of using
@@ -55,7 +51,7 @@ export class HostProvider {
 		createTerminalManager: TerminalManagerCreator,
 		hostBridge: HostBridgeClientProvider,
 		logToChannel: LogToChannel,
-		getCallbackUrl: (path: string, preferredPort?: number) => Promise<string>,
+		getCallbackUrl: (path: string) => Promise<string>,
 		getBinaryLocation: (name: string) => Promise<string>,
 		extensionFsPath: string,
 		globalStorageFsPath: string,
@@ -79,7 +75,7 @@ export class HostProvider {
 		terminalManagerCreator: TerminalManagerCreator,
 		hostBridgeProvider: HostBridgeClientProvider,
 		logToChannel: LogToChannel,
-		getCallbackUrl: (path: string, preferredPort?: number) => Promise<string>,
+		getCallbackUrl: (path: string) => Promise<string>,
 		getBinaryLocation: (name: string) => Promise<string>,
 		extensionFsPath: string,
 		globalStorageFsPath: string,
@@ -160,6 +156,6 @@ export type LogToChannel = (message: string) => void
 
 /**
  * A function that creates TerminalManager instances
- * Returns the platform-appropriate terminal manager (VSCode TerminalManager or StandaloneTerminalManager)
+ * Returns the VS Code terminal manager.
  */
 export type TerminalManagerCreator = () => ITerminalManager

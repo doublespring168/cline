@@ -2,14 +2,13 @@ import { type EmptyRequest, String as ProtoString } from "@shared/proto/cline/co
 import { OcaAuthState, OcaUserInfo } from "@shared/proto/cline/oca_account"
 import type { Controller } from "@/core/controller"
 import { getRequestRegistry, type StreamingResponseHandler } from "@/core/controller/grpc-handler"
-import { AuthHandler } from "@/hosts/external/AuthHandler"
+import { HostProvider } from "@/hosts/host-provider"
 import { Logger } from "@/shared/services/Logger"
 import { openExternal } from "@/utils/env"
 import { LogoutReason } from "../types"
 import { OcaAuthProvider } from "./providers/OcaAuthProvider"
 import type { OcaConfig } from "./utils/types"
 import { getOcaConfig } from "./utils/utils"
-// import { AuthHandler } from "@/hosts/external/AuthHandler"
 
 export class OcaAuthService {
 	protected static instance: OcaAuthService | null = null
@@ -140,10 +139,7 @@ export class OcaAuthService {
 		if (!idcsUrl) {
 			throw new Error("IDCS URI is not configured")
 		}
-		// Start the auth handler
-		const authHandler = AuthHandler.getInstance()
-		authHandler.setEnabled(true)
-		const callbackUrl = await authHandler.getCallbackUrl("/auth/oca")
+		const callbackUrl = await HostProvider.get().getCallbackUrl("/auth/oca")
 		const authUrl = this.requireProvider().getAuthUrl(callbackUrl!, ocaMode)
 		const authUrlString = authUrl?.toString() || ""
 		if (!authUrlString) {
@@ -180,9 +176,6 @@ export class OcaAuthService {
 		} catch (error) {
 			Logger.error("Error signing in with custom token:", error)
 			throw error
-		} finally {
-			const authHandler = AuthHandler.getInstance()
-			authHandler.setEnabled(false)
 		}
 	}
 

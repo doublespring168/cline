@@ -41,7 +41,7 @@ describe("getButtonConfig", () => {
 		})
 	})
 
-	it("does not render standalone Start New Task actions above the input", () => {
+	it("does not render separate Start New Task actions above the input", () => {
 		const affectedConfigs = [
 			BUTTON_CONFIGS.api_req_failed,
 			BUTTON_CONFIGS.mistake_limit_reached,

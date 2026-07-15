@@ -95,9 +95,9 @@ export const ClineProvider = ({
 				</RouteContainer>
 			)}
 			{!isClinePassEnabled && (
-				<StandaloneRouteActions>
+				<DefaultRouteActions>
 					<ClineAccountInfoCard />
-				</StandaloneRouteActions>
+				</DefaultRouteActions>
 			)}
 
 			{showModelOptions && (
@@ -154,6 +154,6 @@ const RouteActions = styled.div`
 	margin-top: 8px;
 `
 
-const StandaloneRouteActions = styled(RouteActions)`
+const DefaultRouteActions = styled(RouteActions)`
 	margin: 4px 0 14px;
 `

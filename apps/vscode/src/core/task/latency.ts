@@ -36,11 +36,8 @@ const schedulingDisabled = readBooleanEnv("CLINE_DISABLE_PRESENTATION_SCHEDULER"
  * (e.g. `"ssh-remote"`, `"dev-container"`, `"codespaces"`). When this field is present
  * the host is definitively remote.
  *
- * For non-VSCode hosts (e.g. JetBrains) that do not populate `remoteName`, this
- * function conservatively returns `false` and uses the local cadence. This avoids
- * false positives from version strings that happen to contain the word "remote"
- * (e.g. `"1.0.0-remote-fix"`). Host bridges for remote-capable environments should
- * populate `remoteName` explicitly to opt in to the higher cadence.
+ * When `remoteName` is absent, the extension uses the local cadence. This avoids
+ * false positives from version strings that happen to contain the word "remote".
  */
 export function isRemoteWorkspaceEnvironment(host: { platform?: string; version?: string; remoteName?: string | null }): boolean {
 	return !!host.remoteName

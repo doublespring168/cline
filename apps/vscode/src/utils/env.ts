@@ -36,7 +36,7 @@ export async function readTextFromClipboard(): Promise<string> {
 /**
  * Opens an external URL in the default browser.
  * Uses the host bridge RPC first (VS Code's openExternal which handles remote environments).
- * Falls back to the `open` npm package if the host doesn't implement the RPC (e.g., JetBrains).
+ * Falls back to the `open` npm package if the VS Code host call fails.
  * @param url The URL to open
  * @returns Promise that resolves when the operation is complete
  */
@@ -45,7 +45,7 @@ export async function openExternal(url: string): Promise<void> {
 	try {
 		await HostProvider.env.openExternal(StringRequest.create({ value: url }))
 	} catch (error) {
-		// Fallback for hosts that don't implement openExternal (e.g., JetBrains plugin)
+		// Fallback for VS Code-compatible hosts that cannot open the URL through the API.
 		Logger.warn(`Host openExternal RPC failed, falling back to 'open' package: ${error}`)
 		try {
 			const open = (await import("open")).default

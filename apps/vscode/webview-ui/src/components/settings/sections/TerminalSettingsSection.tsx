@@ -1,9 +1,7 @@
 import { UpdateTerminalConnectionTimeoutResponse } from "@shared/proto/index.cline"
 import { VSCodeCheckbox, VSCodeDropdown, VSCodeOption, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import React, { useState } from "react"
-import { PlatformType } from "@/config/platform.config"
 import { useExtensionState } from "@/context/ExtensionStateContext"
-import { usePlatform } from "@/context/PlatformContext"
 import { StateServiceClient } from "../../../services/grpc-client"
 import Section from "../Section"
 import TerminalOutputLineLimitSlider from "../TerminalOutputLineLimitSlider"
@@ -19,10 +17,7 @@ export const TerminalSettingsSection: React.FC<TerminalSettingsSectionProps> = (
 		terminalReuseEnabled,
 		defaultTerminalProfile,
 		availableTerminalProfiles,
-		vscodeTerminalExecutionMode,
 	} = useExtensionState()
-	const platformConfig = usePlatform()
-	const isVsCodePlatform = platformConfig.type === PlatformType.VSCODE
 
 	const [inputValue, setInputValue] = useState((shellIntegrationTimeout / 1000).toString())
 	const [inputError, setInputError] = useState<string | null>(null)
@@ -67,12 +62,6 @@ export const TerminalSettingsSection: React.FC<TerminalSettingsSectionProps> = (
 		const target = event.target as HTMLInputElement
 		const checked = target.checked
 		updateSetting("terminalReuseEnabled", checked)
-	}
-
-	const handleExecutionModeChange = (event: Event) => {
-		const target = event.target as HTMLSelectElement
-		const value = target.value === "backgroundExec" ? "backgroundExec" : "vscodeTerminal"
-		updateSetting("vscodeTerminalExecutionMode", value)
 	}
 
 	// Use any to avoid type conflicts between Event and FormEvent
@@ -144,24 +133,6 @@ export const TerminalSettingsSection: React.FC<TerminalSettingsSectionProps> = (
 							Disable this if you experience issues with task lockout after a terminal command.
 						</p>
 					</div>
-					{isVsCodePlatform && (
-						<div className="mb-4">
-							<label className="font-medium block mb-1" htmlFor="terminal-execution-mode">
-								Terminal Execution Mode
-							</label>
-							<VSCodeDropdown
-								className="w-full"
-								id="terminal-execution-mode"
-								onChange={(event) => handleExecutionModeChange(event as Event)}
-								value={vscodeTerminalExecutionMode ?? "vscodeTerminal"}>
-								<VSCodeOption value="vscodeTerminal">VS Code Terminal</VSCodeOption>
-								<VSCodeOption value="backgroundExec">Background Exec</VSCodeOption>
-							</VSCodeDropdown>
-							<p className="text-xs text-[var(--vscode-descriptionForeground)] mt-1">
-								Choose whether Cline runs commands in the VS Code terminal or a background process.
-							</p>
-						</div>
-					)}
 					<TerminalOutputLineLimitSlider />
 					
 				</div>

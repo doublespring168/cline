@@ -189,7 +189,7 @@ Use the new_task command to create a task for implementing the plan. ${focusChai
 ### Task Creation Requirements
 
 <IMPORTANT>
-**Standalone Product:**
+**Self-contained implementation task:**
 Your new task should be self-contained and reference the plan document rather than requiring additional codebase investigation. Include these specific instructions in the task description:
 
 ${

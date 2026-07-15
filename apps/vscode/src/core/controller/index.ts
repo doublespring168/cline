@@ -1,7 +1,6 @@
 import type { Anthropic } from "@anthropic-ai/sdk"
 import { buildApiHandler } from "@core/api"
 import { getHooksEnabledSafe } from "@core/hooks/hooks-utils"
-import { tryAcquireTaskLockWithRetry } from "@core/task/TaskLockUtils"
 import { detectWorkspaceRoots } from "@core/workspace/detection"
 import { setupWorkspaceManager } from "@core/workspace/setup"
 import type { WorkspaceRootManager } from "@core/workspace/WorkspaceRootManager"
@@ -25,7 +24,6 @@ import open from "open"
 import pWaitFor from "p-wait-for"
 import * as path from "path"
 import { ClineEnv } from "@/config"
-import type { FolderLockWithRetryResult } from "@/core/locks/types"
 import { HostProvider } from "@/hosts/host-provider"
 import { ExtensionRegistryInfo } from "@/registry"
 import { AuthService } from "@/services/auth/AuthService"
@@ -57,7 +55,6 @@ import { Task } from "../task"
 import { sendMcpMarketplaceCatalogEvent } from "./mcp/subscribeToMcpMarketplaceCatalog"
 import { getClineOnboardingModels } from "./models/getClineOnboardingModels"
 import { appendClineStealthModels } from "./models/refreshOpenRouterModels"
-import { checkCliInstallation } from "./state/checkCliInstallation"
 import { sendStateUpdate } from "./state/subscribeToState"
 import { sendChatButtonClickedEvent } from "./ui/subscribeToChatButtonClicked"
 
@@ -78,8 +75,6 @@ export class Controller {
 
 	// NEW: Add workspace manager (optional initially)
 	private workspaceManager?: WorkspaceRootManager
-	private backgroundCommandRunning = false
-	private backgroundCommandTaskId?: string
 
 	// Flag to prevent duplicate cancellations from spam clicking
 	private cancelInProgress = false
@@ -153,9 +148,6 @@ export class Controller {
 		cleanupLegacyCheckpoints().catch((error) => {
 			Logger.error("Failed to cleanup legacy checkpoints:", error)
 		})
-
-		// Check CLI installation status once on startup
-		checkCliInstallation(this)
 
 		Logger.log("[Controller] ClineProvider instantiated")
 	}
@@ -249,7 +241,6 @@ export class Controller {
 		const autoApprovalSettings = this.stateManager.getGlobalSettingsKey("autoApprovalSettings")
 		const shellIntegrationTimeout = this.stateManager.getGlobalSettingsKey("shellIntegrationTimeout")
 		const terminalReuseEnabled = this.stateManager.getGlobalStateKey("terminalReuseEnabled")
-		const vscodeTerminalExecutionMode = this.stateManager.getGlobalStateKey("vscodeTerminalExecutionMode")
 		const terminalOutputLineLimit = this.stateManager.getGlobalSettingsKey("terminalOutputLineLimit")
 		const defaultTerminalProfile = this.stateManager.getGlobalSettingsKey("defaultTerminalProfile")
 		const isNewUser = this.stateManager.getGlobalStateKey("isNewUser")
@@ -281,24 +272,6 @@ export class Controller {
 
 		const taskId = historyItem?.id || Date.now().toString()
 
-		// Acquire task lock
-		let taskLockAcquired = false
-		const lockResult: FolderLockWithRetryResult = await tryAcquireTaskLockWithRetry(taskId)
-
-		if (!lockResult.acquired && !lockResult.skipped) {
-			const errorMessage = lockResult.conflictingLock
-				? `Task locked by instance (${lockResult.conflictingLock.held_by})`
-				: "Failed to acquire task lock"
-			throw new Error(errorMessage) // Prevents task initialization
-		}
-
-		taskLockAcquired = lockResult.acquired
-		if (lockResult.acquired) {
-			Logger.debug(`[Task ${taskId}] Task lock acquired`)
-		} else {
-			Logger.debug(`[Task ${taskId}] Task lock skipped (VS Code)`)
-		}
-
 		await this.stateManager.loadTaskSettings(taskId)
 		if (taskSettings) {
 			this.stateManager.setTaskSettingsBatch(taskId, taskSettings)
@@ -315,7 +288,6 @@ export class Controller {
 			terminalReuseEnabled: terminalReuseEnabled ?? true,
 			terminalOutputLineLimit: terminalOutputLineLimit ?? 500,
 			defaultTerminalProfile: defaultTerminalProfile ?? "default",
-			vscodeTerminalExecutionMode,
 			cwd,
 			stateManager: this.stateManager,
 			workspaceManager: this.workspaceManager,
@@ -324,7 +296,6 @@ export class Controller {
 			files,
 			historyItem,
 			taskId,
-			taskLockAcquired,
 		})
 
 		if (historyItem) {
@@ -438,8 +409,6 @@ export class Controller {
 		this.cancelInProgress = true
 
 		try {
-			this.updateBackgroundCommandState(false)
-
 			try {
 				await this.task.abortTask()
 			} catch (error) {
@@ -490,23 +459,6 @@ export class Controller {
 		} finally {
 			// Always clear the flag, even if cancellation fails
 			this.cancelInProgress = false
-		}
-	}
-
-	updateBackgroundCommandState(running: boolean, taskId?: string) {
-		const nextTaskId = running ? taskId : undefined
-		if (this.backgroundCommandRunning === running && this.backgroundCommandTaskId === nextTaskId) {
-			return
-		}
-		this.backgroundCommandRunning = running
-		this.backgroundCommandTaskId = nextTaskId
-		void this.postStateToWebview()
-	}
-
-	async cancelBackgroundCommand(): Promise<void> {
-		const didCancel = await this.task?.cancelBackgroundCommand()
-		if (!didCancel) {
-			this.updateBackgroundCommandState(false)
 		}
 	}
 
@@ -878,7 +830,6 @@ export class Controller {
 		const remoteWorkflowToggles = this.stateManager.getGlobalStateKey("remoteWorkflowToggles")
 		const shellIntegrationTimeout = this.stateManager.getGlobalSettingsKey("shellIntegrationTimeout")
 		const terminalReuseEnabled = this.stateManager.getGlobalStateKey("terminalReuseEnabled")
-		const vscodeTerminalExecutionMode = this.stateManager.getGlobalStateKey("vscodeTerminalExecutionMode")
 		const defaultTerminalProfile = this.stateManager.getGlobalSettingsKey("defaultTerminalProfile")
 		const isNewUser = this.stateManager.getGlobalStateKey("isNewUser")
 		// Can be undefined but is set to either true or false by the migration that runs on extension launch in extension.ts
@@ -891,7 +842,6 @@ export class Controller {
 		const favoritedModelIds = this.stateManager.getGlobalStateKey("favoritedModelIds")
 		const lastDismissedInfoBannerVersion = this.stateManager.getGlobalStateKey("lastDismissedInfoBannerVersion") || 0
 		const lastDismissedModelBannerVersion = this.stateManager.getGlobalStateKey("lastDismissedModelBannerVersion") || 0
-		const lastDismissedCliBannerVersion = this.stateManager.getGlobalStateKey("lastDismissedCliBannerVersion") || 0
 		const dismissedBanners = this.stateManager.getGlobalStateKey("dismissedBanners")
 		const doubleCheckCompletionEnabled = this.stateManager.getGlobalSettingsKey("doubleCheckCompletionEnabled")
 		const lazyTeammateModeEnabled = this.stateManager.getGlobalSettingsKey("lazyTeammateModeEnabled")
@@ -966,7 +916,6 @@ export class Controller {
 			remoteWorkflowToggles: remoteWorkflowToggles,
 			shellIntegrationTimeout,
 			terminalReuseEnabled,
-			vscodeTerminalExecutionMode: vscodeTerminalExecutionMode,
 			defaultTerminalProfile,
 			isNewUser,
 			welcomeViewCompleted,
@@ -978,8 +927,6 @@ export class Controller {
 			taskHistory: processedTaskHistory,
 			shouldShowAnnouncement,
 			favoritedModelIds,
-			backgroundCommandRunning: this.backgroundCommandRunning,
-			backgroundCommandTaskId: this.backgroundCommandTaskId,
 			// NEW: Add workspace information
 			workspaceRoots: this.workspaceManager?.getRoots() ?? [],
 			primaryRootIndex: this.workspaceManager?.getPrimaryIndex() ?? 0,
@@ -1000,7 +947,6 @@ export class Controller {
 			lastDismissedInfoBannerVersion,
 			lastDismissedModelBannerVersion,
 			remoteConfigSettings: this.stateManager.getRemoteConfigSettings(),
-			lastDismissedCliBannerVersion,
 			dismissedBanners,
 			nativeToolCallSetting: this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.stateManager.getGlobalSettingsKey("enableParallelToolCalling"),

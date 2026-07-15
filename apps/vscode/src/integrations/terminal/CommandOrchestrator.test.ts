@@ -64,7 +64,6 @@ function createCallbacks(): CommandExecutorCallbacks {
 	return {
 		say: async () => undefined,
 		ask: async () => ({ response: "messageResponse" }),
-		updateBackgroundCommandState: () => {},
 		updateClineMessage: async () => {},
 		getClineMessages: () => [],
 		addToUserMessageContent: () => {},

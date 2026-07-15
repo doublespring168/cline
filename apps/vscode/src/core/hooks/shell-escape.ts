@@ -19,7 +19,7 @@
 function escapeWindowsShellPath(path: string): string {
 	// Escape backslashes that precede quotes
 	let escaped = path.replace(/\\"/g, '\\\\"')
-	// Escape standalone double quotes by doubling them
+	// Escape unpaired double quotes by doubling them
 	escaped = escaped.replace(/"/g, '""')
 	// Wrap in double quotes
 	return `"${escaped}"`

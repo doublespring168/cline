@@ -65,9 +65,6 @@ export interface ExtensionState {
 	terminalOutputLineLimit: number
 	maxConsecutiveMistakes: number
 	defaultTerminalProfile?: string
-	vscodeTerminalExecutionMode: string
-	backgroundCommandRunning?: boolean
-	backgroundCommandTaskId?: string
 	lastCompletedCommandTs?: number
 	userInfo?: UserInfo
 	version: string
@@ -98,7 +95,6 @@ export interface ExtensionState {
 	multiRootSetting: ClineFeatureSetting
 	lastDismissedInfoBannerVersion: number
 	lastDismissedModelBannerVersion: number
-	lastDismissedCliBannerVersion: number
 	dismissedBanners?: Array<{ bannerId: string; dismissedAt: number }>
 	hooksEnabled?: boolean
 	remoteConfigSettings?: Partial<RemoteConfigFields>

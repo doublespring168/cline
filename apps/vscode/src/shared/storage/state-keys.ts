@@ -75,9 +75,6 @@ const GLOBAL_STATE_FIELDS = {
 	mcpMarketplaceEnabled: { default: true as boolean },
 	mcpResponsesCollapsed: { default: false as boolean },
 	terminalReuseEnabled: { default: true as boolean },
-	vscodeTerminalExecutionMode: {
-		default: "vscodeTerminal" as "vscodeTerminal" | "backgroundExec",
-	},
 	isNewUser: { default: true as boolean },
 	welcomeViewCompleted: { default: undefined as boolean | undefined },
 	mcpDisplayMode: { default: DEFAULT_MCP_DISPLAY_MODE as McpDisplayMode },
@@ -86,7 +83,6 @@ const GLOBAL_STATE_FIELDS = {
 	multiRootEnabled: { default: true as boolean },
 	lastDismissedInfoBannerVersion: { default: 0 as number },
 	lastDismissedModelBannerVersion: { default: 0 as number },
-	lastDismissedCliBannerVersion: { default: 0 as number },
 	nativeToolCallEnabled: { default: true as boolean },
 	remoteRulesToggles: { default: {} as ClineRulesToggles },
 	remoteWorkflowToggles: { default: {} as ClineRulesToggles },

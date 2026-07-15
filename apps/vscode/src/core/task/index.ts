@@ -49,7 +49,6 @@ import {
 	getSavedApiConversationHistory,
 	getSavedClineMessages,
 } from "@core/storage/disk";
-import { releaseTaskLock } from "@core/task/TaskLockUtils";
 import { isMultiRootEnabled } from "@core/workspace/multi-root-utils";
 import type { WorkspaceRootManager } from "@core/workspace/WorkspaceRootManager";
 import {
@@ -113,11 +112,9 @@ import {
 	CommandExecutor,
 	type CommandExecutorCallbacks,
 	type FullCommandExecutorConfig,
-	StandaloneTerminalManager,
 } from "@/integrations/terminal";
 import { ClineError, ClineErrorType, ErrorService } from "@/services/error";
 import { telemetryService } from "@/services/telemetry";
-import { ClineClient } from "@/shared/cline";
 import type {
 	ClineAssistantContent,
 	ClineContent,
@@ -173,7 +170,6 @@ type TaskParams = {
 	terminalReuseEnabled: boolean;
 	terminalOutputLineLimit: number;
 	defaultTerminalProfile: string;
-	vscodeTerminalExecutionMode: "vscodeTerminal" | "backgroundExec";
 	cwd: string;
 	stateManager: StateManager;
 	workspaceManager?: WorkspaceRootManager;
@@ -182,7 +178,6 @@ type TaskParams = {
 	files?: string[];
 	historyItem?: HistoryItem;
 	taskId: string;
-	taskLockAcquired: boolean;
 };
 
 export class Task {
@@ -268,7 +263,6 @@ export class Task {
 	private useNativeToolCalls = false;
 	private streamHandler: StreamResponseHandler;
 
-	private terminalExecutionMode: "vscodeTerminal" | "backgroundExec";
 
 	// Metadata tracking
 	private fileContextTracker: FileContextTracker;
@@ -295,9 +289,6 @@ export class Task {
 	// Workspace manager
 	workspaceManager?: WorkspaceRootManager;
 
-	// Task Locking (Sqlite)
-	private taskLockAcquired: boolean;
-
 	// Command executor for running shell commands (extracted from executeCommandTool)
 	private commandExecutor!: CommandExecutor;
 	private isRemoteWorkspaceEnvironment = false;
@@ -319,7 +310,6 @@ export class Task {
 			terminalReuseEnabled,
 			terminalOutputLineLimit,
 			defaultTerminalProfile,
-			vscodeTerminalExecutionMode,
 			cwd,
 			stateManager,
 			workspaceManager,
@@ -328,7 +318,6 @@ export class Task {
 			files,
 			historyItem,
 			taskId,
-			taskLockAcquired,
 		} = params;
 
 		this.taskInitializationStartTime = performance.now();
@@ -355,26 +344,9 @@ export class Task {
 		this.cancelTask = cancelTask;
 		this.clineIgnoreController = new ClineIgnoreController(cwd);
 		this.commandPermissionController = new CommandPermissionController();
-		this.taskLockAcquired = taskLockAcquired;
-		// Determine terminal execution mode and create appropriate terminal manager
-		this.terminalExecutionMode =
-			vscodeTerminalExecutionMode || "vscodeTerminal";
-
-		// When backgroundExec mode is selected, use StandaloneTerminalManager for hidden execution
-		// Otherwise, use the HostProvider's terminal manager (VSCode terminal in VSCode, standalone in CLI)
-		if (this.terminalExecutionMode === "backgroundExec") {
-			// Import StandaloneTerminalManager for background execution
-			this.terminalManager = new StandaloneTerminalManager();
-			Logger.info(
-				`[Task ${taskId}] Using StandaloneTerminalManager for backgroundExec mode`,
-			);
-		} else {
-			// Use the host-provided terminal manager (VSCode terminal in VSCode environment)
-			this.terminalManager = HostProvider.get().createTerminalManager();
-			Logger.info(
-				`[Task ${taskId}] Using HostProvider terminal manager for vscodeTerminal mode`,
-			);
-		}
+		// VS Code is the only supported host, so all commands use its terminal manager.
+		this.terminalManager = HostProvider.get().createTerminalManager();
+		Logger.info(`[Task ${taskId}] Using VS Code terminal manager`);
 		this.terminalManager.setShellIntegrationTimeout(shellIntegrationTimeout);
 		this.terminalManager.setTerminalReuseEnabled(terminalReuseEnabled ?? true);
 		this.terminalManager.setTerminalOutputLineLimit(terminalOutputLineLimit);
@@ -630,10 +602,7 @@ export class Task {
 		// Initialize command executor with config and callbacks
 		const commandExecutorConfig: FullCommandExecutorConfig = {
 			cwd: this.cwd,
-			terminalExecutionMode: this.terminalExecutionMode,
 			terminalManager: this.terminalManager,
-			taskId: this.taskId,
-			ulid: this.ulid,
 		};
 
 		const commandExecutorCallbacks: CommandExecutorCallbacks = {
@@ -650,8 +619,6 @@ export class Task {
 			resolvePendingAsk: (response) => {
 				void this.handleWebviewAskResponse(response as ClineAskResponse);
 			},
-			updateBackgroundCommandState: (isRunning: boolean) =>
-				this.controller.updateBackgroundCommandState(isRunning, this.taskId),
 			updateClineMessage: async (
 				index: number,
 				updates: { commandCompleted?: boolean; text?: string },
@@ -717,7 +684,6 @@ export class Task {
 			cwd,
 			this.taskId,
 			this.ulid,
-			this.terminalExecutionMode,
 			this.workspaceManager,
 			isMultiRootEnabled(this.stateManager),
 			this.say.bind(this),
@@ -726,7 +692,7 @@ export class Task {
 			this.sayAndCreateMissingParamError.bind(this),
 			this.removeLastPartialMessageIfExistsWithType.bind(this),
 			this.executeCommandTool.bind(this),
-			this.cancelBackgroundCommand.bind(this),
+			this.cancelCurrentCommand.bind(this),
 			() =>
 				this.checkpointManager?.doesLatestTaskCompletionHaveNewChanges() ??
 				Promise.resolve(false),
@@ -1769,11 +1735,6 @@ export class Task {
 			return true;
 		}
 
-		// Run if there's active background command (work happening now)
-		if (this.commandExecutor.hasActiveBackgroundCommand()) {
-			return true;
-		}
-
 		// Check if we're at a button-only state (no active work, just waiting for user action)
 		const clineMessages = this.messageStateHandler.getClineMessages();
 		const lastMessage = clineMessages.at(-1);
@@ -1821,17 +1782,6 @@ export class Task {
 					Logger.error("Failed to cancel hook during task abort", error);
 					// Still clear state even on error to prevent stuck state
 					await this.clearActiveHookExecution();
-				}
-			}
-
-			if (this.commandExecutor.hasActiveBackgroundCommand()) {
-				try {
-					await this.commandExecutor.cancelBackgroundCommand();
-				} catch (error) {
-					Logger.error(
-						"Failed to cancel background command during task abort",
-						error,
-					);
 				}
 			}
 
@@ -1941,20 +1891,6 @@ export class Task {
 			}
 			await this.presentationScheduler.dispose();
 		} finally {
-			// Release task folder lock
-			if (this.taskLockAcquired) {
-				try {
-					await releaseTaskLock(this.taskId);
-					this.taskLockAcquired = false;
-					Logger.info(`[Task ${this.taskId}] Task lock released`);
-				} catch (error) {
-					Logger.error(
-						`[Task ${this.taskId}] Failed to release task lock:`,
-						error,
-					);
-				}
-			}
-
 			// Final state update to notify UI that abort is complete
 			try {
 				await this.postStateToWebview();
@@ -1974,11 +1910,10 @@ export class Task {
 	}
 
 	/**
-	 * Cancel a background command that is running in the background
-	 * @returns true if a command was cancelled, false if no command was running
+	 * Cancel the currently running VS Code terminal command when supported.
 	 */
-	public async cancelBackgroundCommand(): Promise<boolean> {
-		return this.commandExecutor.cancelBackgroundCommand();
+	public async cancelCurrentCommand(): Promise<boolean> {
+		return this.commandExecutor.cancelCurrentCommand();
 	}
 
 	/**
@@ -2183,7 +2118,6 @@ export class Task {
 		const providerInfo = this.getCurrentProviderInfo();
 		const host = await HostProvider.env.getHostVersion({});
 		const ide = host?.platform || "Unknown";
-		const isCliEnvironment = host.clineType === ClineClient.Cli;
 		const browserSettings =
 			this.stateManager.getGlobalSettingsKey("browserSettings");
 		const disableBrowserTool = browserSettings.disableToolUse ?? false;
@@ -2327,12 +2261,10 @@ export class Task {
 			isMultiRootEnabled: multiRootEnabled,
 			workspaceRoots,
 			isSubagentRun: false,
-			isCliEnvironment,
 			enableNativeToolCalls:
 				providerInfo.model.info.apiFormat === ApiFormat.OPENAI_RESPONSES ||
 				this.stateManager.getGlobalStateKey("nativeToolCallEnabled"),
 			enableParallelToolCalling: this.isParallelToolCallingEnabled(),
-			terminalExecutionMode: this.terminalExecutionMode,
 		};
 
 		// Notify user if any conditional rules were applied for this request

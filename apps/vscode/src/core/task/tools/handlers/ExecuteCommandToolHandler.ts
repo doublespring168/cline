@@ -113,11 +113,11 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 
 		config.taskState.consecutiveMistakeCount = 0
 
-		// Handling of timeout while in yolo mode or background exec mode
+		// Handling of timeout while in yolo mode
 		timeoutSeconds = resolveCommandTimeoutSeconds(
 			command,
 			timeoutParam,
-			config.yoloModeToggled || config.vscodeTerminalExecutionMode === "backgroundExec",
+			config.yoloModeToggled,
 		)
 
 		// Pre-process command for certain models

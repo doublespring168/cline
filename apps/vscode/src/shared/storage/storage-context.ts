@@ -8,9 +8,8 @@ import { ClineMemento } from "./ClineStorage"
  * The storage backend context object used by StateManager and other components.
  * Global, workspace and secret key-value storage goes through this component.
  *
- * This replaces the previous pattern of passing VSCode's ExtensionContext around
- * for storage access. All platforms (VSCode, CLI, JetBrains) use the same
- * file-backed implementation.
+ * This replaces the previous pattern of passing VS Code's ExtensionContext around
+ * for storage access and keeps the extension's state in a file-backed implementation.
  */
 export interface StorageContext {
 	/** Global state — settings, task history references, UI state, etc. */
@@ -20,8 +19,7 @@ export interface StorageContext {
 	/**
 	 * The backing store for global state. Prefer `globalState` when possible.
 	 *
-	 * This split exists because CLI needs to intercept the ClineMemento interface to global state,
-	 * but state resets need to write through to the backing store.
+	 * State resets need direct access to the backing store while ordinary callers use the Memento interface.
 	 */
 	readonly globalStateBackingStore: ClineFileStorage
 
@@ -53,10 +51,7 @@ export interface StorageContextOptions {
 	/**
 	 * Explicit workspace storage directory override.
 	 * When set, this path is used directly instead of computing a hash.
-	 * Used by JetBrains (via WORKSPACE_STORAGE_DIR env var).
-	 *
-	 * TODO: Unify JetBrains workspace path scheme with the hash-based approach
-	 * once the JetBrains client side is cleaned up.
+	 * Primarily useful for migrations and isolated tests.
 	 */
 	workspaceStorageDir?: string
 }
@@ -98,10 +93,10 @@ export function createStorageContext(opts: StorageContextOptions = {}): StorageC
 	// Resolve workspace storage directory
 	let workspaceDir: string
 	if (opts.workspaceStorageDir) {
-		// Explicit override (JetBrains via env var, or test overrides)
+		// Explicit override for migrations or isolated tests.
 		workspaceDir = opts.workspaceStorageDir
 	} else {
-		// Hash-based workspace isolation (CLI, VSCode)
+		// Hash-based workspace isolation for VS Code workspaces.
 		const workspacePath = opts.workspacePath || process.cwd()
 		const workspaceHash = hashString(workspacePath)
 		workspaceDir = path.join(dataDir, "workspaces", workspaceHash)

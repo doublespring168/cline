@@ -40,7 +40,7 @@ export async function initializeDistinctId(storage: StorageContext, uuid: () => 
 
 /*
  * Get machine ID using node-machine-id package
- * This works across all platforms (VS Code, JetBrains, CLI)
+ * This is shared by the VS Code extension's telemetry providers.
  */
 async function getMachineId(): Promise<string | undefined> {
 	try {

@@ -79,7 +79,7 @@ export function filterVisibleMessages(messages: ClineMessage[]): ClineMessage[] 
 			// NOTE: reasoning passes through to be included in tool groups
 			case "api_req_started": {
 				// api_req_started rows only render visible content for errors/cancels.
-				// Reasoning has its own standalone ChatRows. Everything else renders
+				// Reasoning has its own independent ChatRows. Everything else renders
 				// as invisible padding. Filter out unless there's an error.
 				try {
 					const info = JSON.parse(message.text || "{}")

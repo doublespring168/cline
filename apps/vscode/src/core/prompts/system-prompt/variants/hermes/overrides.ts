@@ -145,7 +145,7 @@ Each tool supports an optional task_progress parameter for maintaining a Markdow
 - Update the checklist whenever progress is made; rewrite it if scope or priorities change.
 - When adding the checklist for the first time, mark the current step as completed if it was just accomplished.
 - Short checklists are fine for simple tasks; keep longer ones concise and readable.
-- task_progress must be included as a parameter, not as a standalone tool call.
+- task_progress must be included as a parameter, not as a separate tool call.
 
 Example:
 <execute_command>

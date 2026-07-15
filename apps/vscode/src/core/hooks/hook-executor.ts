@@ -127,7 +127,7 @@ export async function executeHook<Name extends keyof Hooks>(options: HookExecuti
 			// script produced which line (and can look like only one hook is printing).
 			//
 			// NOTE: We keep backward compatibility by encoding metadata into the string.
-			// The CLI prints this as-is in verbose mode.
+			// The UI displays this prefix as-is in verbose hook output.
 			const prefixParts: string[] = []
 			if (meta?.source) prefixParts.push(meta.source)
 			prefixParts.push(stream)

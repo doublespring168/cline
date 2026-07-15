@@ -53,7 +53,7 @@ describe("groupLowStakesTools", () => {
 		expect(grouped[2]).toMatchObject({ type: "say", say: "text", text: "Follow-up text" })
 	})
 
-	it("keeps standalone reasoning when no low-stakes tool group follows", () => {
+	it("keeps independent reasoning when no low-stakes tool group follows", () => {
 		const grouped = groupLowStakesTools([
 			createReasoningMessage(1, "Thinking through options"),
 			createTextMessage(2, "Answer text"),
@@ -64,7 +64,7 @@ describe("groupLowStakesTools", () => {
 		expect(grouped[1]).toMatchObject({ type: "say", say: "text", text: "Answer text" })
 	})
 
-	it("keeps standalone reasoning before a non-low-stakes tool", () => {
+	it("keeps independent reasoning before a non-low-stakes tool", () => {
 		const grouped = groupLowStakesTools([
 			createReasoningMessage(1, "Thinking through options"),
 			createToolMessage(2, "editedExistingFile"),

@@ -7,7 +7,7 @@
 //
 // The README files diverge in two directions:
 //   - README.md is what GitHub renders on the repo home page. We want this to
-//     cover the SDK, JetBrains plugin, CLI, and VS Code extension together.
+//     cover the SDK and VS Code extension together.
 //   - README.marketplace.md is what users see on the VS Code Marketplace and
 //     inside the extension after install. It stays focused on the VS Code UX.
 //

@@ -80,10 +80,7 @@ By thoughtfully selecting between write_to_file and replace_in_file, you can mak
 export async function getEditingFilesSection(variant: PromptVariant, context: SystemPromptContext): Promise<string> {
 	const template = variant.componentOverrides?.[SystemPromptSection.EDITING_FILES]?.template || EDITING_FILES_TEMPLATE_TEXT
 
-	// Skip auto-formatting section for CLI since there's no IDE to auto-format files
-	const autoFormattingSection = context.isCliEnvironment ? "" : AUTO_FORMATTING_SECTION
-
 	return new TemplateEngine().resolve(template, context, {
-		AUTO_FORMATTING_SECTION: autoFormattingSection,
+		AUTO_FORMATTING_SECTION,
 	})
 }
