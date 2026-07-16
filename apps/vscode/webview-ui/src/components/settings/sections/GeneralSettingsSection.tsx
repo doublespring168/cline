@@ -9,9 +9,10 @@
  * Copyright (c) 2026 by 【 tech.darcy.zhang@outlook.com 】, All Rights Reserved.
  */
 import { DEFAULT_CHAT_FONT_SIZE, MAX_CHAT_FONT_SIZE, MIN_CHAT_FONT_SIZE } from "@shared/ChatSettings"
+import { VSCodeButton, VSCodeTextField } from "@vscode/webview-ui-toolkit/react"
 import { useExtensionState } from "@/context/ExtensionStateContext"
+import { useCallback, useEffect, useState } from "react"
 import AutoApproveSettings from "../AutoApproveSettings"
-import { DebouncedTextField } from "../common/DebouncedTextField"
 import PreferredLanguageSetting from "../PreferredLanguageSetting"
 import Section from "../Section"
 import SettingsSlider from "../SettingsSlider"
@@ -23,6 +24,25 @@ interface GeneralSettingsSectionProps {
 
 const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionProps) => {
 	const { chatFontSize, historyPath } = useExtensionState()
+	const [localHistoryPath, setLocalHistoryPath] = useState(historyPath ?? "")
+	const [isSaved, setIsSaved] = useState(true)
+
+	// Sync local state when external historyPath changes
+	useEffect(() => {
+		setLocalHistoryPath(historyPath ?? "")
+		setIsSaved(true)
+	}, [historyPath])
+
+	const handleHistoryPathChange = useCallback((e: any) => {
+		const value = e.target.value
+		setLocalHistoryPath(value)
+		setIsSaved(value === (historyPath ?? ""))
+	}, [historyPath])
+
+	const handleSaveHistoryPath = useCallback(() => {
+		updateSetting("historyPath", localHistoryPath)
+		setIsSaved(true)
+	}, [localHistoryPath])
 
 	return (
 		<div>
@@ -46,14 +66,24 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 
 				<div className="relative p-3 my-3 rounded-md border border-editor-widget-border/50" id="history-path-settings">
 					<div className="mb-2 text-sm font-medium text-foreground">History Path</div>
-					<DebouncedTextField
-						className="w-full"
-						id="history-path"
-						initialValue={historyPath ?? ""}
-						onChange={(value) => updateSetting("historyPath", value)}
-						placeholder="~/coderx-history"
-						type="text"
-					/>
+					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+						<VSCodeTextField
+							className="w-full"
+							id="history-path"
+							onInput={handleHistoryPathChange}
+							placeholder="~/coderx-history"
+							type="text"
+							value={localHistoryPath}
+						/>
+						<VSCodeButton
+							appearance="icon"
+							aria-label="Save History Path"
+							disabled={isSaved}
+							onClick={handleSaveHistoryPath}
+							title="Save History Path">
+							<span className="codicon codicon-check" />
+						</VSCodeButton>
+					</div>
 					<div className="mt-2 text-xs text-description">
 						Stores daily raw user/model message logs and copies user attachments into a matching date folder. Leave
 						blank to disable recording.

@@ -25,17 +25,18 @@ vi.mock("../SettingsSlider", () => ({
 	),
 }))
 
-vi.mock("../common/DebouncedTextField", () => ({
-	DebouncedTextField: ({
-		id,
-		initialValue,
-		onChange,
-	}: {
-		id: string
-		initialValue: string
-		onChange: (value: string) => void
-	}) => <input aria-label="History Path" id={id} onChange={(event) => onChange(event.target.value)} value={initialValue} />,
-}))
+vi.mock("@vscode/webview-ui-toolkit/react", async () => {
+	const actual = await vi.importActual<typeof import("@vscode/webview-ui-toolkit/react")>("@vscode/webview-ui-toolkit/react")
+	return {
+		...actual,
+		VSCodeTextField: ({ id, onInput, value, placeholder }: any) => (
+			<input aria-label="History Path" id={id} onChange={(e: any) => onInput(e)} placeholder={placeholder} value={value} />
+		),
+		VSCodeButton: ({ children, disabled, onClick, ...props }: any) => (
+			<button disabled={disabled} onClick={onClick} {...props}>{children}</button>
+		),
+	}
+})
 
 vi.mock("../AutoApproveSettings", () => ({
 	default: () => <div data-testid="auto-approve-settings-section">Auto-approve settings</div>,
@@ -64,12 +65,31 @@ describe("GeneralSettingsSection", () => {
 		expect(mockUpdateSetting).toHaveBeenCalledWith("chatFontSize", 16)
 	})
 
-	it("renders and updates History Path", () => {
+	it("renders History Path with save button", () => {
 		render(<GeneralSettingsSection renderSectionHeader={() => null} />)
 		const historyPath = screen.getByRole("textbox", { name: "History Path" })
 		expect((historyPath as HTMLInputElement).value).toBe("/tmp/coderx-history")
 
+		// Save button should be disabled initially (no changes)
+		const saveButton = screen.getByRole("button", { name: "Save History Path" })
+		expect(saveButton).toBeTruthy()
+		expect((saveButton as HTMLButtonElement).disabled).toBe(true)
+	})
+
+	it("saves History Path only when save button is clicked", () => {
+		render(<GeneralSettingsSection renderSectionHeader={() => null} />)
+		const historyPath = screen.getByRole("textbox", { name: "History Path" })
+		const saveButton = screen.getByRole("button", { name: "Save History Path" })
+
+		// Type a new value - should NOT call updateSetting yet
 		fireEvent.change(historyPath, { target: { value: "/tmp/new-history" } })
+		expect(mockUpdateSetting).not.toHaveBeenCalledWith("historyPath", "/tmp/new-history")
+
+		// Save button should now be enabled
+		expect((saveButton as HTMLButtonElement).disabled).toBe(false)
+
+		// Click save - should call updateSetting
+		fireEvent.click(saveButton)
 		expect(mockUpdateSetting).toHaveBeenCalledWith("historyPath", "/tmp/new-history")
 	})
 
