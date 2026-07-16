@@ -35,7 +35,7 @@ import { getAxiosSettings } from "@/shared/net"
 import { ShowMessageType } from "@/shared/proto/host/window"
 import { Logger } from "@/shared/services/Logger"
 import { Session } from "@/shared/services/Session"
-import { getCwd, getDesktopDir } from "@/utils/path"
+import { getCwd, getDesktopDir, getWorkspacePath, arePathsEqual } from "@/utils/path"
 import { PromptRegistry } from "../prompts/system-prompt"
 import {
 	ensureCacheDirectoryExists,
@@ -777,10 +777,29 @@ export class Controller {
 		const clineMessages = [...(this.task?.messageStateHandler.getClineMessages() || [])]
 		const checkpointManagerErrorMessage = this.task?.taskState.checkpointManagerErrorMessage
 
+		const workspacePath = await getWorkspacePath()
 		const processedTaskHistory = (taskHistory || [])
-			.filter((item) => item.ts && item.task)
+			.filter((item) => {
+				const hasRequiredFields = item.ts && item.task
+				if (!hasRequiredFields) {
+					return false
+				}
+
+				let isInWorkspace = false
+				if (item.cwdOnTaskInitialization) {
+					if (arePathsEqual(item.cwdOnTaskInitialization, workspacePath)) {
+						isInWorkspace = true
+					}
+				}
+				if (!isInWorkspace && item.shadowGitConfigWorkTree) {
+					if (arePathsEqual(item.shadowGitConfigWorkTree, workspacePath)) {
+						isInWorkspace = true
+					}
+				}
+				return isInWorkspace
+			})
 			.sort((a, b) => b.ts - a.ts)
-			.slice(0, 100) // for now we're only getting the latest 100 tasks, but a better solution here is to only pass in 3 for recent task history, and then get the full task history on demand when going to the task history view (maybe with pagination?)
+			.slice(0, 100)
 
 		const platform = process.platform as Platform
 		const version = ExtensionRegistryInfo.version
