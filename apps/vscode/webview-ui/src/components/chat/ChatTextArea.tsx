@@ -256,6 +256,16 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 		} = useExtensionState();
 		const [isTextAreaFocused, setIsTextAreaFocused] = useState(false);
 		const [isDraggingOver, setIsDraggingOver] = useState(false);
+		const [history, setHistory] = useState<string[]>(() => {
+			try {
+				const saved = localStorage.getItem("chat_input_history");
+				return saved ? JSON.parse(saved) : [];
+			} catch (error) {
+				console.error("Failed to load chat history", error);
+				return [];
+			}
+		});
+		const [historyIndex, setHistoryIndex] = useState<number>(-1);
 		const [gitCommits, setGitCommits] = useState<GitCommit[]>([]);
 		const [showSlashCommandsMenu, setShowSlashCommandsMenu] = useState(false);
 		const [selectedSlashCommandsIndex, setSelectedSlashCommandsIndex] =
@@ -522,6 +532,27 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 			},
 			[setInputValue, slashCommandsQuery, cursorPosition],
 		);
+
+		const triggerSend = useCallback(() => {
+			const trimmedValue = inputValue.trim();
+			if (trimmedValue) {
+				setHistory((prev) => {
+					if (prev[prev.length - 1] === trimmedValue) {
+						return prev;
+					}
+					const newHistory = [...prev, trimmedValue].slice(-50);
+					try {
+						localStorage.setItem("chat_input_history", JSON.stringify(newHistory));
+					} catch (e) {
+						console.error("Failed to save chat history", e);
+					}
+					return newHistory;
+				});
+			}
+			setHistoryIndex(-1);
+			onSend();
+		}, [inputValue, onSend]);
+
 		const handleKeyDown = useCallback(
 			(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
 				const isSelectAllShortcut =
@@ -667,6 +698,52 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 					}
 				}
 
+				if (!showSlashCommandsMenu && !showContextMenu) {
+					if (event.key === "ArrowUp") {
+						if (inputValue === "" || historyIndex !== -1) {
+							if (history.length > 0) {
+								event.preventDefault();
+								let newIndex = historyIndex;
+								if (historyIndex === -1) {
+									newIndex = history.length - 1;
+								} else if (historyIndex > 0) {
+									newIndex = historyIndex - 1;
+								}
+								setHistoryIndex(newIndex);
+								setInputValue(history[newIndex]);
+								setTimeout(() => {
+									if (textAreaRef.current) {
+										const len = history[newIndex].length;
+										textAreaRef.current.setSelectionRange(len, len);
+									}
+								}, 0);
+							}
+							return;
+						}
+					}
+
+					if (event.key === "ArrowDown") {
+						if (historyIndex !== -1) {
+							event.preventDefault();
+							if (historyIndex < history.length - 1) {
+								const newIndex = historyIndex + 1;
+								setHistoryIndex(newIndex);
+								setInputValue(history[newIndex]);
+								setTimeout(() => {
+									if (textAreaRef.current) {
+										const len = history[newIndex].length;
+										textAreaRef.current.setSelectionRange(len, len);
+									}
+								}, 0);
+							} else {
+								setHistoryIndex(-1);
+								setInputValue("");
+							}
+							return;
+						}
+					}
+				}
+
 				// Safari does not support InputEvent.isComposing (always false), so we need to fallback to keyCode === 229 for it
 				const isComposing = isSafari
 					? event.nativeEvent.keyCode === 229
@@ -676,7 +753,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 
 					if (!sendingDisabled || isTaskRunning) {
 						setIsTextAreaFocused(false);
-						onSend();
+						triggerSend();
 					}
 				}
 
@@ -768,7 +845,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				}
 			},
 			[
-				onSend,
+				triggerSend,
 				showContextMenu,
 				searchQuery,
 				selectedMenuIndex,
@@ -786,6 +863,9 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				handleSlashCommandsSelect,
 				sendingDisabled,
 				isTaskRunning,
+				history,
+				historyIndex,
+				setHistoryIndex,
 			],
 		);
 
@@ -843,6 +923,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				const newCursorPosition = e.target.selectionStart;
 				setInputValue(newValue);
 				setCursorPosition(newCursorPosition);
+				setHistoryIndex(-1);
 				let showMenu = shouldShowContextMenu(newValue, newCursorPosition);
 				const showSlashCommandsMenu = shouldShowSlashCommandsMenu(
 					newValue,
@@ -1749,7 +1830,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 										onCancel();
 									} else if (!sendingDisabled) {
 										setIsTextAreaFocused(false);
-										onSend();
+										triggerSend();
 									}
 								}}
 								role="button"
