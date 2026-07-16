@@ -1,19 +1,23 @@
 import { ClineMessage } from "@shared/ExtensionMessage"
+import { RenameTaskRequest } from "@shared/proto/cline/task"
 import { ChevronDownIcon, ChevronRightIcon } from "lucide-react"
 import React, { useCallback, useLayoutEffect, useMemo, useState } from "react"
 import Thumbnails from "@/components/common/Thumbnails"
 import { getModeSpecificFields, normalizeApiConfiguration } from "@/components/settings/utils/providerUtils"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import { cn } from "@/lib/utils"
+import { TaskServiceClient } from "@/services/grpc-client"
 import { getEnvironmentColor } from "@/utils/environmentColors"
 import CopyTaskButton from "./buttons/CopyTaskButton"
 import DeleteTaskButton from "./buttons/DeleteTaskButton"
+import EditTaskButton from "./buttons/EditTaskButton"
 import NewTaskButton from "./buttons/NewTaskButton"
 import OpenDiskConversationHistoryButton from "./buttons/OpenDiskConversationHistoryButton"
 import { CheckpointError } from "./CheckpointError"
 import ContextWindow from "./ContextWindow"
 import { FocusChain } from "./FocusChain"
 import { highlightText } from "./Highlights"
+import { TaskTitleEditor } from "./TaskTitleEditor"
 
 const IS_DEV = process.env.IS_DEV === "true"
 interface TaskHeaderProps {
@@ -60,9 +64,13 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 
 	const [isHighlightedTextExpanded, setIsHighlightedTextExpanded] = useState(false)
 	const [isTextOverflowing, setIsTextOverflowing] = useState(false)
+	const [isEditingTitle, setIsEditingTitle] = useState(false)
+	const [titleDraft, setTitleDraft] = useState("")
+	const [isSavingTitle, setIsSavingTitle] = useState(false)
 	const highlightedTextRef = React.useRef<HTMLDivElement>(null)
 
-	const highlightedText = useMemo(() => highlightText(task.text, false), [task.text])
+	const displayTitle = currentTaskItem?.task || task.text
+	const highlightedText = useMemo(() => highlightText(displayTitle, false), [displayTitle])
 
 	// Check if text overflows the container (i.e., needs clamping)
 	useLayoutEffect(() => {
@@ -71,7 +79,7 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 			// Check if content height exceeds the max-height
 			setIsTextOverflowing(el.scrollHeight > el.clientHeight)
 		}
-	}, [task.text, isTaskExpanded, isHighlightedTextExpanded])
+	}, [displayTitle, isTaskExpanded, isHighlightedTextExpanded])
 
 	// Handle click outside to collapse
 	React.useEffect(() => {
@@ -109,6 +117,36 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 	const handleCheckpointSettingsClick = useCallback(() => {
 		navigateToSettings("features")
 	}, [navigateToSettings])
+
+	const handleStartTitleEdit = useCallback(() => {
+		if (!currentTaskItem?.id || isEditingTitle) {
+			return
+		}
+		setTitleDraft(displayTitle)
+		setIsEditingTitle(true)
+	}, [currentTaskItem?.id, displayTitle, isEditingTitle])
+
+	const handleConfirmTitle = useCallback(async () => {
+		const newName = titleDraft.trim()
+		if (!currentTaskItem?.id || !newName || isSavingTitle) {
+			return
+		}
+
+		setIsSavingTitle(true)
+		try {
+			await TaskServiceClient.renameTask(
+				RenameTaskRequest.create({
+					taskId: currentTaskItem.id,
+					newName,
+				}),
+			)
+			setIsEditingTitle(false)
+		} catch (error) {
+			console.error("Failed to rename task:", error)
+		} finally {
+			setIsSavingTitle(false)
+		}
+	}, [currentTaskItem?.id, isSavingTitle, titleDraft])
 
 	const environmentBorderColor = getEnvironmentColor(environment, "border")
 
@@ -148,6 +186,11 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 						{isTaskExpanded ? <ChevronDownIcon size="16" /> : <ChevronRightIcon size="16" />}
 						{isTaskExpanded && (
 							<div className="mt-1 flex justify-end cursor-pointer opacity-80 gap-2 mx-2">
+								<EditTaskButton
+									className={BUTTON_CLASS}
+									disabled={!currentTaskItem?.id || isEditingTitle}
+									onClick={handleStartTitleEdit}
+								/>
 								<CopyTaskButton className={BUTTON_CLASS} taskText={task.text} />
 								<DeleteTaskButton
 									className={BUTTON_CLASS}
@@ -183,27 +226,36 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 				{/* Expand/Collapse Task Details */}
 				{isTaskExpanded && (
 					<div className="flex flex-col break-words" key={`task-details-${currentTaskItem?.id}`}>
-						<div
-							className={cn(
-								"ph-no-capture whitespace-pre-wrap break-words px-0.5 text-sm mt-1 relative",
-								"max-h-[4.5rem] overflow-hidden",
-								{
-									"max-h-[25vh] overflow-y-auto scroll-smooth": isHighlightedTextExpanded,
-									"cursor-pointer": isTextOverflowing,
-								},
-							)}
-							onClick={() => isTextOverflowing && setIsHighlightedTextExpanded(true)}
-							ref={highlightedTextRef}
-							style={
-								!isHighlightedTextExpanded && isTextOverflowing
-									? {
-											WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
-											maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
-										}
-									: undefined
-							}>
-							{highlightedText}
-						</div>
+						{isEditingTitle ? (
+							<TaskTitleEditor
+								isSaving={isSavingTitle}
+								onChange={setTitleDraft}
+								onConfirm={handleConfirmTitle}
+								value={titleDraft}
+							/>
+						) : (
+							<div
+								className={cn(
+									"ph-no-capture whitespace-pre-wrap break-words px-0.5 text-sm mt-1 relative",
+									"max-h-[4.5rem] overflow-hidden",
+									{
+										"max-h-[25vh] overflow-y-auto scroll-smooth": isHighlightedTextExpanded,
+										"cursor-pointer": isTextOverflowing,
+									},
+								)}
+								onClick={() => isTextOverflowing && setIsHighlightedTextExpanded(true)}
+								ref={highlightedTextRef}
+								style={
+									!isHighlightedTextExpanded && isTextOverflowing
+										? {
+												WebkitMaskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
+												maskImage: "linear-gradient(to bottom, black 60%, transparent 100%)",
+											}
+										: undefined
+								}>
+								{highlightedText}
+							</div>
+						)}
 
 						{((task.images && task.images.length > 0) || (task.files && task.files.length > 0)) && (
 							<Thumbnails files={task.files ?? []} images={task.images ?? []} />

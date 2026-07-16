@@ -26,6 +26,8 @@ service TaskService {
   rpc exportTaskWithId(StringRequest) returns (Empty);
   // Toggles the favorite status of a task
   rpc toggleTaskFavorite(TaskFavoriteRequest) returns (Empty);
+  // Renames a task in local history
+  rpc renameTask(RenameTaskRequest) returns (Empty);
   // Gets filtered task history
   rpc getTaskHistory(GetTaskHistoryRequest) returns (TaskHistoryArray);
   // Sends a response to a previous ask operation
@@ -52,6 +54,12 @@ message TaskFavoriteRequest {
   Metadata metadata = 1;
   string task_id = 2;
   bool is_favorited = 3;
+}
+
+// Request for renaming a task in local history
+message RenameTaskRequest {
+  string task_id = 1;
+  string new_name = 2;
 }
 
 // Response for task details
