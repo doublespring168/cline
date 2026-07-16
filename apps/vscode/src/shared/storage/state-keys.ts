@@ -29,6 +29,10 @@ import {
 	McpDisplayMode,
 } from "@shared/McpDisplayMode";
 import { WorkspaceRoot } from "@shared/multi-root/types";
+import {
+	createDefaultPendingMessageQueue,
+	PendingMessageQueue,
+} from "@shared/PendingMessageQueue";
 import { Mode } from "@shared/storage/types";
 import { SavedApiConfig } from "@shared/SavedApiConfig";
 import { LanguageModelChatSelector } from "vscode";
@@ -297,6 +301,7 @@ const USER_SETTINGS_FIELDS = {
 		default: DEFAULT_CHAT_FONT_SIZE as number,
 		transform: normalizeChatFontSize,
 	},
+	historyPath: { default: undefined as string | undefined },
 	mode: { default: "act" as Mode },
 	focusChainSettings: {
 		default: DEFAULT_FOCUS_CHAIN_SETTINGS as FocusChainSettings,
@@ -370,13 +375,18 @@ const SECRETS_KEYS = [
 
 // WARNING, these are not ALL of the local state keys in practice. For example, FileContextTracker
 // uses dynamic keys like pendingFileContextWarning_${taskId}.
-export const LocalStateKeys = [
+const LOCAL_TOGGLE_STATE_KEYS = [
 	"localClineRulesToggles",
 	"localCursorRulesToggles",
 	"localWindsurfRulesToggles",
 	"localAgentsRulesToggles",
 	"localSkillsToggles",
 	"workflowToggles",
+] as const;
+
+export const LocalStateKeys = [
+	...LOCAL_TOGGLE_STATE_KEYS,
+	"pendingMessageQueue",
 ] as const;
 
 // ============================================================================
@@ -404,13 +414,24 @@ export type Secrets = {
 	[K in (typeof SecretKeys)[number]]: string | undefined;
 };
 export type LocalState = {
-	[K in (typeof LocalStateKeys)[number]]: ClineRulesToggles;
+	[K in (typeof LOCAL_TOGGLE_STATE_KEYS)[number]]: ClineRulesToggles;
+} & {
+	pendingMessageQueue: PendingMessageQueue;
 };
 export type SecretKey = (typeof SecretKeys)[number];
 export type GlobalStateKey = keyof GlobalState;
 export type LocalStateKey = keyof LocalState;
 export type SettingsKey = keyof Settings;
 export type GlobalStateAndSettingsKey = keyof GlobalStateAndSettings;
+
+export function getLocalStateDefault<K extends LocalStateKey>(
+	key: K,
+): LocalState[K] {
+	if (key === "pendingMessageQueue") {
+		return createDefaultPendingMessageQueue() as LocalState[K];
+	}
+	return {} as LocalState[K];
+}
 
 // ============================================================================
 // GENERATED KEYS AND LOOKUP SETS - Auto-generated from property definitions

@@ -42,7 +42,15 @@ interface MessageStateHandlerParams {
 	taskIsFavorited?: boolean
 	updateTaskHistory: (historyItem: HistoryItem) => Promise<HistoryItem[]>
 	taskState: TaskState
+	onApiConversationMessageAdded?: (
+		message: ClineStorageMessage,
+		metadata?: ApiConversationMessageMetadata,
+	) => Promise<void>
 	checkpointManagerErrorMessage?: string
+}
+
+export interface ApiConversationMessageMetadata {
+	rawResponseText?: string
 }
 
 export class MessageStateHandler extends EventEmitter<MessageStateHandlerEvents> {
@@ -54,6 +62,10 @@ export class MessageStateHandler extends EventEmitter<MessageStateHandlerEvents>
 	private taskId: string
 	private ulid: string
 	private taskState: TaskState
+	private onApiConversationMessageAdded?: (
+		message: ClineStorageMessage,
+		metadata?: ApiConversationMessageMetadata,
+	) => Promise<void>
 
 	// Mutex to prevent concurrent state modifications (RC-4)
 	// Protects against data loss from race conditions when multiple
@@ -68,6 +80,7 @@ export class MessageStateHandler extends EventEmitter<MessageStateHandlerEvents>
 		this.taskState = params.taskState
 		this.taskIsFavorited = params.taskIsFavorited ?? false
 		this.updateTaskHistory = params.updateTaskHistory
+		this.onApiConversationMessageAdded = params.onApiConversationMessageAdded
 	}
 
 	/**
@@ -175,11 +188,12 @@ export class MessageStateHandler extends EventEmitter<MessageStateHandlerEvents>
 		})
 	}
 
-	async addToApiConversationHistory(message: ClineStorageMessage) {
+	async addToApiConversationHistory(message: ClineStorageMessage, metadata?: ApiConversationMessageMetadata) {
 		// Protect with mutex to prevent concurrent modifications from corrupting data (RC-4)
 		return await this.withStateLock(async () => {
 			this.apiConversationHistory.push(message)
 			await saveApiConversationHistory(this.taskId, this.apiConversationHistory)
+			await this.onApiConversationMessageAdded?.(message, metadata)
 		})
 	}
 

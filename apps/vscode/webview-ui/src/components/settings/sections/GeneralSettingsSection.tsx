@@ -11,6 +11,7 @@
 import { DEFAULT_CHAT_FONT_SIZE, MAX_CHAT_FONT_SIZE, MIN_CHAT_FONT_SIZE } from "@shared/ChatSettings"
 import { useExtensionState } from "@/context/ExtensionStateContext"
 import AutoApproveSettings from "../AutoApproveSettings"
+import { DebouncedTextField } from "../common/DebouncedTextField"
 import PreferredLanguageSetting from "../PreferredLanguageSetting"
 import Section from "../Section"
 import SettingsSlider from "../SettingsSlider"
@@ -21,7 +22,7 @@ interface GeneralSettingsSectionProps {
 }
 
 const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionProps) => {
-	const { chatFontSize } = useExtensionState()
+	const { chatFontSize, historyPath } = useExtensionState()
 
 	return (
 		<div>
@@ -40,6 +41,22 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 							value={chatFontSize ?? DEFAULT_CHAT_FONT_SIZE}
 							valueWidth="w-8"
 						/>
+					</div>
+				</div>
+
+				<div className="relative p-3 my-3 rounded-md border border-editor-widget-border/50" id="history-path-settings">
+					<div className="mb-2 text-sm font-medium text-foreground">History Path</div>
+					<DebouncedTextField
+						className="w-full"
+						id="history-path"
+						initialValue={historyPath ?? ""}
+						onChange={(value) => updateSetting("historyPath", value)}
+						placeholder="~/coderx-history"
+						type="text"
+					/>
+					<div className="mt-2 text-xs text-description">
+						Stores daily raw user/model message logs and copies user attachments into a matching date folder. Leave
+						blank to disable recording.
 					</div>
 				</div>
 

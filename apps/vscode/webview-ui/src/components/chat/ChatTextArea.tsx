@@ -674,7 +674,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				if (event.key === "Enter" && !event.shiftKey && !isComposing) {
 					event.preventDefault();
 
-					if (!sendingDisabled) {
+					if (!sendingDisabled || isTaskRunning) {
 						setIsTextAreaFocused(false);
 						onSend();
 					}
@@ -785,6 +785,7 @@ const ChatTextArea = forwardRef<HTMLTextAreaElement, ChatTextAreaProps>(
 				slashCommandsQuery,
 				handleSlashCommandsSelect,
 				sendingDisabled,
+				isTaskRunning,
 			],
 		);
 

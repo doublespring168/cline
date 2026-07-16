@@ -38,6 +38,14 @@ service TaskService {
   rpc deleteAllTaskHistory(EmptyRequest) returns (DeleteAllTaskHistoryCount);
   // Explains changes with AI and adds inline comments to the diff view
   rpc explainChanges(ExplainChangesRequest) returns (Empty);
+  // Adds a user message to the persistent pending-message queue
+  rpc enqueuePendingMessage(PendingMessageRequest) returns (Empty);
+  // Moves a queued message to the front of the queue
+  rpc movePendingMessageToFront(StringRequest) returns (Empty);
+  // Deletes a queued message
+  rpc deletePendingMessage(StringRequest) returns (Empty);
+  // Resumes automatic delivery of queued messages
+  rpc resumePendingMessageQueue(EmptyRequest) returns (Empty);
 }
 
 // Request message for creating a new task
@@ -114,6 +122,13 @@ message AskResponseRequest {
   string text = 3;
   repeated string images = 4;
   repeated string files = 5;
+}
+
+// A user message waiting for the current task to finish.
+message PendingMessageRequest {
+  string text = 1;
+  repeated string images = 2;
+  repeated string files = 3;
 }
 
 // Results returned when deleting all task history

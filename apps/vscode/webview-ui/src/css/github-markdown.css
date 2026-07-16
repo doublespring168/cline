@@ -717,7 +717,10 @@
 .markdown-body table th,
 .markdown-body table td {
 	padding: 6px 13px;
-	border: 1px solid var(--borderColor-default);
+	border-top: 1px solid var(--borderColor-default);
+	border-right: 0;
+	border-bottom: 1px solid var(--borderColor-default);
+	border-left: 0;
 }
 
 .markdown-body table td > :last-child {
@@ -729,8 +732,12 @@
 	border-top: 1px solid var(--borderColor-muted);
 }
 
-.markdown-body table tr:nth-child(2n) {
-	background-color: var(--bgColor-muted);
+.markdown-body table tr:nth-child(odd) {
+	background-color: color-mix(in srgb, var(--bgColor-muted) 50%, transparent);
+}
+
+.markdown-body table tr:nth-child(even) {
+	background-color: transparent;
 }
 
 .markdown-body table img {

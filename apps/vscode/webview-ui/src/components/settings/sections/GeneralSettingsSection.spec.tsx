@@ -7,6 +7,7 @@ const mockUpdateSetting = vi.fn()
 vi.mock("@/context/ExtensionStateContext", () => ({
 	useExtensionState: vi.fn(() => ({
 		chatFontSize: 15,
+		historyPath: "/tmp/coderx-history",
 		preferredLanguage: "English",
 	})),
 }))
@@ -22,6 +23,18 @@ vi.mock("../SettingsSlider", () => ({
 			<input aria-label={label} onChange={(event) => onChange(Number(event.target.value))} type="range" value={value} />
 		</label>
 	),
+}))
+
+vi.mock("../common/DebouncedTextField", () => ({
+	DebouncedTextField: ({
+		id,
+		initialValue,
+		onChange,
+	}: {
+		id: string
+		initialValue: string
+		onChange: (value: string) => void
+	}) => <input aria-label="History Path" id={id} onChange={(event) => onChange(event.target.value)} value={initialValue} />,
 }))
 
 vi.mock("../AutoApproveSettings", () => ({
@@ -49,6 +62,15 @@ describe("GeneralSettingsSection", () => {
 		fireEvent.change(slider, { target: { value: "16" } })
 
 		expect(mockUpdateSetting).toHaveBeenCalledWith("chatFontSize", 16)
+	})
+
+	it("renders and updates History Path", () => {
+		render(<GeneralSettingsSection renderSectionHeader={() => null} />)
+		const historyPath = screen.getByRole("textbox", { name: "History Path" })
+		expect((historyPath as HTMLInputElement).value).toBe("/tmp/coderx-history")
+
+		fireEvent.change(historyPath, { target: { value: "/tmp/new-history" } })
+		expect(mockUpdateSetting).toHaveBeenCalledWith("historyPath", "/tmp/new-history")
 	})
 
 	it("renders Auto-approve settings as the last General section", () => {

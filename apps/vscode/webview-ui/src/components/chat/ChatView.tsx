@@ -11,6 +11,7 @@ import { useExtensionState } from "@/context/ExtensionStateContext";
 import { useShowNavbar } from "@/context/PlatformContext";
 import { FileServiceClient, UiServiceClient } from "@/services/grpc-client";
 import { Navbar } from "../menu/Navbar";
+import PendingMessageQueueCard from "./PendingMessageQueueCard";
 // Import utilities and hooks from the new structure
 import {
 	ActionButtons,
@@ -198,7 +199,11 @@ const ChatView = ({ isHidden, showHistoryView }: ChatViewProps) => {
 	// handleFocusChange is already provided by chatState
 
 	// Use message handlers hook
-	const messageHandlers = useMessageHandlers(messages, chatState);
+	const messageHandlers = useMessageHandlers(
+		messages,
+		chatState,
+		isTaskRunning,
+	);
 
 	const { selectedModelInfo } = useMemo(() => {
 		return normalizeApiConfiguration(apiConfiguration, mode);
@@ -415,6 +420,7 @@ const ChatView = ({ isHidden, showHistoryView }: ChatViewProps) => {
 					mode={mode}
 					task={task}
 				/>
+				<PendingMessageQueueCard />
 				<InputSection
 					chatState={chatState}
 					isTaskRunning={isTaskRunning}

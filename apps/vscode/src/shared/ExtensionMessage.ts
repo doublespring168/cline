@@ -12,6 +12,7 @@ import { FocusChainSettings } from "./FocusChainSettings"
 import { HistoryItem } from "./HistoryItem"
 import { McpDisplayMode } from "./McpDisplayMode"
 import { ClineMessageModelInfo } from "./messages"
+import { PendingMessageQueue } from "./PendingMessageQueue"
 import { Mode } from "./storage/types"
 // webview will hold state
 export interface ExtensionMessage {
@@ -41,9 +42,11 @@ export interface ExtensionState {
 	remoteBrowserHost?: string
 	preferredLanguage?: string
 	chatFontSize: number
+	historyPath?: string
 	mode: Mode
 	checkpointManagerErrorMessage?: string
 	clineMessages: ClineMessage[]
+	pendingMessageQueue: PendingMessageQueue
 	currentTaskItem?: HistoryItem
 	currentFocusChainChecklist?: string | null
 	mcpDisplayMode: McpDisplayMode

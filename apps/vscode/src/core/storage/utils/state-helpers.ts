@@ -5,9 +5,11 @@ import {
 	GlobalStateAndSettingKeys,
 	GlobalStateAndSettings,
 	getDefaultValue,
+	getLocalStateDefault,
 	isAsyncProperty,
 	isComputedProperty,
 	LocalState,
+	LocalStateKey,
 	LocalStateKeys,
 	SecretKeys,
 	Secrets,
@@ -34,7 +36,7 @@ export function readSecretsFromStorage(store: ClineFileStorage<string>): Secrets
  */
 export function readWorkspaceStateFromStorage(store: ClineFileStorage): LocalState {
 	return LocalStateKeys.reduce((acc, key) => {
-		acc[key] = store.get(key) || {}
+		;(acc as Record<LocalStateKey, unknown>)[key] = store.get(key) ?? getLocalStateDefault(key)
 		return acc
 	}, {} as LocalState)
 }
@@ -116,7 +118,7 @@ async function handleAsyncProperties(result: any): Promise<void> {
 
 export async function resetWorkspaceState() {
 	const stateManager = StateManager.get()
-	LocalStateKeys.map((key) => stateManager.setWorkspaceState(key, {}))
+	LocalStateKeys.map((key) => stateManager.setWorkspaceState(key, getLocalStateDefault(key)))
 	await stateManager.reInitialize()
 }
 

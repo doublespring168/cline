@@ -11,6 +11,12 @@ import type { ChatContent } from "@shared/ChatContent"
 import type { ExtensionState, Platform } from "@shared/ExtensionMessage"
 import { DEFAULT_FOCUS_CHAIN_SETTINGS } from "@shared/FocusChainSettings"
 import type { HistoryItem } from "@shared/HistoryItem"
+import {
+	deletePendingMessage,
+	movePendingMessageToFront,
+	normalizePendingMessageQueue,
+	type PendingMessageQueue,
+} from "@shared/PendingMessageQueue"
 import { type Settings } from "@shared/storage/state-keys"
 import type { Mode } from "@shared/storage/types"
 import { fileExistsAtPath } from "@utils/fs"
@@ -61,6 +67,9 @@ export class Controller {
 
 	// Flag to prevent duplicate cancellations from spam clicking
 	private cancelInProgress = false
+	private isConsumingPendingMessage = false
+	private pendingQueueResumeRequested = false
+	private pendingMessageDeliveredAskTs?: number
 
 	// Public getter for workspace manager with lazy initialization - To get workspaces when task isn't initialized (Used by file mentions)
 	async ensureWorkspaceManager(): Promise<WorkspaceRootManager | undefined> {
@@ -578,6 +587,144 @@ export class Controller {
 	async postStateToWebview() {
 		const state = await this.getStateToPostToWebview()
 		await sendStateUpdate(state)
+
+		// A completed task waits on a completion_result ask. Delivering the queue
+		// response here wakes that ask without coupling the queue to tool internals.
+		const queueTrigger = this.pendingQueueResumeRequested ? "resume" : "completion"
+		await this.consumePendingMessageIfReady(queueTrigger).catch((error) => {
+			Logger.error("[PendingMessageQueue] Failed to deliver the next message:", error)
+		})
+	}
+
+	getPendingMessageQueue(): PendingMessageQueue {
+		return normalizePendingMessageQueue(this.stateManager.getWorkspaceStateKey("pendingMessageQueue"))
+	}
+
+	async enqueuePendingMessage(text: string, images: string[], files: string[]): Promise<void> {
+		const queue = this.getPendingMessageQueue()
+		queue.items.push({
+			id: crypto.randomUUID(),
+			text,
+			images: [...images],
+			files: [...files],
+			createdAt: Date.now(),
+		})
+		await this.persistPendingMessageQueue(queue)
+	}
+
+	async movePendingMessageToFront(messageId: string): Promise<void> {
+		const queue = this.getPendingMessageQueue()
+		const updatedQueue = movePendingMessageToFront(queue, messageId)
+		if (updatedQueue !== queue) {
+			await this.persistPendingMessageQueue(updatedQueue)
+		}
+	}
+
+	async deletePendingMessage(messageId: string): Promise<void> {
+		const queue = this.getPendingMessageQueue()
+		const updatedQueue = deletePendingMessage(queue, messageId)
+		if (updatedQueue.items.length !== queue.items.length) {
+			if (updatedQueue.items.length === 0) {
+				this.pendingQueueResumeRequested = false
+			}
+			await this.persistPendingMessageQueue(updatedQueue)
+		}
+	}
+
+	async pausePendingMessageQueue(): Promise<void> {
+		const queue = this.getPendingMessageQueue()
+		if (queue.items.length === 0 || queue.paused) {
+			return
+		}
+		await this.persistPendingMessageQueue({ ...queue, paused: true }, false)
+	}
+
+	async resumePendingMessageQueue(): Promise<void> {
+		const queue = this.getPendingMessageQueue()
+		const nextMessageId = queue.items[0]?.id
+		if (!nextMessageId) {
+			return
+		}
+
+		this.pendingQueueResumeRequested = true
+		if (queue.paused) {
+			await this.persistPendingMessageQueue({ ...queue, paused: false })
+		}
+		// persistPendingMessageQueue posts state and may consume the head itself.
+		// Only retry directly when the same head is still waiting.
+		if (this.getPendingMessageQueue().items[0]?.id === nextMessageId) {
+			await this.consumePendingMessageIfReady("resume")
+		}
+	}
+
+	private async persistPendingMessageQueue(queue: PendingMessageQueue, postState = true): Promise<void> {
+		this.stateManager.setWorkspaceState("pendingMessageQueue", queue)
+		await this.stateManager.flushPendingState()
+		if (postState) {
+			await this.postStateToWebview()
+		}
+	}
+
+	private async consumePendingMessageIfReady(trigger: "completion" | "resume"): Promise<void> {
+		if (this.isConsumingPendingMessage) {
+			return
+		}
+
+		const queue = this.getPendingMessageQueue()
+		const nextMessage = queue.items[0]
+		if (!nextMessage || queue.paused) {
+			return
+		}
+
+		this.isConsumingPendingMessage = true
+		try {
+			if (this.task) {
+				const lastMessage = this.task.messageStateHandler.getClineMessages().at(-1)
+				if (lastMessage?.type !== "ask") {
+					this.pendingMessageDeliveredAskTs = undefined
+					return
+				}
+				if (lastMessage.ts === this.pendingMessageDeliveredAskTs) {
+					return
+				}
+
+				if (lastMessage.ask === "completion_result") {
+					await this.task.handleWebviewAskResponse(
+						"messageResponse",
+						nextMessage.text,
+						nextMessage.images,
+						nextMessage.files,
+					)
+				} else if (
+					trigger === "resume" &&
+					(lastMessage.ask === "resume_task" || lastMessage.ask === "resume_completed_task")
+				) {
+					await this.task.handleWebviewAskResponse(
+						"yesButtonClicked",
+						nextMessage.text,
+						nextMessage.images,
+						nextMessage.files,
+					)
+				} else {
+					return
+				}
+				this.pendingMessageDeliveredAskTs = lastMessage.ts
+			} else if (trigger === "resume") {
+				this.pendingMessageDeliveredAskTs = undefined
+				await this.initTask(nextMessage.text, nextMessage.images, nextMessage.files)
+			} else {
+				return
+			}
+
+			// Remove only after the task accepted the message. Delete by id so a
+			// concurrent reorder cannot remove the wrong queue entry.
+			const latestQueue = this.getPendingMessageQueue()
+			const updatedQueue = deletePendingMessage(latestQueue, nextMessage.id)
+			this.pendingQueueResumeRequested = false
+			await this.persistPendingMessageQueue(updatedQueue)
+		} finally {
+			this.isConsumingPendingMessage = false
+		}
 	}
 
 	async getStateToPostToWebview(): Promise<ExtensionState> {
@@ -589,6 +736,7 @@ export class Controller {
 		const focusChainSettings = this.stateManager.getGlobalSettingsKey("focusChainSettings") ?? DEFAULT_FOCUS_CHAIN_SETTINGS
 		const preferredLanguage = this.stateManager.getGlobalSettingsKey("preferredLanguage")
 		const chatFontSize = this.stateManager.getGlobalSettingsKey("chatFontSize")
+		const historyPath = this.stateManager.getGlobalSettingsKey("historyPath")
 		const mode = this.stateManager.getGlobalSettingsKey("mode")
 		const strictPlanModeEnabled = this.stateManager.getGlobalSettingsKey("strictPlanModeEnabled")
 		const yoloModeToggled = this.stateManager.getGlobalSettingsKey("yoloModeToggled")
@@ -621,6 +769,7 @@ export class Controller {
 		const localCursorRulesToggles = this.stateManager.getWorkspaceStateKey("localCursorRulesToggles")
 		const localAgentsRulesToggles = this.stateManager.getWorkspaceStateKey("localAgentsRulesToggles")
 		const workflowToggles = this.stateManager.getWorkspaceStateKey("workflowToggles")
+		const pendingMessageQueue = this.getPendingMessageQueue()
 
 		const currentTaskItem = this.task?.taskId ? (taskHistory || []).find((item) => item.id === this.task?.taskId) : undefined
 		// Spread to create new array reference - React needs this to detect changes in useEffect dependencies
@@ -646,6 +795,7 @@ export class Controller {
 			apiConfiguration,
 			currentTaskItem,
 			clineMessages,
+			pendingMessageQueue,
 			currentFocusChainChecklist: this.task?.taskState.currentFocusChainChecklist || null,
 			checkpointManagerErrorMessage,
 			autoApprovalSettings,
@@ -653,6 +803,7 @@ export class Controller {
 			focusChainSettings,
 			preferredLanguage,
 			chatFontSize,
+			historyPath,
 			mode,
 			strictPlanModeEnabled,
 			yoloModeToggled,

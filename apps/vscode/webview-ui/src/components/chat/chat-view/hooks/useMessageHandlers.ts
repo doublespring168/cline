@@ -1,6 +1,6 @@
 import type { ClineMessage } from "@shared/ExtensionMessage"
 import { EmptyRequest, StringRequest } from "@shared/proto/cline/common"
-import { AskResponseRequest, NewTaskRequest } from "@shared/proto/cline/task"
+import { AskResponseRequest, NewTaskRequest, PendingMessageRequest } from "@shared/proto/cline/task"
 import { useCallback, useRef } from "react"
 import { SlashServiceClient, TaskServiceClient } from "@/services/grpc-client"
 import type { ButtonActionType } from "../shared/buttonConfig"
@@ -10,7 +10,7 @@ import type { ChatState, MessageHandlers } from "../types/chatTypes"
  * Custom hook for managing message handlers
  * Handles sending messages, button clicks, and task management
  */
-export function useMessageHandlers(messages: ClineMessage[], chatState: ChatState): MessageHandlers {
+export function useMessageHandlers(messages: ClineMessage[], chatState: ChatState, isTaskRunning: boolean): MessageHandlers {
 	const {
 		setInputValue,
 		activeQuote,
@@ -41,8 +41,19 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 			if (hasContent) {
 				console.log("[ChatView] handleSendMessage - Sending message:", messageToSend)
 				let messageSent = false
+				let messageQueued = false
 
-				if (messages.length === 0) {
+				if (isTaskRunning) {
+					await TaskServiceClient.enqueuePendingMessage(
+						PendingMessageRequest.create({
+							text: messageToSend,
+							images,
+							files,
+						}),
+					)
+					messageSent = true
+					messageQueued = true
+				} else if (messages.length === 0) {
 					await TaskServiceClient.newTask(
 						NewTaskRequest.create({
 							text: messageToSend,
@@ -92,35 +103,18 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 								break
 						}
 					}
-				} else if (messages.length > 0) {
-					// No clineAsk set - check if task is actively running
-					// If so, allow interrupting it with feedback
-					const lastMessage = messages[messages.length - 1]
-					const isTaskRunning =
-						lastMessage.partial === true || (lastMessage.type === "say" && lastMessage.say === "api_req_started")
-
-					if (isTaskRunning) {
-						// Task is running - send message as interruption/feedback
-						await TaskServiceClient.askResponse(
-							AskResponseRequest.create({
-								responseType: "messageResponse",
-								text: messageToSend,
-								images,
-								files,
-							}),
-						)
-						messageSent = true
-					}
 				}
 
 				// Only clear input and disable UI if message was actually sent
 				if (messageSent) {
 					setInputValue("")
 					setActiveQuote(null)
-					setSendingDisabled(true)
 					setSelectedImages([])
 					setSelectedFiles([])
-					setEnableButtons(false)
+					if (!messageQueued) {
+						setSendingDisabled(true)
+						setEnableButtons(false)
+					}
 
 					// Reset auto-scroll
 					if ("disableAutoScrollRef" in chatState) {
@@ -131,6 +125,7 @@ export function useMessageHandlers(messages: ClineMessage[], chatState: ChatStat
 		},
 		[
 			messages.length,
+			isTaskRunning,
 			clineAsk,
 			activeQuote,
 			setInputValue,

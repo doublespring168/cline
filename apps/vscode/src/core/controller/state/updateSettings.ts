@@ -1,4 +1,5 @@
 import { buildApiHandler } from "@core/api"
+import { ConversationHistoryRecorder } from "@core/history/ConversationHistoryRecorder"
 import { normalizeChatFontSize } from "@shared/ChatSettings"
 import { Empty } from "@shared/proto/cline/common"
 import { PlanActMode, McpDisplayMode as ProtoMcpDisplayMode, UpdateSettingsRequest } from "@shared/proto/cline/state"
@@ -98,6 +99,12 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 
 		if (request.chatFontSize !== undefined) {
 			controller.stateManager.setGlobalState("chatFontSize", normalizeChatFontSize(request.chatFontSize))
+		}
+
+		if (request.historyPath !== undefined) {
+			const historyPath = request.historyPath.trim()
+			await ConversationHistoryRecorder.ensureHistoryPath(historyPath)
+			controller.stateManager.setGlobalState("historyPath", historyPath || undefined)
 		}
 
 		// Update terminal timeout setting

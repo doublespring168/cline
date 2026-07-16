@@ -5,6 +5,7 @@ import { DEFAULT_CHAT_FONT_SIZE } from "@shared/ChatSettings"
 import { DEFAULT_PLATFORM, type ExtensionState } from "@shared/ExtensionMessage"
 import { DEFAULT_FOCUS_CHAIN_SETTINGS } from "@shared/FocusChainSettings"
 import { DEFAULT_MCP_DISPLAY_MODE } from "@shared/McpDisplayMode"
+import { createDefaultPendingMessageQueue } from "@shared/PendingMessageQueue"
 import { EmptyRequest } from "@shared/proto/cline/common"
 import type { OpenRouterCompatibleModelInfo } from "@shared/proto/cline/models"
 import type { TerminalProfile } from "@shared/proto/cline/state"
@@ -195,12 +196,14 @@ export const ExtensionStateContextProvider: React.FC<{
 	const [state, setState] = useState<ExtensionState>({
 		version: "",
 		clineMessages: [],
+		pendingMessageQueue: createDefaultPendingMessageQueue(),
 		taskHistory: [],
 		autoApprovalSettings: DEFAULT_AUTO_APPROVAL_SETTINGS,
 		browserSettings: DEFAULT_BROWSER_SETTINGS,
 		focusChainSettings: DEFAULT_FOCUS_CHAIN_SETTINGS,
 		preferredLanguage: "English",
 		chatFontSize: DEFAULT_CHAT_FONT_SIZE,
+		historyPath: undefined,
 		mode: "act",
 		platform: DEFAULT_PLATFORM,
 		environment: Environment.production,

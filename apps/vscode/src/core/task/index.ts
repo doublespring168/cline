@@ -28,6 +28,10 @@ import {
 	refreshExternalRulesToggles,
 } from "@core/context/instructions/user-instructions/external-rules";
 import { sendPartialMessageEvent } from "@core/controller/ui/subscribeToPartialMessage";
+import {
+	ConversationHistoryRecorder,
+	type ConversationModelMetadata,
+} from "@core/history/ConversationHistoryRecorder";
 import { getHookModelContext } from "@core/hooks/hook-model-context";
 import { getHooksEnabledSafe } from "@core/hooks/hooks-utils";
 import * as NotificationHook from "@core/hooks/notification-hook";
@@ -274,6 +278,7 @@ export class Task {
 
 	// Cache service
 	private stateManager: StateManager;
+	private conversationHistoryRecorder: ConversationHistoryRecorder;
 
 	// Message and conversation state
 	messageStateHandler: MessageStateHandler;
@@ -350,6 +355,9 @@ export class Task {
 		this.cwd = cwd;
 		this.stateManager = stateManager;
 		this.workspaceManager = workspaceManager;
+		this.conversationHistoryRecorder = new ConversationHistoryRecorder({
+			getHistoryPath: () => this.stateManager.getGlobalSettingsKey("historyPath"),
+		});
 
 		// DiffViewProvider opens Diff Editor during edits while FileEditProvider performs
 		// edits in the background without stealing user's editor's focus.
@@ -392,6 +400,16 @@ export class Task {
 			taskState: this.taskState,
 			taskIsFavorited: this.taskIsFavorited,
 			updateTaskHistory: this.updateTaskHistory,
+			onApiConversationMessageAdded: async (message, metadata) => {
+				if (message.role === "assistant") {
+					await this.conversationHistoryRecorder.recordModelMessage({
+						sessionId: this.taskId,
+						message,
+						rawResponseText: metadata?.rawResponseText,
+						model: this.getConversationModelMetadata(message),
+					});
+				}
+			},
 		});
 
 		// Initialize context trackers
@@ -903,6 +921,19 @@ export class Task {
 			type !== "hook_output_stream"
 		) {
 			throw new Error("coderX instance aborted");
+		}
+
+		if (
+			partial === undefined &&
+			(type === "task" || type === "user_feedback") &&
+			(text || images?.length || files?.length)
+		) {
+			await this.conversationHistoryRecorder.recordUserMessage({
+				sessionId: this.taskId,
+				text,
+				images,
+				files,
+			});
 		}
 
 		const providerInfo = this.getCurrentProviderInfo();
@@ -1916,6 +1947,32 @@ export class Task {
 		const providerId = configuredProviderId;
 		const customPrompt = this.stateManager.getGlobalSettingsKey("customPrompt");
 		return { model, providerId, customPrompt, mode };
+	}
+
+	private getConversationModelMetadata(message: ClineStorageMessage): ConversationModelMetadata {
+		const providerInfo = this.getCurrentProviderInfo();
+		const apiConfiguration = this.stateManager.getApiConfiguration();
+		const mode = message.modelInfo?.mode ?? providerInfo.mode;
+		return {
+			providerId: message.modelInfo?.providerId ?? providerInfo.providerId,
+			modelId: message.modelInfo?.modelId ?? providerInfo.model.id,
+			modelName: providerInfo.model.info.name ?? providerInfo.model.id,
+			mode,
+			reasoningEffort:
+				mode === "plan" ? apiConfiguration.planModeReasoningEffort : apiConfiguration.actModeReasoningEffort,
+			thinkingBudgetTokens:
+				mode === "plan"
+					? apiConfiguration.planModeThinkingBudgetTokens
+					: apiConfiguration.actModeThinkingBudgetTokens,
+			thinkingLevel:
+				mode === "plan"
+					? apiConfiguration.geminiPlanModeThinkingLevel
+					: apiConfiguration.geminiActModeThinkingLevel,
+			maxOutputTokens: providerInfo.model.info.maxTokens,
+			contextWindow: providerInfo.model.info.contextWindow,
+			temperature: providerInfo.model.info.temperature,
+			supportsReasoning: providerInfo.model.info.supportsReasoning,
+		};
 	}
 
 	private async writePromptMetadataArtifacts(params: {
@@ -3050,7 +3107,7 @@ export class Task {
 						cost: taskMetrics.totalCost,
 					},
 					ts: Date.now(),
-				});
+				}, { rawResponseText: assistantMessage });
 				// signals to provider that it can retrieve the saved messages from disk, as abortTask can not be awaited on in nature
 				this.taskState.didFinishAbortingStream = true;
 			};
@@ -3509,7 +3566,7 @@ export class Task {
 							cost: taskMetrics.totalCost,
 						},
 						ts: Date.now(),
-					});
+					}, { rawResponseText: assistantMessage });
 				}
 			}
 
@@ -3601,7 +3658,7 @@ export class Task {
 						cost: taskMetrics.totalCost,
 					},
 					ts: Date.now(),
-				});
+				}, { rawResponseText: assistantMessage });
 
 				let response: ClineAskResponse;
 

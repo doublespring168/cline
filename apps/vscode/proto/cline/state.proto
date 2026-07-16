@@ -261,6 +261,7 @@ message Settings {
   optional bool act_mode_vertex_custom_model_selected = 186;
   optional OpenRouterModelInfo act_mode_vertex_custom_model_info = 187;
   optional int32 chat_font_size = 192;
+  optional string history_path = 193;
 }
 
 message State {
@@ -379,6 +380,7 @@ message UpdateSettingsRequest {
   optional bool double_check_completion_enabled = 41;
   optional int32 chat_font_size = 44;
   optional string saved_api_configs_json = 45;
+  optional string history_path = 46;
 }
 
 message UpdateTerminalConnectionTimeoutRequest {
