@@ -52,8 +52,8 @@ Line count difference: 245 vs 246
 
 First differences:
 Line 23:
-  - Expected: You are coderX, an AI assistant created by Anthropic.
-  + Actual:   You are coderX, an AI coding assistant created by Anthropic.
+  - Expected: You are coderX, an AI assistant created by GYYun.
+  + Actual:   You are coderX, an AI coding assistant created by GYYun.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔧 HOW TO FIX:
