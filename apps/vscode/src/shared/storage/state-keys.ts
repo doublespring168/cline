@@ -30,6 +30,7 @@ import {
 } from "@shared/McpDisplayMode";
 import { WorkspaceRoot } from "@shared/multi-root/types";
 import { Mode } from "@shared/storage/types";
+import { SavedApiConfig } from "@shared/SavedApiConfig";
 import { LanguageModelChatSelector } from "vscode";
 
 // ============================================================================
@@ -74,6 +75,7 @@ const GLOBAL_STATE_FIELDS = {
 	nativeToolCallEnabled: { default: true as boolean },
 	// Path to worktree that should auto-open coderX sidebar when launched
 	worktreeAutoOpenPath: { default: undefined as string | undefined },
+	savedApiConfigs: { default: [] as SavedApiConfig[] },
 } satisfies FieldDefinitions;
 
 // Fields that map directly to ApiHandlerOptions in @shared/api.ts

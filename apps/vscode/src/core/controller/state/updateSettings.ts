@@ -269,6 +269,15 @@ export async function updateSettings(controller: Controller, request: UpdateSett
 			controller.stateManager.setGlobalState("doubleCheckCompletionEnabled", request.doubleCheckCompletionEnabled)
 		}
 
+		// Update saved API configs
+		if (request.savedApiConfigsJson !== undefined) {
+			try {
+				const parsed = JSON.parse(request.savedApiConfigsJson)
+				controller.stateManager.setGlobalState("savedApiConfigs", parsed)
+			} catch (e) {
+				Logger.error("Failed to parse saved_api_configs_json:", e)
+			}
+		}
 
 		// Post updated state to webview
 		await controller.postStateToWebview()

@@ -4,6 +4,7 @@ import { WorkspaceRoot } from "@shared/multi-root/types"
 import type { Environment } from "../config"
 import { AutoApprovalSettings } from "./AutoApprovalSettings"
 import { ApiConfiguration } from "./api"
+import { SavedApiConfig } from "./SavedApiConfig"
 import { BrowserSettings } from "./BrowserSettings"
 import { ClineFeatureSetting } from "./ClineFeatureSetting"
 import { ClineRulesToggles } from "./cline-rules"
@@ -87,6 +88,7 @@ export interface ExtensionState {
 	backgroundEditEnabled?: boolean
 	doubleCheckCompletionEnabled?: boolean
 	openAiCodexIsAuthenticated?: boolean
+	savedApiConfigs?: SavedApiConfig[]
 }
 
 export interface ClineMessage {

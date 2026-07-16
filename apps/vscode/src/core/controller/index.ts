@@ -614,6 +614,7 @@ export class Controller {
 		const maxConsecutiveMistakes = this.stateManager.getGlobalSettingsKey("maxConsecutiveMistakes")
 		const favoritedModelIds = this.stateManager.getGlobalStateKey("favoritedModelIds")
 		const doubleCheckCompletionEnabled = this.stateManager.getGlobalSettingsKey("doubleCheckCompletionEnabled")
+		const savedApiConfigs = this.stateManager.getGlobalStateKey("savedApiConfigs")
 
 		const localClineRulesToggles = this.stateManager.getWorkspaceStateKey("localClineRulesToggles")
 		const localWindsurfRulesToggles = this.stateManager.getWorkspaceStateKey("localWindsurfRulesToggles")
@@ -698,6 +699,7 @@ export class Controller {
 			backgroundEditEnabled: this.stateManager.getGlobalSettingsKey("backgroundEditEnabled"),
 			doubleCheckCompletionEnabled,
 			openAiCodexIsAuthenticated,
+			savedApiConfigs,
 		}
 	}
 
