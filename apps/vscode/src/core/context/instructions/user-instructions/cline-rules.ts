@@ -51,9 +51,10 @@ export const getGlobalClineRules = async (
 						...rulesFilesTotal.activatedConditionalRules,
 					);
 				}
-			} catch {
+			} catch (error) {
 				Logger.error(
 					`Failed to read .coderxrules directory at ${globalClineRulesFilePath}`,
+					error,
 				);
 			}
 		} else {
@@ -112,9 +113,10 @@ export const getLocalClineRules = async (
 						...rulesFilesTotal.activatedConditionalRules,
 					);
 				}
-			} catch {
+			} catch (error) {
 				Logger.error(
 					`Failed to read .coderxrules directory at ${clineRulesFilePath}`,
+					error,
 				);
 			}
 		} else {
@@ -158,9 +160,10 @@ export const getLocalClineRules = async (
 						}
 					}
 				}
-			} catch {
+			} catch (error) {
 				Logger.error(
 					`Failed to read .coderxrules file at ${clineRulesFilePath}`,
+					error,
 				);
 			}
 		}

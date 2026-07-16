@@ -15,7 +15,7 @@ export async function openUrl(_controller: Controller, request: StringRequest): 
 		await openUrlInBrowser(request.value)
 		return Empty.create({})
 	} catch (error) {
-		Logger.error(`Failed to open URL: ${error}`)
+		Logger.error("[ControllerAction] failed to open URL", error)
 		throw error
 	}
 }

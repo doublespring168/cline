@@ -76,7 +76,9 @@ async function deleteTaskWithId(controller: Controller, id: string): Promise<voi
 		try {
 			await fs.rmdir(taskDirPath) // succeeds if the dir is empty
 		} catch (error) {
-			Logger.debug("Could not remove task directory (may not be empty):", error)
+			if ((error as NodeJS.ErrnoException).code !== "ENOTEMPTY") {
+				Logger.error(`[ControllerAction] failed to remove task directory '${taskDirPath}'`, error)
+			}
 		}
 
 		// If no tasks remain, clean up everything
@@ -92,7 +94,7 @@ async function deleteTaskWithId(controller: Controller, id: string): Promise<voi
 			}
 		}
 	} catch (error) {
-		Logger.debug(`Error deleting task ${id}:`, error)
+		Logger.error(`[ControllerAction] failed to delete task '${id}'`, error)
 		throw error // Re-throw to let caller handle the error
 	}
 

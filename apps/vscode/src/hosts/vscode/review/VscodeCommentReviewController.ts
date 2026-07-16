@@ -10,6 +10,7 @@ import {
 import { ExtensionRegistryInfo } from "@/registry";
 import { Logger } from "@/shared/services/Logger";
 import { DIFF_VIEW_URI_SCHEME } from "../VscodeDiffViewProvider";
+import { registerCommandWithErrorLogging } from "../registerCommandWithErrorLogging";
 
 /**
  * VS Code implementation of CommentReviewController.
@@ -68,7 +69,7 @@ export class VscodeCommentReviewController
 
 		// Register reply command - this is called when user clicks the Reply button
 		this.disposables.push(
-			vscode.commands.registerCommand(
+			registerCommandWithErrorLogging(
 				ExtensionRegistryInfo.commands.ReviewReply,
 				async (reply: vscode.CommentReply) => {
 					await this.handleReply(reply);
@@ -78,7 +79,7 @@ export class VscodeCommentReviewController
 
 		// Register add to chat command - sends the conversation to coderX's main chat
 		this.disposables.push(
-			vscode.commands.registerCommand(
+			registerCommandWithErrorLogging(
 				ExtensionRegistryInfo.commands.ReviewAddToChat,
 				async (thread: vscode.CommentThread) => {
 					await this.handleAddToChat(thread);
@@ -412,6 +413,7 @@ export class VscodeCommentReviewController
 					}
 				})
 				.catch((error) => {
+					Logger.error("[CommentReview] reply action failed", error);
 					// Show error
 					const errorComment: vscode.Comment = {
 						body: new vscode.MarkdownString(
@@ -495,7 +497,7 @@ Please continue helping the user with their question about this code.`;
 				await vscode.window.tabGroups.close(tab);
 			} catch (error) {
 				// Tab might already be closed
-				Logger.warn("Failed to close diff tab:", error);
+				Logger.error("[CommentReview] failed to close diff tab", error);
 			}
 		}
 	}

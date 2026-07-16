@@ -7,6 +7,7 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { HostProvider } from "@/hosts/host-provider";
+import { Logger } from "@/shared/services/Logger";
 import { resolveExistingHookPath, VALID_HOOK_TYPES } from "../../hooks/utils";
 import { Controller } from "..";
 
@@ -88,7 +89,11 @@ async function isExecutable(filePath: string): Promise<boolean> {
 	try {
 		await fs.access(filePath, fs.constants.X_OK);
 		return true;
-	} catch {
+	} catch (error) {
+		const code = (error as NodeJS.ErrnoException).code;
+		if (code !== "EACCES" && code !== "EPERM") {
+			Logger.error(`[ControllerAction] failed to inspect hook executable '${filePath}'`, error);
+		}
 		return false;
 	}
 }

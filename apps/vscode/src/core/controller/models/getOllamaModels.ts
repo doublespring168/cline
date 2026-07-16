@@ -1,6 +1,7 @@
 import { StringArray, StringRequest } from "@shared/proto/cline/common"
 import axios from "axios"
 import { getAxiosSettings } from "@/shared/net"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
 /**
@@ -22,7 +23,8 @@ export async function getOllamaModels(_controller: Controller, request: StringRe
 		const models = [...new Set<string>(modelsArray)].sort()
 
 		return StringArray.create({ values: models })
-	} catch (_error) {
+	} catch (error) {
+		Logger.error("[ControllerAction] failed to fetch Ollama models", error)
 		return StringArray.create({ values: [] })
 	}
 }

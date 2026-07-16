@@ -156,7 +156,7 @@ export async function parseSlashCommands(
 						// Prompt not found - log for debugging and fall through to workflow checking
 						Logger.debug(`MCP prompt not found: ${commandName} (server: ${serverName}, prompt: ${promptName})`)
 					} catch (error) {
-						Logger.error(`Error fetching MCP prompt ${commandName}: ${error}`)
+						Logger.error(`Error fetching MCP prompt ${commandName}`, error)
 					}
 				}
 			}
@@ -196,7 +196,7 @@ export async function parseSlashCommands(
 					// Track telemetry for workflow command usage
 					return { processedText, needsClinerulesFileCheck: false }
 				} catch (error) {
-					Logger.error(`Error reading workflow file ${matchingWorkflow.fullPath}: ${error}`)
+					Logger.error(`Error reading workflow file ${matchingWorkflow.fullPath}`, error)
 				}
 			}
 		}

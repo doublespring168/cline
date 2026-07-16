@@ -5,6 +5,7 @@ import {
 	ClineSayBrowserAction,
 } from "@shared/ExtensionMessage";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import { ToolUse } from "../../../assistant-message";
 import { formatResponse } from "../../../prompts/responses";
 import { ToolResponse } from "../..";
@@ -61,7 +62,7 @@ export class BrowserToolHandler implements IFullyManagedTool {
 						uiHelpers.removeClosingTag(block, "url", url),
 						block.partial,
 					)
-					.catch(() => {});
+					.catch(Logger.catchError("[browser_action] failed to render partial UI"));
 			}
 		} else {
 			await uiHelpers.say(
@@ -269,7 +270,12 @@ export class BrowserToolHandler implements IFullyManagedTool {
 					return closeResult;
 			}
 		} catch (error) {
-			await config.services.browserSession.closeBrowser(); // if any error occurs, the browser session is terminated
+			Logger.error("[browser_action] execution failed", error);
+			try {
+				await config.services.browserSession.closeBrowser(); // if any error occurs, the browser session is terminated
+			} catch (cleanupError) {
+				Logger.error("[browser_action] failed to close the browser after an error", cleanupError);
+			}
 			throw error;
 		}
 	}

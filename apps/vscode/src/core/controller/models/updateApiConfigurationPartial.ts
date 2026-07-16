@@ -52,7 +52,7 @@ export async function updateApiConfigurationPartial(
 
 		return Empty.create()
 	} catch (error) {
-		Logger.error(`Failed to update API configuration (partial): ${error}`)
+		Logger.error("[ControllerAction] failed to partially update API configuration", error)
 		throw error
 	}
 }

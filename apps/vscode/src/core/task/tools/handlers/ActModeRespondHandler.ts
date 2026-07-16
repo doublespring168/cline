@@ -1,6 +1,7 @@
 import type { ToolUse } from "@core/assistant-message"
 import { formatResponse } from "@core/prompts/responses"
 import { ClineDefaultTool } from "@shared/tools"
+import { Logger } from "@/shared/services/Logger"
 import type { ToolResponse } from "../../index"
 import type { IPartialBlockHandler, IToolHandler } from "../ToolExecutorCoordinator"
 import type { TaskConfig } from "../types/TaskConfig"
@@ -24,7 +25,9 @@ export class ActModeRespondHandler implements IToolHandler, IPartialBlockHandler
 		const message = uiHelpers.removeClosingTag(block, "response", response)
 
 		// Display partial message as "text" type to avoid blocking
-		await uiHelpers.say("text", message, undefined, undefined, true).catch(() => {})
+		await uiHelpers
+			.say("text", message, undefined, undefined, true)
+			.catch(Logger.catchError("[act_mode_respond] failed to render partial UI"))
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {

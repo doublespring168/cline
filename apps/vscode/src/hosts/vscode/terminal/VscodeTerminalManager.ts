@@ -112,8 +112,8 @@ export class VscodeTerminalManager implements ITerminalManager {
 				// Creating a read stream here results in a more consistent output. This is most obvious when running the `date` command.
 				e?.execution?.read()
 			})
-		} catch (_error) {
-			// Logger.error("Error setting up onDidEndTerminalShellExecution", error)
+		} catch (error) {
+			Logger.error("[TerminalManager] failed to register shell execution listener", error)
 		}
 		if (disposable) {
 			this.disposables.push(disposable)
@@ -215,8 +215,9 @@ export class VscodeTerminalManager implements ITerminalManager {
 					)
 				})
 				.catch((err) => {
-					Logger.warn(
-						`[TerminalManager Test] Shell integration timed out or failed for terminal ${vscodeTerminalInfo.id}: ${err.message}`,
+					Logger.error(
+						`[TerminalManager] shell integration timed out or failed for terminal ${vscodeTerminalInfo.id}`,
+						err,
 					)
 				})
 				.finally(() => {
@@ -302,7 +303,8 @@ export class VscodeTerminalManager implements ITerminalManager {
 								setTimeout(() => reject(new Error(`CWD timeout: Failed to update to ${cwd}`)), 1000),
 							),
 						])
-					} catch (_err) {
+					} catch (error) {
+						Logger.error(`[TerminalManager] failed to update terminal ${availableTerminal.id} cwd to '${cwd}'`, error)
 						// Clear pending state on timeout
 						availableTerminal.pendingCwdChange = undefined
 						availableTerminal.cwdResolved = undefined

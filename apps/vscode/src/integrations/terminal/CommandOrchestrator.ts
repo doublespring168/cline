@@ -204,8 +204,8 @@ export async function orchestrateCommandExecution(
 						await flushBuffer()
 					}
 				}
-			} catch {
-				Logger.error("Error while asking for command output")
+			} catch (error) {
+				Logger.error("Error while asking for command output", error)
 			} finally {
 				// Interaction cleanup is handled by clearPendingCommandOutputAsk.
 			}

@@ -131,7 +131,7 @@ export class Controller {
 		await this.clearTask()
 		this.mcpHub.dispose()
 
-		Logger.error("Controller disposed")
+		Logger.log("Controller disposed")
 	}
 
 	// Oca Auth methods
@@ -143,7 +143,8 @@ export class Controller {
 				type: ShowMessageType.INFORMATION,
 				message: "Successfully logged out of OCA",
 			})
-		} catch (_error) {
+		} catch (error) {
+			Logger.error("[ControllerAction] OCA logout failed", error)
 			HostProvider.window.showMessage({
 				type: ShowMessageType.INFORMATION,
 				message: "OCA Logout failed",

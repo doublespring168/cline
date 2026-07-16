@@ -37,7 +37,7 @@ export async function readDirectoryRecursive(
 		}
 		return results;
 	} catch (error) {
-		Logger.error(`Error reading directory ${directoryPath}: ${error}`);
+		Logger.error(`Error reading directory ${directoryPath}`, error);
 		return [];
 	}
 }

@@ -157,7 +157,7 @@ export async function updateApiConfiguration(controller: Controller, request: Up
 
 		return Empty.create()
 	} catch (error) {
-		Logger.error(`Failed to update API configuration: ${error}`)
+		Logger.error("[ControllerAction] failed to update API configuration", error)
 		throw error
 	}
 }

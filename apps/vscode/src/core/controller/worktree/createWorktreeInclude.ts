@@ -5,6 +5,7 @@ import {
 import { getWorkspacePath } from "@utils/path";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { Logger } from "@/shared/services/Logger";
 import { Controller } from "..";
 
 /**
@@ -34,6 +35,7 @@ export async function createWorktreeInclude(
 			message: "Created .coderxworktreeinclude file",
 		});
 	} catch (error) {
+		Logger.error("[ControllerAction] failed to create .coderxworktreeinclude", error);
 		return WorktreeResult.create({
 			success: false,
 			message: `Failed to create .coderxworktreeinclude: ${error instanceof Error ? error.message : String(error)}`,

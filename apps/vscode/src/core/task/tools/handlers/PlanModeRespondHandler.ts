@@ -28,7 +28,9 @@ export class PlanModeRespondHandler implements IToolHandler, IPartialBlockHandle
 			options: parsePartialArrayString(uiHelpers.removeClosingTag(block, "options", optionsRaw)),
 		} satisfies ClinePlanModeResponse
 
-		await uiHelpers.ask(this.name, JSON.stringify(sharedMessage), true).catch(() => {})
+		await uiHelpers
+			.ask(this.name, JSON.stringify(sharedMessage), true)
+			.catch(Logger.catchError("[plan_mode_respond] failed to render partial UI"))
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {

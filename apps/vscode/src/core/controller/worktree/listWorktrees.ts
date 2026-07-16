@@ -76,7 +76,7 @@ export async function listWorktrees(_controller: Controller, _request: EmptyRequ
 			error: result.error || "",
 		})
 	} catch (error) {
-		Logger.error(`Error listing worktrees: ${JSON.stringify(error)}`)
+		Logger.error("[ControllerAction] failed to list worktrees", error)
 		return WorktreeList.create({
 			worktrees: [],
 			isGitRepo: false,

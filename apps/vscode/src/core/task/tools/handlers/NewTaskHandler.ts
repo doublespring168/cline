@@ -3,6 +3,7 @@ import { formatResponse } from "@core/prompts/responses";
 import { processFilesIntoText } from "@integrations/misc/extract-text";
 import { showSystemNotification } from "@integrations/notifications";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import type {
 	IPartialBlockHandler,
@@ -31,7 +32,7 @@ export class NewTaskHandler implements IToolHandler, IPartialBlockHandler {
 			"context",
 			block.params.context,
 		);
-		await uiHelpers.ask(this.name, context, true).catch(() => {});
+		await uiHelpers.ask(this.name, context, true).catch(Logger.catchError("[new_task] failed to render partial UI"));
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {

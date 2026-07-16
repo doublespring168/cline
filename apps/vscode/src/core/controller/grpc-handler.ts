@@ -56,7 +56,10 @@ async function handleUnaryRequest(
 		})
 	} catch (error) {
 		// Send error response
-		Logger.log("Protobus error:", error)
+		Logger.error(
+			`[ControllerAction] ${request.service}.${request.method} failed (request: ${request.request_id})`,
+			error,
+		)
 		await postMessageToWebview({
 			type: "grpc_response",
 			grpc_response: {
@@ -107,7 +110,10 @@ async function handleStreamingRequest(
 		// The stream will be closed when the client disconnects or when the service explicitly ends it
 	} catch (error) {
 		// Send error response
-		Logger.log("Protobus error:", error)
+		Logger.error(
+			`[ControllerAction] streaming ${request.service}.${request.method} failed (request: ${request.request_id})`,
+			error,
+		)
 		await postMessageToWebview({
 			type: "grpc_response",
 			grpc_response: {

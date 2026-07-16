@@ -58,9 +58,10 @@ export class NotebookDiffView {
 		// Validate JSON before creating notebook diff
 		try {
 			JSON.parse(currentContent);
-		} catch {
+		} catch (error) {
 			Logger.error(
 				`Invalid JSON content for notebook file ${fileName}, skipping notebook diff view`,
+				error,
 			);
 			return;
 		}
@@ -130,7 +131,7 @@ export class NotebookDiffView {
 			try {
 				await vscode.workspace.fs.delete(this.tempModifiedUri);
 			} catch (error) {
-				Logger.error(`Failed to cleanup temporary file: ${error}`);
+				Logger.error("[NotebookDiffView] failed to clean up temporary file", error);
 			}
 			this.tempModifiedUri = undefined;
 		}

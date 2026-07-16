@@ -478,7 +478,7 @@ export abstract class DiffViewProvider {
 					await fs.rmdir(this.createdDirs[i]);
 					Logger.log(`Directory ${this.createdDirs[i]} has been deleted.`);
 				} catch (error) {
-					Logger.log(
+					Logger.error(
 						`Could not delete directory ${this.createdDirs[i]}`,
 						error,
 					);

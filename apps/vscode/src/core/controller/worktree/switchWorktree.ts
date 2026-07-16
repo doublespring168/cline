@@ -46,7 +46,7 @@ export async function switchWorktree(
 			message: `Switched to worktree at ${request.path}`,
 		});
 	} catch (error) {
-		Logger.error(`Error switching worktree: ${JSON.stringify(error)}`);
+		Logger.error(`[ControllerAction] failed to switch to worktree '${request.path}'`, error);
 		return WorktreeResult.create({
 			success: false,
 			message: error instanceof Error ? error.message : String(error),

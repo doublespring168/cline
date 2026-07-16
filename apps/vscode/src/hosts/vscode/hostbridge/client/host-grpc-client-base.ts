@@ -63,11 +63,14 @@ export function createGrpcClient<T extends ProtoService>(service: T): GrpcClient
 							return result
 						} else {
 							// This shouldn't happen, but just in case
-							Logger.error(`Expected cancel function but got response object for streaming request: ${requestId}`)
+							Logger.error(
+								`Expected cancel function but got response object for streaming request: ${requestId}`,
+								new Error("Host bridge returned a non-cancellable streaming response"),
+							)
 							return () => {}
 						}
 					} catch (error) {
-						Logger.error(`Error in streaming request: ${error}`)
+						Logger.error(`[HostBridgeClient] streaming request ${requestId} failed`, error)
 						if (options.onError) {
 							options.onError(error instanceof Error ? error : new Error(String(error)))
 						}
@@ -90,7 +93,10 @@ export function createGrpcClient<T extends ProtoService>(service: T): GrpcClient
 						}
 						resolve(response)
 					} catch (e) {
-						Logger.log(`[DEBUG] gRPC host ERR to ${service.fullName}.${methodKey} req:${requestId} err:${e}`)
+						Logger.error(
+							`[HostBridgeClient] ${service.fullName}.${methodKey} failed (request: ${requestId})`,
+							e,
+						)
 						reject(e)
 					}
 				})

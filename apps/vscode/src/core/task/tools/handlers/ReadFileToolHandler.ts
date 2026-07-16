@@ -12,6 +12,7 @@ import {
 	isLocatedInWorkspace,
 } from "@utils/path";
 import { ClineSayTool } from "@/shared/ExtensionMessage";
+import { Logger } from "@/shared/services/Logger";
 import { ClineDefaultTool } from "@/shared/tools";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
@@ -228,7 +229,7 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 			await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "tool");
 			await uiHelpers
 				.ask("tool", partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[read_file] failed to render partial UI"));
 		}
 	}
 
@@ -372,7 +373,10 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 					// File was modified externally — evict cache entry and fall through to fresh read
 					config.taskState.fileReadCache.delete(cacheKey);
 				}
-			} catch {
+			} catch (error) {
+				if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+					Logger.error(`[read_file] failed to inspect cached file '${absolutePath}'`, error);
+				}
 				// If we can't stat the file, evict the cache and let extractFileContent handle the error
 				config.taskState.fileReadCache.delete(cacheKey);
 			}
@@ -396,6 +400,7 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 				fileContent = await extractFileContent(absolutePath, supportsImages);
 			} catch (error) {
 				config.taskState.consecutiveMistakeCount++;
+				Logger.error(`[read_file] cached read failed for '${absolutePath}'`, error);
 				const errorMessage =
 					error instanceof Error ? error.message : String(error);
 				const normalizedMessage = errorMessage.startsWith("Error reading file:")
@@ -441,6 +446,7 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 			// model to see the error (e.g. "File not found") and recover by
 			// trying a different path, rather than terminating the entire task.
 			config.taskState.consecutiveMistakeCount++;
+			Logger.error(`[read_file] failed for '${absolutePath}'`, error);
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			const normalizedMessage = errorMessage.startsWith("Error reading file:")
@@ -466,7 +472,8 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 				fs.stat(absolutePath),
 			);
 			mtime = stat.mtimeMs;
-		} catch {
+		} catch (error) {
+			Logger.error(`[read_file] failed to read metadata for '${absolutePath}'`, error);
 			// If stat fails, use 0 — the next cache hit will evict due to mtime mismatch
 		}
 		config.taskState.fileReadCache.set(cacheKey, {

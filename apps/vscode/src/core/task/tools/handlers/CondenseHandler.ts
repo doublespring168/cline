@@ -5,6 +5,7 @@ import { processFilesIntoText } from "@integrations/misc/extract-text";
 import { showSystemNotification } from "@integrations/notifications";
 import { ClineAsk } from "@shared/ExtensionMessage";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import type {
 	IPartialBlockHandler,
@@ -112,6 +113,6 @@ export class CondenseHandler implements IToolHandler, IPartialBlockHandler {
 		await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "condense");
 		await uiHelpers
 			.ask("condense" as ClineAsk, cleanedContext, block.partial)
-			.catch(() => {});
+			.catch(Logger.catchError("[condense] failed to render partial UI"));
 	}
 }

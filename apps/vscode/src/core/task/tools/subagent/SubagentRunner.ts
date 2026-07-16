@@ -161,7 +161,8 @@ function normalizeToolCallArguments(argumentsPayload: unknown): string {
 
 	try {
 		return JSON.stringify(argumentsPayload ?? {})
-	} catch {
+	} catch (error) {
+		Logger.error("[SubagentRunner] failed to serialize tool call arguments", error)
 		return "{}"
 	}
 }
@@ -287,7 +288,7 @@ export class SubagentRunner {
 
 			return `<environment_details>\n# Workspace Configuration\n${workspacesJson}\n</environment_details>`
 		} catch (error) {
-			Logger.warn("[SubagentRunner] Failed to build workspace metadata block", error)
+			Logger.error("[SubagentRunner] Failed to build workspace metadata block", error)
 			return null
 		}
 	}
@@ -658,6 +659,7 @@ export class SubagentRunner {
 						try {
 							toolResult = await handler.execute(subagentConfig, toolCallBlock)
 						} catch (error) {
+							Logger.error(`[SubagentRunner] tool '${toolName}' execution failed`, error)
 							toolResult = formatResponse.toolError((error as Error).message)
 						}
 					}

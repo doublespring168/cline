@@ -69,6 +69,7 @@ export async function generateCommitMsg(
 		await orchestrateWorkspaceCommitMsgGeneration(controller, git.repositories);
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
+		Logger.error("[VSCodeAction] commit message generation failed", error);
 		HostProvider.window.showMessage({
 			type: ShowMessageType.ERROR,
 			message: `[Commit Generation Failed] ${errorMessage}`,
@@ -132,7 +133,8 @@ async function filterForReposWithChanges(repos: any[]) {
 			if (gitDiff) {
 				reposWithChanges.push(repo);
 			}
-		} catch {
+		} catch (error) {
+			Logger.error(`[VSCodeAction] failed to inspect repository '${repo.rootUri.fsPath}' for commit generation`, error);
 			// Skip repositories with errors (no changes, etc.)
 		}
 	}
@@ -178,7 +180,7 @@ async function generateCommitMsgForRepository(
 			title: `Generating commit message for ${repoPath.split(path.sep).pop() || "repository"}...`,
 			cancellable: true,
 		},
-		() => performCommitMsgGeneration(controller, gitDiff, inputBox),
+		() => performCommitMsgGeneration(controller, gitDiff, inputBox, repoPath),
 	);
 }
 
@@ -186,6 +188,7 @@ async function performCommitMsgGeneration(
 	controller: Controller,
 	gitDiff: string,
 	inputBox: any,
+	repoPath: string,
 ) {
 	try {
 		vscode.commands.executeCommand(
@@ -248,6 +251,7 @@ async function performCommitMsgGeneration(
 		}
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : String(error);
+		Logger.error(`[VSCodeAction] failed to generate commit message for '${repoPath}'`, error);
 		HostProvider.window.showMessage({
 			type: ShowMessageType.ERROR,
 			message: `Failed to generate commit message: ${errorMessage}`,

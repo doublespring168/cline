@@ -1,6 +1,7 @@
 import { CheckoutBranchRequest, WorktreeResult } from "@shared/proto/cline/worktree"
 import { getWorkspacePath } from "@utils/path"
 import simpleGit from "simple-git"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
 /**
@@ -36,6 +37,7 @@ export async function checkoutBranch(_controller: Controller, request: CheckoutB
 			message: `Switched to branch '${branch}'`,
 		})
 	} catch (error) {
+		Logger.error(`[ControllerAction] failed to checkout branch '${branch}'`, error)
 		const errorMessage = error instanceof Error ? error.message : String(error)
 		return WorktreeResult.create({
 			success: false,

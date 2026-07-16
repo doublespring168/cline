@@ -3,6 +3,7 @@ import { showSystemNotification } from "@integrations/notifications";
 import { findLast, parsePartialArrayString } from "@shared/array";
 import { ClineAsk, ClineAskQuestion } from "@shared/ExtensionMessage";
 import { ClineDefaultTool } from "@shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import { ToolUse } from "../../../assistant-message";
 import { formatResponse } from "../../../prompts/responses";
 import { ToolResponse } from "../..";
@@ -37,7 +38,7 @@ export class AskFollowupQuestionToolHandler
 
 		await uiHelpers
 			.ask("followup" as ClineAsk, JSON.stringify(sharedMessage), block.partial)
-			.catch(() => {});
+			.catch(Logger.catchError("[ask_followup_question] failed to render partial UI"));
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {

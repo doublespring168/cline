@@ -46,12 +46,12 @@ export async function openExternal(url: string): Promise<void> {
 		await HostProvider.env.openExternal(StringRequest.create({ value: url }))
 	} catch (error) {
 		// Fallback for VS Code-compatible hosts that cannot open the URL through the API.
-		Logger.warn(`Host openExternal RPC failed, falling back to 'open' package: ${error}`)
+		Logger.error("Host openExternal RPC failed, falling back to 'open' package", error)
 		try {
 			const open = (await import("open")).default
 			await open(url)
 		} catch (fallbackError) {
-			Logger.error(`Fallback 'open' also failed: ${fallbackError}`)
+			Logger.error("Fallback 'open' also failed", fallbackError)
 			HostProvider.window.showMessage({
 				type: ShowMessageType.ERROR,
 				message: `Failed to open URL: ${url}`,

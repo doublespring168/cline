@@ -17,6 +17,7 @@ import {
 	isLocatedInWorkspace,
 } from "@utils/path";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
@@ -113,7 +114,7 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "tool");
 				await uiHelpers
 					.ask("tool", partialMessage, block.partial)
-					.catch(() => {});
+					.catch(Logger.catchError(`[${block.name}] failed to render partial UI`));
 			}
 
 			// CRITICAL: Open editor and stream content in real-time (from original code)
@@ -126,9 +127,8 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 			// Editor is open, stream content in real-time (false = don't finalize yet)
 			await config.services.diffViewProvider.update(newContent, false);
 		} catch (error) {
-			// Reset diff view on error
-			await config.services.diffViewProvider.revertChanges();
-			await config.services.diffViewProvider.reset();
+			Logger.error(`[${block.name}] partial execution failed`, error);
+			await cleanupDiffViewAfterError(config, block.name);
 			throw error;
 		}
 	}
@@ -248,7 +248,7 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				const partialMessage = JSON.stringify(sharedMessageProps);
 				await config.callbacks
 					.ask("tool", partialMessage, true)
-					.catch(() => {}); // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
+					.catch(Logger.catchError(`[${block.name}] failed to render approval UI`)); // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
 				await config.services.diffViewProvider.open(absolutePath, {
 					displayPath: relPath,
 				});
@@ -445,9 +445,8 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				newProblemsMessage,
 			);
 		} catch (error) {
-			// Reset diff view on error
-			await config.services.diffViewProvider.revertChanges();
-			await config.services.diffViewProvider.reset();
+			Logger.error(`[${block.name}] execution failed`, error);
+			await cleanupDiffViewAfterError(config, block.name);
 			throw error;
 		}
 	}
@@ -571,6 +570,7 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				if (block.partial) {
 					return;
 				}
+				Logger.error(`[${block.name}] failed to construct changes for '${relPath}'`, error);
 
 				config.taskState.consecutiveMistakeCount++;
 
@@ -648,5 +648,19 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 			workspaceContext,
 			matchIndices,
 		};
+	}
+}
+
+async function cleanupDiffViewAfterError(config: TaskConfig, toolName: string): Promise<void> {
+	try {
+		await config.services.diffViewProvider.revertChanges();
+	} catch (cleanupError) {
+		Logger.error(`[${toolName}] failed to revert diff view after an error`, cleanupError);
+	}
+
+	try {
+		await config.services.diffViewProvider.reset();
+	} catch (cleanupError) {
+		Logger.error(`[${toolName}] failed to reset diff view after an error`, cleanupError);
 	}
 }

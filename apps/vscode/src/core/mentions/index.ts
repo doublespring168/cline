@@ -337,7 +337,7 @@ export async function parseMentions(
 		try {
 			await urlContentFetcher.closeBrowser();
 		} catch (error) {
-			Logger.error(`Error closing browser: ${error.message}`);
+			Logger.error("Error closing browser", error);
 		}
 	}
 

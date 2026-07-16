@@ -22,7 +22,7 @@ export async function searchCommits(_controller: Controller, request: StringRequ
 
 		return GitCommits.create({ commits })
 	} catch (error) {
-		Logger.error(`Error searching commits: ${JSON.stringify(error)}`)
+		Logger.error("[ControllerAction] searchCommits failed", error)
 		return GitCommits.create({ commits: [] })
 	}
 }

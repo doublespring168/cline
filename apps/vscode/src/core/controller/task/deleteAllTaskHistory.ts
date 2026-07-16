@@ -103,6 +103,7 @@ export async function deleteAllTaskHistory(controller: Controller): Promise<Dele
 				await fs.rm(checkpointsDirPath, { recursive: true, force: true })
 			}
 		} catch (error) {
+			Logger.error("[ControllerAction] failed to remove task history files", error)
 			HostProvider.window.showMessage({
 				type: ShowMessageType.ERROR,
 				message: `Encountered error while deleting task history, there may be some files left behind. Error: ${error instanceof Error ? error.message : String(error)}`,

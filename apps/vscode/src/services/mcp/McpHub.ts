@@ -1320,7 +1320,8 @@ export class McpHub {
 			timeout = secondsToMs(parsedConfig.timeout);
 		} catch (error) {
 			Logger.error(
-				`Failed to parse timeout configuration for server ${serverName}: ${error}`,
+				`Failed to parse timeout configuration for server ${serverName}`,
+				error,
 			);
 		}
 		try {
@@ -1588,7 +1589,8 @@ export class McpHub {
 			throw new Error(`${serverName} not found in MCP configuration`);
 		} catch (error) {
 			Logger.error(
-				`Failed to delete MCP server: ${error instanceof Error ? error.message : String(error)}`,
+				"Failed to delete MCP server",
+				error,
 			);
 			throw error;
 		} finally {

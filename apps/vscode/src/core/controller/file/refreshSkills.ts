@@ -23,7 +23,12 @@ async function scanSkillsDirectory(dirPath: string): Promise<SkillInfo[]> {
 
 		for (const entryName of entries) {
 			const entryPath = path.join(dirPath, entryName)
-			const stats = await fs.stat(entryPath).catch(() => null)
+			const stats = await fs.stat(entryPath).catch((error) => {
+				if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+					Logger.error(`[ControllerAction] failed to inspect skill directory '${entryPath}'`, error)
+				}
+				return null
+			})
 			if (!stats?.isDirectory()) continue
 
 			const skillMdPath = path.join(entryPath, "SKILL.md")
@@ -33,7 +38,7 @@ async function scanSkillsDirectory(dirPath: string): Promise<SkillInfo[]> {
 				const fileContent = await fs.readFile(skillMdPath, "utf-8")
 				const result = parseYamlFrontmatter(fileContent)
 				if (result.parseError) {
-					Logger.warn("Failed to parse YAML frontmatter:", result.parseError)
+					Logger.error(`[ControllerAction] failed to parse skill metadata '${skillMdPath}'`, result.parseError)
 				}
 				const frontmatter = result.data
 
@@ -50,11 +55,15 @@ async function scanSkillsDirectory(dirPath: string): Promise<SkillInfo[]> {
 						enabled: true, // Will be updated with toggle state
 					}),
 				)
-			} catch {
+			} catch (error) {
+				Logger.error(`[ControllerAction] failed to read skill '${skillMdPath}'`, error)
 				// Skip invalid skills
 			}
 		}
-	} catch {
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			Logger.error(`[ControllerAction] failed to scan skills directory '${dirPath}'`, error)
+		}
 		// Directory read error, skip
 	}
 

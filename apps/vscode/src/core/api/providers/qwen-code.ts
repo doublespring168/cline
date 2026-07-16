@@ -83,6 +83,7 @@ export class QwenCodeHandler implements ApiHandler {
 		} catch (error) {
 			Logger.error(
 				`Error reading or parsing credentials file at ${getQwenCachedCredentialPath(this.options.qwenCodeOauthPath)}`,
+				error,
 			)
 			throw new Error(`Failed to load Qwen OAuth credentials: ${error}`)
 		}

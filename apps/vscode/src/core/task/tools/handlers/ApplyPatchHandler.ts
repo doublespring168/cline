@@ -15,6 +15,7 @@ import {
 	type PatchChunk,
 } from "@/shared/Patch";
 import { preserveEscaping } from "@/shared/string";
+import { Logger } from "@/shared/services/Logger";
 import { ClineDefaultTool } from "@/shared/tools";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
@@ -91,7 +92,7 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 			this.initializeHelpers(config);
 
 			// Preview the first file being edited
-			await this.previewPatchStream(rawInput, uiHelpers).catch(() => {});
+			await this.previewPatchStream(rawInput, uiHelpers).catch(Logger.catchError("[apply_patch] failed to render patch preview"));
 		} catch {
 			// Wait for more data if parsing fails
 		}
@@ -189,7 +190,7 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 				}),
 				true,
 			)
-			.catch(() => {}); // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
+			.catch(Logger.catchError("[apply_patch] failed to render approval UI")); // sending true for partial even though it's not a partial, this shows the edit row before the content is streamed into the editor
 
 		const stream: { content: string | undefined } = { content: undefined };
 
@@ -251,8 +252,8 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 		if (provider.isEditing) {
 			try {
 				await provider.reset();
-			} catch {
-				// Ignore reset errors
+			} catch (error) {
+				Logger.error("[apply_patch] failed to reset an existing diff view", error);
 			}
 		}
 
@@ -447,10 +448,19 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 
 			return responseLines.join("\n");
 		} catch (error) {
-			await provider.revertChanges();
+			Logger.error("[apply_patch] execution failed", error);
+			try {
+				await provider.revertChanges();
+			} catch (cleanupError) {
+				Logger.error("[apply_patch] failed to revert changes after an error", cleanupError);
+			}
 			throw error;
 		} finally {
-			await provider.reset();
+			try {
+				await provider.reset();
+			} catch (cleanupError) {
+				Logger.error("[apply_patch] failed to reset the diff view", cleanupError);
+			}
 		}
 	}
 

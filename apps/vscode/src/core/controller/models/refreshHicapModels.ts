@@ -6,6 +6,7 @@ import axios from "axios"
 import fs from "fs/promises"
 import path from "path"
 import { getAxiosSettings } from "@/shared/net"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
 /**
@@ -57,6 +58,7 @@ export async function refreshHicapModels(controller: Controller, _request: Empty
 		}
 		await fs.writeFile(hicapModelsFilePath, JSON.stringify(models))
 	} catch (error) {
+		Logger.error("[ControllerAction] failed to refresh Hicap models", error)
 		// If we failed to fetch models, try to read cached models
 		/* const cachedModels = await readHicapModels(controller)
 		if (cachedModels) {
@@ -78,6 +80,7 @@ async function readHicapModels(controller: Controller): Promise<Record<string, O
 			const fileContents = await fs.readFile(hicapModelsFilePath, "utf8")
 			return JSON.parse(fileContents)
 		} catch (error) {
+			Logger.error(`[ControllerAction] failed to read cached Hicap models from '${hicapModelsFilePath}'`, error)
 			return undefined
 		}
 	}

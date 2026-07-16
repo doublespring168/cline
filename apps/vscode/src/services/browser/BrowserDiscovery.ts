@@ -96,7 +96,7 @@ export async function testBrowserConnection(host: string): Promise<{ success: bo
 			endpoint: browserWSEndpoint,
 		}
 	} catch (error) {
-		Logger.error(`Failed to connect to remote browser: ${error}`)
+		Logger.error("Failed to connect to remote browser", error)
 		return {
 			success: false,
 			message: `Failed to connect: ${error instanceof Error ? error.message : String(error)}`,

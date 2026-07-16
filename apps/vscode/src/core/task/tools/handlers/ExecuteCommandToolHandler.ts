@@ -9,6 +9,7 @@ import { COMMAND_REQ_APP_STRING } from "@shared/combineCommandSequences";
 import { ClineAsk } from "@shared/ExtensionMessage";
 import { arePathsEqual } from "@utils/path";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
 import type { ToolValidator } from "../ToolValidator";
@@ -94,7 +95,7 @@ export class ExecuteCommandToolHandler implements IFullyManagedTool {
 				uiHelpers.removeClosingTag(block, "command", command),
 				block.partial,
 			)
-			.catch(() => {});
+			.catch(Logger.catchError("[execute_command] failed to render partial UI"));
 	}
 
 	async execute(config: TaskConfig, block: ToolUse): Promise<ToolResponse> {

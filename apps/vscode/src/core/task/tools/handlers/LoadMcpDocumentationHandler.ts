@@ -1,6 +1,7 @@
 import type { ToolUse } from "@core/assistant-message"
 import { loadMcpDocumentation } from "@core/prompts/loadMcpDocumentation"
 import { ClineDefaultTool } from "@/shared/tools"
+import { Logger } from "@/shared/services/Logger"
 import type { ToolResponse } from "../../index"
 import type { IPartialBlockHandler, IToolHandler } from "../ToolExecutorCoordinator"
 import type { TaskConfig } from "../types/TaskConfig"
@@ -31,6 +32,7 @@ export class LoadMcpDocumentationHandler implements IToolHandler, IPartialBlockH
 			const documentation = await loadMcpDocumentation(config.services.mcpHub)
 			return documentation
 		} catch (error) {
+			Logger.error("[load_mcp_documentation] execution failed", error)
 			return `Error loading MCP documentation: ${(error as Error)?.message}`
 		}
 	}

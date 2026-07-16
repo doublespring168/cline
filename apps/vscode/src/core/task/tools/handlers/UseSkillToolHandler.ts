@@ -2,6 +2,7 @@ import type { ToolUse } from "@core/assistant-message"
 import { discoverAvailableSkills, getSkillContent } from "@core/context/instructions/user-instructions/skills"
 import type { SkillMetadata } from "@shared/skills"
 import { ClineDefaultTool } from "@/shared/tools"
+import { Logger } from "@/shared/services/Logger"
 import type { ToolResponse } from "../../index"
 import type { IPartialBlockHandler, IToolHandler } from "../ToolExecutorCoordinator"
 import type { TaskConfig } from "../types/TaskConfig"
@@ -78,6 +79,7 @@ ${skillContent.instructions}
 ---
 IMPORTANT: The skill is now loaded. Do NOT call use_skill again for this task. Simply follow the instructions above to complete the user's request.${skillDirNote}`
 		} catch (error) {
+			Logger.error(`[use_skill] failed to load '${skillName}'`, error)
 			return `Error loading skill "${skillName}": ${(error as Error)?.message}`
 		}
 	}

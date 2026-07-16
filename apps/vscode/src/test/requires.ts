@@ -1,5 +1,9 @@
 const Module = require("module")
+const os = require("node:os")
+const nodePath = require("node:path")
 const originalRequire = Module.prototype.require
+
+process.env.CODERX_ERROR_LOG_PATH ??= nodePath.join(os.tmpdir(), `coderx-tests-${process.pid}`, "error.log")
 
 /**
  * VSCode is not available during unit tests

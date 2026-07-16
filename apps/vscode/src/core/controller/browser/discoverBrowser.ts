@@ -2,6 +2,7 @@ import { discoverChromeInstances } from "@services/browser/BrowserDiscovery"
 import { BrowserSession } from "@services/browser/BrowserSession"
 import { BrowserConnection } from "@shared/proto/cline/browser"
 import { EmptyRequest } from "@shared/proto/cline/common"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from "../index"
 
 /**
@@ -36,6 +37,7 @@ export async function discoverBrowser(controller: Controller, _request: EmptyReq
 			})
 		}
 	} catch (error) {
+		Logger.error("[ControllerAction] discoverBrowser failed", error)
 		return BrowserConnection.create({
 			success: false,
 			message: `Error discovering browser: ${error instanceof Error ? error.message : String(error)}`,

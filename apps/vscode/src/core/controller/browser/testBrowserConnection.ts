@@ -2,6 +2,7 @@ import { discoverChromeInstances } from "@services/browser/BrowserDiscovery"
 import { BrowserSession } from "@services/browser/BrowserSession"
 import { BrowserConnection } from "@shared/proto/cline/browser"
 import { StringRequest } from "@shared/proto/cline/common"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from "../index"
 
 /**
@@ -36,6 +37,7 @@ export async function testBrowserConnection(controller: Controller, request: Str
 					})
 				}
 			} catch (error) {
+				Logger.error("[ControllerAction] browser auto-discovery failed", error)
 				return BrowserConnection.create({
 					success: false,
 					message: `Error during auto-discovery: ${error instanceof Error ? error.message : String(error)}`,
@@ -52,6 +54,7 @@ export async function testBrowserConnection(controller: Controller, request: Str
 			})
 		}
 	} catch (error) {
+		Logger.error("[ControllerAction] testBrowserConnection failed", error)
 		return BrowserConnection.create({
 			success: false,
 			message: `Error testing connection: ${error instanceof Error ? error.message : String(error)}`,

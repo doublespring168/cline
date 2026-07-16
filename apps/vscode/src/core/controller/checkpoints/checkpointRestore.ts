@@ -18,7 +18,7 @@ export async function checkpointRestore(
 		await pWaitFor(() => controller.task?.taskState.isInitialized === true, {
 			timeout: 3_000,
 		}).catch((error) => {
-			Logger.log(
+			Logger.error(
 				"Failed to init new coderX instance to restore checkpoint",
 				error,
 			);

@@ -87,7 +87,7 @@ export async function openUrlInBrowser(url: string): Promise<void> {
 		await writeTextToClipboard(url)
 		Logger.log("URL copied to clipboard as backup")
 	} catch (error) {
-		Logger.error(`Failed to copy URL to clipboard: ${error}`)
+		Logger.error("Failed to copy URL to clipboard", error)
 	}
 
 	// Try to open the URL using platform-specific commands
@@ -106,14 +106,14 @@ export async function openUrlInBrowser(url: string): Promise<void> {
 				Logger.log("Opened URL with Windows 'start' command")
 				return
 			} catch (winError) {
-				Logger.error(`Error with Windows 'start' command: ${winError}`)
+				Logger.error("Error with Windows 'start' command", winError)
 
 				try {
 					await execPromise(`powershell.exe -Command "Start-Process '${url}'"`)
 					Logger.log("Opened URL with PowerShell command")
 					return
 				} catch (psError) {
-					Logger.error(`Error with PowerShell command: ${psError}`)
+					Logger.error("Error with PowerShell command", psError)
 					// Fall through to the fallbacks
 				}
 			}
@@ -132,7 +132,7 @@ export async function openUrlInBrowser(url: string): Promise<void> {
 					Logger.log(`Opened URL with '${cmd}' command`)
 					return
 				} catch (cmdError) {
-					Logger.error(`Error with '${cmd}' command: ${cmdError}`)
+					Logger.error(`Error with '${cmd}' command`, cmdError)
 					// Try next command
 				}
 			}
@@ -141,7 +141,7 @@ export async function openUrlInBrowser(url: string): Promise<void> {
 		// If we got here, none of the OS commands worked
 		throw new Error("All OS commands failed")
 	} catch (error) {
-		Logger.error(`OS commands failed: ${error}`)
+		Logger.error("OS commands failed", error)
 
 		// First fallback: Try openExternal utility
 		// Note: This will likely have encoding issues per https://github.com/microsoft/vscode/issues/85930
@@ -151,7 +151,7 @@ export async function openUrlInBrowser(url: string): Promise<void> {
 			Logger.log("Opened URL with openExternal utility (note: URL encoding may be affected)")
 			return
 		} catch (openExternalError) {
-			Logger.error(`Error with openExternal utility: ${openExternalError}`)
+			Logger.error("Error with openExternal utility", openExternalError)
 
 			// Last fallback: Show a message with instructions
 			HostProvider.window

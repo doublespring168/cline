@@ -30,7 +30,7 @@ export async function getAvailableBranches(_controller: Controller, _request: Em
 			currentBranch: result.currentBranch,
 		})
 	} catch (error) {
-		Logger.error(`Error getting available branches: ${JSON.stringify(error)}`)
+		Logger.error("[ControllerAction] failed to get available branches", error)
 		return BranchList.create({
 			localBranches: [],
 			remoteBranches: [],

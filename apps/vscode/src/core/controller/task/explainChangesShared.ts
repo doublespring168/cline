@@ -501,7 +501,8 @@ export async function detectBinaryFile(filePath: string): Promise<boolean> {
 		try {
 			const result = await isBinaryFile(filePath);
 			return result;
-		} catch {
+		} catch (error) {
+			Logger.error(`[ControllerAction] failed to determine whether '${filePath}' is binary`, error);
 			return false;
 		}
 	}

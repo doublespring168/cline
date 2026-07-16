@@ -294,6 +294,7 @@ export class SummarizeTaskHandler
 
 			return toolResult;
 		} catch (error) {
+			Logger.error(`[summarize_task] failed for task ${config.taskId}`, error);
 			return `Error summarizing context window: ${(error as Error).message}`;
 		}
 	}

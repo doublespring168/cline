@@ -1,6 +1,7 @@
 import * as vscode from "vscode"
 import { ShowTextDocumentRequest, TextEditorInfo } from "@/shared/proto/host/window"
 import { arePathsEqual } from "@/utils/path"
+import { Logger } from "@/shared/services/Logger"
 
 export async function showTextDocument(request: ShowTextDocumentRequest): Promise<TextEditorInfo> {
 	// Convert file path to URI
@@ -22,7 +23,9 @@ export async function showTextDocument(request: ShowTextDocumentRequest): Promis
 				break
 			}
 		}
-	} catch {} // not essential, sometimes tab operations fail
+	} catch (error) {
+		Logger.error(`[HostBridge] failed to prepare existing tab for '${request.path}'`, error)
+	} // not essential, sometimes tab operations fail
 
 	const options: vscode.TextDocumentShowOptions = {}
 

@@ -3,6 +3,7 @@ import { formatResponse } from "@core/prompts/responses";
 import { ClineAsk, ClineAskUseMcpServer } from "@shared/ExtensionMessage";
 import { truncateContent } from "@/shared/content-limits";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
@@ -57,7 +58,7 @@ export class UseMcpToolHandler implements IFullyManagedTool {
 			);
 			await uiHelpers
 				.ask("use_mcp_server" as ClineAsk, partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[use_mcp_tool] failed to render partial UI"));
 		}
 	}
 
@@ -98,8 +99,12 @@ export class UseMcpToolHandler implements IFullyManagedTool {
 		if (mcp_arguments) {
 			try {
 				parsedArguments = JSON.parse(mcp_arguments);
-			} catch (_error) {
+			} catch (error) {
 				config.taskState.consecutiveMistakeCount++;
+				Logger.error(
+					`[use_mcp_tool] invalid JSON arguments for ${server_name}.${tool_name}`,
+					error,
+				);
 				await config.callbacks.say(
 					"error",
 					`coderX tried to use ${tool_name} with an invalid JSON argument. Retrying...`,
@@ -258,6 +263,7 @@ export class UseMcpToolHandler implements IFullyManagedTool {
 				supportsImages ? toolResultImages : undefined,
 			);
 		} catch (error) {
+			Logger.error(`[use_mcp_tool] ${server_name}.${tool_name} execution failed`, error);
 			return `Error executing MCP tool: ${(error as Error)?.message}`;
 		}
 	}

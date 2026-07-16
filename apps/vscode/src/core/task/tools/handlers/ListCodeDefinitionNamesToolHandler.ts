@@ -4,6 +4,7 @@ import { listCodeDefinitionsTopLevel } from "@services/symbols";
 import { getReadablePath, isLocatedInWorkspace } from "@utils/path";
 import { formatResponse } from "@/core/prompts/responses";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
@@ -59,7 +60,7 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 			await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "tool");
 			await uiHelpers
 				.ask("tool", partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[list_code_definition_names] failed to render partial UI"));
 		}
 	}
 
@@ -109,6 +110,7 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 			);
 		} catch (error) {
 			config.taskState.consecutiveMistakeCount++;
+			Logger.error(`[list_code_definition_names] failed for '${relDirPath}'`, error);
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			return formatResponse.toolError(

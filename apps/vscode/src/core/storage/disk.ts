@@ -77,9 +77,10 @@ export async function getDocumentsPath(): Promise<string> {
 			if (trimmedPath) {
 				return trimmedPath;
 			}
-		} catch (_err) {
+		} catch (error) {
 			Logger.error(
 				"Failed to retrieve Windows Documents path. Falling back to homedir/Documents.",
+				error,
 			);
 		}
 	} else if (process.platform === "linux") {
@@ -93,10 +94,11 @@ export async function getDocumentsPath(): Promise<string> {
 			if (trimmedPath) {
 				return trimmedPath;
 			}
-		} catch {
+		} catch (error) {
 			// Log error but continue to fallback
 			Logger.error(
 				"Failed to retrieve XDG Documents path. Falling back to homedir/Documents.",
+				error,
 			);
 		}
 	}

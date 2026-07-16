@@ -43,6 +43,7 @@ import {
 	generateCommitMsg,
 } from "./hosts/vscode/commit-message-generator";
 import { registerClineOutputChannel } from "./hosts/vscode/hostbridge/env/debugLog";
+import { registerCommandWithErrorLogging } from "./hosts/vscode/registerCommandWithErrorLogging";
 import {
 	disposeVscodeCommentReviewController,
 	getVscodeCommentReviewController,
@@ -61,6 +62,7 @@ import { fileExistsAtPath } from "./utils/fs";
 // for the extension's shared lifecycle should be registered in common.ts.
 export async function activate(context: vscode.ExtensionContext) {
 	const activationStartTime = performance.now();
+	registerGlobalErrorLogging(context);
 
 	// 1. Set up HostProvider for VSCode
 	// IMPORTANT: This must be done before any service can be registered
@@ -125,7 +127,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	const { commands } = ExtensionRegistryInfo;
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.PlusButton, async () => {
+		registerCommandWithErrorLogging(commands.PlusButton, async () => {
 			const sidebarInstance = WebviewProvider.getInstance();
 			await sidebarInstance.controller.clearTask();
 			await sidebarInstance.controller.postStateToWebview();
@@ -133,17 +135,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		}),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.McpButton, () =>
+		registerCommandWithErrorLogging(commands.McpButton, () =>
 			sendMcpButtonClickedEvent(),
 		),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.SettingsButton, () =>
+		registerCommandWithErrorLogging(commands.SettingsButton, () =>
 			sendSettingsButtonClickedEvent(),
 		),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.HistoryButton, () =>
+		registerCommandWithErrorLogging(commands.HistoryButton, () =>
 			sendHistoryButtonClickedEvent(),
 		),
 	);
@@ -208,7 +210,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.TerminalOutput, async () => {
+		registerCommandWithErrorLogging(commands.TerminalOutput, async () => {
 			const terminal = vscode.window.activeTerminal;
 			if (!terminal) {
 				return;
@@ -372,7 +374,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
 	// Register the command handlers
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.AddToChat,
 			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
 				const context = await getContextForCommand(range, diagnostics);
@@ -384,7 +386,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.FixWithCline,
 			async (range: vscode.Range, diagnostics: vscode.Diagnostic[]) => {
 				const context = await getContextForCommand(range, diagnostics);
@@ -396,7 +398,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.ExplainCode,
 			async (range: vscode.Range) => {
 				const context = await getContextForCommand(range);
@@ -408,7 +410,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		),
 	);
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.ImproveCode,
 			async (range: vscode.Range) => {
 				const context = await getContextForCommand(range);
@@ -421,7 +423,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.FocusChatInput,
 			async (preserveEditorFocus = false) => {
 				const webview = WebviewProvider.getInstance() as VscodeWebviewProvider;
@@ -483,7 +485,7 @@ export async function activate(context: vscode.ExtensionContext) {
 	}
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.JupyterGenerateCell,
 			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
 				const userPrompt = await showJupyterPromptInput(
@@ -510,7 +512,7 @@ ${ctx.cellJson || "{}"}
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.JupyterExplainCell,
 			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
 				const ctx = await getNotebookCommandContext(range, diagnostics);
@@ -530,7 +532,7 @@ ${ctx.cellJson || "{}"}
 	);
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.JupyterImproveCell,
 			async (range?: vscode.Range, diagnostics?: vscode.Diagnostic[]) => {
 				const userPrompt = await showJupyterPromptInput(
@@ -561,7 +563,7 @@ ${ctx.cellJson || "{}"}
 
 	// Register the reconstructTaskHistory command handler
 	context.subscriptions.push(
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			commands.ReconstructTaskHistory,
 			async () => {
 				const { reconstructTaskHistory } = await import(
@@ -574,10 +576,10 @@ ${ctx.cellJson || "{}"}
 
 	// Register the generateGitCommitMessage command handler
 	context.subscriptions.push(
-		vscode.commands.registerCommand(commands.GenerateCommit, async (scm) => {
+		registerCommandWithErrorLogging(commands.GenerateCommit, async (scm) => {
 			generateCommitMsg(webview.controller, scm);
 		}),
-		vscode.commands.registerCommand(commands.AbortCommit, () => {
+		registerCommandWithErrorLogging(commands.AbortCommit, () => {
 			abortCommitGeneration();
 		}),
 	);
@@ -587,6 +589,24 @@ ${ctx.cellJson || "{}"}
 	);
 
 	return undefined;
+}
+
+function registerGlobalErrorLogging(context: vscode.ExtensionContext): void {
+	const handleUncaughtException = (error: Error, origin: NodeJS.UncaughtExceptionOrigin) => {
+		Logger.error(`[Process] uncaught exception (${origin})`, error);
+	};
+	const handleUnhandledRejection = (reason: unknown, promise: Promise<unknown>) => {
+		Logger.error("[Process] unhandled promise rejection", reason, { promise });
+	};
+
+	process.on("uncaughtExceptionMonitor", handleUncaughtException);
+	process.on("unhandledRejection", handleUnhandledRejection);
+	context.subscriptions.push({
+		dispose: () => {
+			process.off("uncaughtExceptionMonitor", handleUncaughtException);
+			process.off("unhandledRejection", handleUnhandledRejection);
+		},
+	});
 }
 
 async function showJupyterPromptInput(

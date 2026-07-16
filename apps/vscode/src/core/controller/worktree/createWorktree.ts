@@ -30,7 +30,9 @@ export async function createWorktree(_controller: Controller, request: CreateWor
 		if (result.success) {
 			try {
 				const { worktrees } = await listWorktrees(cwd)
-			} catch {}
+			} catch (error) {
+				Logger.error("[ControllerAction] worktree created but refreshing the worktree list failed", error)
+			}
 		} else {
 		}
 
@@ -51,7 +53,7 @@ export async function createWorktree(_controller: Controller, request: CreateWor
 				: undefined,
 		})
 	} catch (error) {
-		Logger.error(`Error creating worktree: ${JSON.stringify(error)}`)
+		Logger.error(`[ControllerAction] failed to create worktree '${request.path}'`, error)
 		return WorktreeResult.create({
 			success: false,
 			message: error instanceof Error ? error.message : String(error),

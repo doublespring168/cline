@@ -3,6 +3,7 @@ import { formatResponse } from "@core/prompts/responses";
 import { ClineAsk, ClineAskUseMcpServer } from "@shared/ExtensionMessage";
 import { truncateContent } from "@/shared/content-limits";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
@@ -54,7 +55,7 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 			);
 			await uiHelpers
 				.ask("use_mcp_server" as ClineAsk, partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[access_mcp_resource] failed to render partial UI"));
 		}
 	}
 

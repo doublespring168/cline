@@ -36,7 +36,7 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 				try {
 					await vscode.window.tabGroups.close(tab);
 				} catch (error) {
-					Logger.warn("Tab close retry failed:", error.message);
+					Logger.error("[VscodeDiffViewProvider] failed to close an existing file tab", error);
 				}
 			}
 			this.documentWasOpen = true;
@@ -63,43 +63,43 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 			);
 		} else {
 			// Open new diff editor.
-			this.activeDiffEditor = await new Promise<vscode.TextEditor>(
-				(resolve, reject) => {
-					const fileName = path.basename(uri.fsPath);
-					const fileExists = this.editType === "modify";
-					const disposable = vscode.window.onDidChangeActiveTextEditor(
-						(editor) => {
-							if (
-								editor &&
-								arePathsEqual(editor.document.uri.fsPath, uri.fsPath)
-							) {
-								disposable.dispose();
-								resolve(editor);
-							}
-						},
-					);
-					vscode.commands.executeCommand(
-						"vscode.diff",
-						vscode.Uri.parse(
-							`${DIFF_VIEW_URI_SCHEME}:${fileName.replace(/%/g, "%25").replace(/#/g, "%23").replace(/\?/g, "%3F")}`,
-						).with({
-							query: Buffer.from(this.originalContent ?? "").toString("base64"),
-						}),
-						uri,
-						`${fileName}: ${fileExists ? "Original ↔ coderX Changes" : "New File"} (Editable)`,
-						{
-							preserveFocus: true,
-						},
-					);
-					// This may happen on very slow machines ie project idx
-					setTimeout(() => {
-						disposable.dispose();
-						reject(
-							new Error("Failed to open diff editor, please try again..."),
-						);
-					}, 10_000);
-				},
-			);
+			const fileName = path.basename(uri.fsPath);
+			const fileExists = this.editType === "modify";
+			try {
+				await vscode.commands.executeCommand(
+					"vscode.diff",
+					vscode.Uri.parse(
+						`${DIFF_VIEW_URI_SCHEME}:${fileName.replace(/%/g, "%25").replace(/#/g, "%23").replace(/\?/g, "%3F")}`,
+					).with({
+						query: Buffer.from(this.originalContent ?? "").toString("base64"),
+					}),
+					uri,
+					`${fileName}: ${fileExists ? "Original ↔ coderX Changes" : "New File"} (Editable)`,
+					{
+						preserveFocus: true,
+					},
+				);
+
+				// `preserveFocus` means opening the diff is not guaranteed to emit an
+				// active-editor change. Ask VS Code for the modified editor directly
+				// after the diff command completes instead of relying on that event.
+				this.activeDiffEditor =
+					vscode.window.visibleTextEditors.find((editor) =>
+						arePathsEqual(editor.document.uri.fsPath, uri.fsPath),
+					) ??
+					(await vscode.window.showTextDocument(uri, {
+						preserveFocus: true,
+					}));
+			} catch (error) {
+				Logger.error(
+					`[VscodeDiffViewProvider] Failed to open diff editor for "${uri.fsPath}"`,
+					error,
+				);
+				throw new Error(
+					`Failed to open diff editor for ${fileName}: ${error instanceof Error ? error.message : String(error)}`,
+					{ cause: error },
+				);
+			}
 		}
 
 		this.fadedOverlayController = new DecorationController(
@@ -272,7 +272,7 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 				try {
 					await vscode.window.tabGroups.close(tab);
 				} catch (error) {
-					Logger.warn("Tab close retry failed:", error.message);
+					Logger.error("[VscodeDiffViewProvider] failed to close a diff tab", error);
 				}
 			}
 		}

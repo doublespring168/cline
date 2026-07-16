@@ -52,6 +52,10 @@ export class GrpcHandler {
 					streamingCallbacks.onComplete()
 				}
 			} catch (error) {
+				Logger.error(
+					`[HostBridge] response callback failed for ${service}.${method} (request: ${requestId})`,
+					error,
+				)
 				// If there's an error in the callback, call the onError callback
 				if (streamingCallbacks.onError) {
 					streamingCallbacks.onError(error instanceof Error ? error : new Error(String(error)))
@@ -77,6 +81,10 @@ export class GrpcHandler {
 		try {
 			await this.handleStreamingRequest(service, method, request, requestId)
 		} catch (error) {
+			Logger.error(
+				`[HostBridge] streaming action ${service}.${method} failed (request: ${requestId})`,
+				error,
+			)
 			if (streamingCallbacks.onError) {
 				streamingCallbacks.onError(error instanceof Error ? error : new Error(String(error)))
 			}
@@ -90,9 +98,14 @@ export class GrpcHandler {
 	}
 
 	private async handleUnaryRequest(service: string, method: string, request: any): Promise<any> {
-		const serviceConfig = this.getServiceHandlerConfig(service)
-		const response = await serviceConfig.requestHandler(method, request)
-		return response
+		try {
+			const serviceConfig = this.getServiceHandlerConfig(service)
+			const response = await serviceConfig.requestHandler(method, request)
+			return response
+		} catch (error) {
+			Logger.error(`[HostBridge] unary action ${service}.${method} failed`, error)
+			throw error
+		}
 	}
 
 	/**

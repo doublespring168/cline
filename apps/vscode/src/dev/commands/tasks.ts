@@ -8,6 +8,7 @@ import { HostProvider } from "@/hosts/host-provider";
 import { ExtensionRegistryInfo } from "@/registry";
 import { ShowMessageType } from "@/shared/proto/host/window";
 import { Logger } from "@/shared/services/Logger";
+import { registerCommandWithErrorLogging } from "@/hosts/vscode/registerCommandWithErrorLogging";
 
 /**
  * Registers development-only commands for task manipulation.
@@ -17,7 +18,7 @@ export function registerTaskCommands(
 	controller: Controller,
 ): vscode.Disposable[] {
 	return [
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			ExtensionRegistryInfo.commands.DevExpireMcpOAuthTokens,
 			async () => {
 				try {
@@ -60,7 +61,7 @@ export function registerTaskCommands(
 				}
 			},
 		),
-		vscode.commands.registerCommand(
+		registerCommandWithErrorLogging(
 			ExtensionRegistryInfo.commands.DevCreateTestTasks,
 			async () => {
 				const count = (

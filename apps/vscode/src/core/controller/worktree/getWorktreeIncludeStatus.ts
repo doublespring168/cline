@@ -3,6 +3,7 @@ import { WorktreeIncludeStatus } from "@shared/proto/cline/worktree";
 import { getWorkspacePath } from "@utils/path";
 import * as fs from "fs/promises";
 import * as path from "path";
+import { Logger } from "@/shared/services/Logger";
 import { Controller } from "..";
 
 /**
@@ -29,7 +30,10 @@ export async function getWorktreeIncludeStatus(
 	try {
 		await fs.access(path.join(cwd, ".coderxworktreeinclude"));
 		exists = true;
-	} catch {
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			Logger.error("[ControllerAction] failed to inspect .coderxworktreeinclude", error);
+		}
 		exists = false;
 	}
 
@@ -39,7 +43,10 @@ export async function getWorktreeIncludeStatus(
 	try {
 		gitignoreContent = await fs.readFile(path.join(cwd, ".gitignore"), "utf-8");
 		hasGitignore = true;
-	} catch {
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			Logger.error("[ControllerAction] failed to read .gitignore", error);
+		}
 		hasGitignore = false;
 	}
 

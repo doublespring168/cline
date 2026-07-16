@@ -248,7 +248,7 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 			await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "tool");
 			await uiHelpers
 				.ask("tool", partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[search_files] failed to render partial UI"));
 		}
 	}
 
@@ -303,6 +303,7 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 			);
 		} catch (error) {
 			config.taskState.consecutiveMistakeCount++;
+			Logger.error(`[search_files] failed to resolve search path '${relDirPath}'`, error);
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			return formatResponse.toolError(

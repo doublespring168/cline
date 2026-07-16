@@ -201,7 +201,7 @@ export async function updateApiConfigurationProto(
 
 		return Empty.create();
 	} catch (error) {
-		Logger.error(`Failed to update API configuration: ${error}`);
+		Logger.error("[ControllerAction] failed to update API configuration from proto", error);
 		throw error;
 	}
 }

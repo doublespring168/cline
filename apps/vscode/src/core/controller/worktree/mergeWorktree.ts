@@ -2,6 +2,7 @@ import { MergeWorktreeRequest, MergeWorktreeResult } from "@shared/proto/cline/w
 import { listWorktrees } from "@utils/git-worktree"
 import { getWorkspacePath } from "@utils/path"
 import simpleGit from "simple-git"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
 /**
@@ -66,7 +67,8 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 		try {
 			sourceBranch = await worktreeGit.revparse(["--abbrev-ref", "HEAD"])
 			sourceBranch = sourceBranch.trim()
-		} catch {
+		} catch (error) {
+			Logger.error(`[ControllerAction] failed to resolve source branch for worktree '${worktreePath}'`, error)
 			return MergeWorktreeResult.create({
 				success: false,
 				message: "Failed to get branch name from worktree",
@@ -99,7 +101,8 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 					targetBranch,
 				})
 			}
-		} catch {
+		} catch (error) {
+			Logger.error(`[ControllerAction] failed to inspect source worktree '${worktreePath}'`, error)
 			// If status check fails, continue anyway
 		}
 
@@ -116,7 +119,8 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 					targetBranch,
 				})
 			}
-		} catch {
+		} catch (error) {
+			Logger.error(`[ControllerAction] failed to inspect target worktree '${targetWorktreePath}'`, error)
 			// If status check fails, continue anyway
 		}
 
@@ -136,7 +140,8 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 					// Abort the merge so we don't leave the repo in a conflicted state
 					try {
 						await git.merge(["--abort"])
-					} catch {
+					} catch (abortError) {
+						Logger.error(`[ControllerAction] failed to abort conflicted merge into '${targetBranch}'`, abortError)
 						// Ignore abort errors
 					}
 					return MergeWorktreeResult.create({
@@ -148,9 +153,11 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 						targetBranch,
 					})
 				}
-			} catch {
+			} catch (conflictCheckError) {
+				Logger.error("[ControllerAction] failed to inspect merge conflicts", conflictCheckError)
 				// If conflict check fails, return the original error
 			}
+			Logger.error(`[ControllerAction] failed to merge '${sourceBranch}' into '${targetBranch}'`, error)
 
 			const errorMessage = error instanceof Error ? error.message : String(error)
 			return MergeWorktreeResult.create({
@@ -168,6 +175,7 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 			try {
 				await git.raw(["worktree", "remove", worktreePath, "--force"])
 			} catch (error) {
+				Logger.error(`[ControllerAction] merge succeeded but deleting worktree '${worktreePath}' failed`, error)
 				// Merge succeeded but deletion failed - still return success
 				const errorMessage = error instanceof Error ? error.message : String(error)
 				return MergeWorktreeResult.create({
@@ -183,7 +191,8 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 			// Optionally delete the branch too
 			try {
 				await git.deleteLocalBranch(sourceBranch)
-			} catch {
+			} catch (error) {
+				Logger.error(`[ControllerAction] failed to delete merged branch '${sourceBranch}'`, error)
 				// Branch deletion is optional, don't fail if it doesn't work
 			}
 		}
@@ -198,6 +207,7 @@ export async function mergeWorktree(_controller: Controller, request: MergeWorkt
 			targetBranch,
 		})
 	} catch (error) {
+		Logger.error(`[ControllerAction] unexpected mergeWorktree failure for '${worktreePath}'`, error)
 		const errorMessage = error instanceof Error ? error.message : String(error)
 		return MergeWorktreeResult.create({
 			success: false,

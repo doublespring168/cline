@@ -1,4 +1,5 @@
 import { resolveWorkspacePath } from "@/core/workspace"
+import { Logger } from "@/shared/services/Logger"
 import type { ToolValidator } from "../ToolValidator"
 import type { TaskConfig } from "../types/TaskConfig"
 
@@ -20,7 +21,8 @@ export class PathResolver {
 						absolutePath: pathResult.absolutePath,
 						resolvedPath: pathResult.resolvedPath,
 					}
-		} catch {
+		} catch (error) {
+			Logger.error(`[ToolPathResolver] failed to resolve '${filePath}' for ${caller}`, error)
 			return undefined
 		}
 	}

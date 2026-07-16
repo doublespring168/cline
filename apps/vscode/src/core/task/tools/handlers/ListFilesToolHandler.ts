@@ -9,6 +9,7 @@ import {
 	isLocatedInWorkspace,
 } from "@utils/path";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import type { IFullyManagedTool } from "../ToolExecutorCoordinator";
@@ -67,7 +68,7 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 			await uiHelpers.removeLastPartialMessageIfExistsWithType("say", "tool");
 			await uiHelpers
 				.ask("tool", partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[list_files] failed to render partial UI"));
 		}
 	}
 
@@ -133,6 +134,7 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 			[files, didHitLimit] = await listFiles(absolutePath, recursive, 200);
 		} catch (error) {
 			config.taskState.consecutiveMistakeCount++;
+			Logger.error(`[list_files] failed for '${relDirPath}'`, error);
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
 			return formatResponse.toolError(`Error listing files: ${errorMessage}`);

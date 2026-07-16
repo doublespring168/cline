@@ -7,6 +7,7 @@ import {
 	SubagentStatusItem,
 } from "@shared/ExtensionMessage";
 import { ClineDefaultTool } from "@/shared/tools";
+import { Logger } from "@/shared/services/Logger";
 import type { ToolResponse } from "../../index";
 import { showNotificationForApproval } from "../../utils";
 import { AgentConfigLoader } from "../subagent/AgentConfigLoader";
@@ -119,7 +120,7 @@ export class UseSubagentsToolHandler implements IFullyManagedTool {
 			);
 			await uiHelpers
 				.ask("use_subagents", partialMessage, block.partial)
-				.catch(() => {});
+				.catch(Logger.catchError("[use_subagents] failed to render partial UI"));
 		}
 	}
 
@@ -271,7 +272,9 @@ export class UseSubagentsToolHandler implements IFullyManagedTool {
 			partial: boolean,
 		): Promise<void> => {
 			statusUpdateQueue = statusUpdateQueue
-				.catch(() => undefined)
+				.catch((error) => {
+					Logger.error("[use_subagents] failed to publish a status update", error);
+				})
 				.then(() => emitStatus(status, partial));
 			return statusUpdateQueue;
 		};

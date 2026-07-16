@@ -20,7 +20,7 @@ export async function deleteMcpServer(controller: Controller, request: StringReq
 
 		return McpServers.create({ mcpServers: protoServers })
 	} catch (error) {
-		Logger.error(`Failed to delete MCP server: ${error}`)
+		Logger.error(`[ControllerAction] failed to delete MCP server '${request.value}'`, error)
 		throw error
 	}
 }

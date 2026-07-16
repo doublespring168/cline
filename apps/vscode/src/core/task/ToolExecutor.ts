@@ -11,6 +11,7 @@ import { UrlContentFetcher } from "@services/browser/UrlContentFetcher"
 import { McpHub } from "@services/mcp/McpHub"
 import { ClineAsk, ClineSay } from "@shared/ExtensionMessage"
 import { ClineContent } from "@shared/messages/content"
+import { Logger } from "@shared/services/Logger"
 import { ClineDefaultTool, toolUseNames } from "@shared/tools"
 import { ClineAskResponse } from "@shared/WebviewMessage"
 import { isParallelToolCallingEnabled, modelDoesntSupportWebp } from "@/utils/model-utils"
@@ -237,8 +238,11 @@ export class ToolExecutor {
 	 * @param error The error that occurred
 	 * @param block The tool use block that caused the error
 	 */
-	private async handleError(action: string, error: Error, block: ToolUse): Promise<void> {
-		const errorString = `Error ${action}: ${error.message}`
+	private async handleError(action: string, error: unknown, block: ToolUse): Promise<void> {
+		const normalizedError = error instanceof Error ? error : new Error(String(error))
+		const errorString = `Error ${action}: ${normalizedError.message}`
+		const toolPath = block.params.path || block.params.absolutePath
+		Logger.error(`[ToolExecutor] ${errorString}${toolPath ? ` (path: ${toolPath})` : ""}`, normalizedError)
 		await this.say("error", errorString)
 
 		// Create error response for the tool
@@ -378,7 +382,7 @@ export class ToolExecutor {
 			await this.handleCompleteBlock(block, config)
 			return true
 		} catch (error) {
-			await this.handleError(`executing ${block.name}`, error as Error, block)
+			await this.handleError(`executing ${block.name}`, error, block)
 			return true
 		}
 	}

@@ -2,6 +2,7 @@ import { workspaceResolver } from "@core/workspace"
 import { BooleanResponse, StringRequest } from "@shared/proto/cline/common"
 import { getWorkspacePath } from "@utils/path"
 import * as fs from "fs"
+import { Logger } from "@/shared/services/Logger"
 import { Controller } from ".."
 
 /**
@@ -35,7 +36,10 @@ export async function ifFileExistsRelativePath(_controller: Controller, request:
 		return BooleanResponse.create({
 			value: fs.statSync(absolutePath).isFile(),
 		})
-	} catch {
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code !== "ENOENT") {
+			Logger.error(`[ControllerAction] failed to inspect '${absolutePath}'`, error)
+		}
 		return BooleanResponse.create({ value: false })
 	}
 }

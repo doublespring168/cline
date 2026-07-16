@@ -133,7 +133,9 @@ export class VscodeWebviewProvider extends WebviewProvider implements vscode.Web
 	private setWebviewMessageListener(webview: vscode.Webview) {
 		webview.onDidReceiveMessage(
 			(message) => {
-				this.handleWebviewMessage(message)
+				void this.handleWebviewMessage(message).catch((error) => {
+					Logger.error(`[WebviewAction] failed to handle message type '${message?.type ?? "unknown"}'`, error)
+				})
 			},
 			null,
 			this.disposables,

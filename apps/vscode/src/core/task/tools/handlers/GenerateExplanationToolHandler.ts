@@ -122,7 +122,8 @@ export class GenerateExplanationToolHandler implements IToolHandler, IPartialBlo
 			// Validate the refs exist
 			try {
 				await git.revparse([fromRef])
-			} catch {
+			} catch (error) {
+				Logger.error(`[generate_explanation] invalid git reference '${fromRef}'`, error)
 				const errorMsg = `Invalid git reference '${fromRef}'. Please provide a valid commit hash, branch name, tag, or relative reference (e.g., HEAD~1).`
 				await config.callbacks.say(
 					"generate_explanation",
@@ -137,7 +138,8 @@ export class GenerateExplanationToolHandler implements IToolHandler, IPartialBlo
 			if (toRef) {
 				try {
 					await git.revparse([toRef])
-				} catch {
+				} catch (error) {
+					Logger.error(`[generate_explanation] invalid git reference '${toRef}'`, error)
 					const errorMsg = `Invalid git reference '${toRef}'. Please provide a valid commit hash, branch name, tag, or relative reference.`
 					await config.callbacks.say(
 						"generate_explanation",
@@ -285,7 +287,7 @@ export class GenerateExplanationToolHandler implements IToolHandler, IPartialBlo
 			)
 		} catch (error) {
 			const errorMessage = error instanceof Error ? error.message : "Unknown error"
-			Logger.error("Error in generate_explanation:", errorMessage)
+			Logger.error("[generate_explanation] execution failed", error)
 			await config.callbacks.say(
 				"generate_explanation",
 				createExplanationMessage(

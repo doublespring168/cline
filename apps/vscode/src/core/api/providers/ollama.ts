@@ -138,7 +138,7 @@ export class OllamaHandler implements ApiHandler {
 			const statusCode = error.status || error.statusCode
 			const errorMessage = error.message || "Unknown error"
 
-			Logger.error(`Ollama API error (${statusCode || "unknown"}): ${errorMessage}`)
+			Logger.error(`Ollama API error (${statusCode || "unknown"}): ${errorMessage}`, error)
 			throw error
 		}
 	}
