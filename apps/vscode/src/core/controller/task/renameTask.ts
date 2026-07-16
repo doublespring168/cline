@@ -1,6 +1,6 @@
 import { Empty } from "@shared/proto/cline/common"
 import { RenameTaskRequest } from "@shared/proto/cline/task"
-import { Controller } from "../"
+import type { Controller } from "../"
 
 export async function renameTask(controller: Controller, request: RenameTaskRequest): Promise<Empty> {
 	const newName = request.newName.trim()

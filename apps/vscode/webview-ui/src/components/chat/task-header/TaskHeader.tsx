@@ -69,7 +69,7 @@ const TaskHeader: React.FC<TaskHeaderProps> = ({
 	const [isSavingTitle, setIsSavingTitle] = useState(false)
 	const highlightedTextRef = React.useRef<HTMLDivElement>(null)
 
-	const displayTitle = currentTaskItem?.task || task.text
+	const displayTitle = currentTaskItem?.task || task.text || ""
 	const highlightedText = useMemo(() => highlightText(displayTitle, false), [displayTitle])
 
 	// Check if text overflows the container (i.e., needs clamping)

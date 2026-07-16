@@ -3,7 +3,7 @@ import { calculateApiCostOpenAI } from "@utils/cost"
 import OpenAI from "openai"
 import type { ChatCompletionReasoningEffort, ChatCompletionTool as OpenAITool } from "openai/resources/chat/completions"
 import { buildExternalBasicHeaders } from "@/services/EnvUtils"
-import { ClineStorageMessage } from "@/shared/messages/content"
+import { ClineContent, ClineStorageMessage } from "@/shared/messages/content"
 import { fetch } from "@/shared/net"
 import { ApiHandler, CommonApiHandlerOptions } from "../"
 import { withRetry } from "../retry"
@@ -16,6 +16,57 @@ interface DeepSeekHandlerOptions extends CommonApiHandlerOptions {
 	deepSeekApiKey?: string
 	apiModelId?: string
 	reasoningEffort?: string
+}
+
+const DEEPSEEK_IMAGE_OMITTED_TEXT = "[Image omitted because DeepSeek models do not support image input.]"
+
+function replaceImagesWithText(content: ClineContent[]): ClineContent[] {
+	return content.map((block) => {
+		if (block.type === "image") {
+			return { type: "text", text: DEEPSEEK_IMAGE_OMITTED_TEXT }
+		}
+
+		if (block.type === "tool_result" && Array.isArray(block.content)) {
+			return {
+				...block,
+				content: block.content.map((part) =>
+					part.type === "image" ? { type: "text" as const, text: DEEPSEEK_IMAGE_OMITTED_TEXT } : part,
+				),
+			}
+		}
+
+		return block
+	})
+}
+
+function convertToDeepSeekMessages(messages: ClineStorageMessage[]): OpenAI.Chat.ChatCompletionMessageParam[] {
+	const textOnlyMessages = messages.map((message): ClineStorageMessage => {
+		if (typeof message.content === "string") {
+			return message
+		}
+
+		return {
+			...message,
+			content: replaceImagesWithText(message.content),
+		}
+	})
+
+	return convertToOpenAiMessages(textOnlyMessages).map((message) => {
+		if (!("content" in message) || !Array.isArray(message.content)) {
+			return message
+		}
+
+		const content = message.content
+			.map((part) => {
+				if (part.type === "text") {
+					return part.text
+				}
+				return DEEPSEEK_IMAGE_OMITTED_TEXT
+			})
+			.join("\n")
+
+		return { ...message, content } as OpenAI.Chat.ChatCompletionMessageParam
+	})
 }
 
 export class DeepSeekHandler implements ApiHandler {
@@ -86,7 +137,7 @@ export class DeepSeekHandler implements ApiHandler {
 		const isDeepSeekThinkingModel =
 			isDeepSeekReasonerModel || model.id === "deepseek-v4-flash" || model.id === "deepseek-v4-pro"
 
-		const convertedMessages = convertToOpenAiMessages(messages)
+		const convertedMessages = convertToDeepSeekMessages(messages)
 		const openAiMessages: OpenAI.Chat.ChatCompletionMessageParam[] = isDeepSeekReasonerModel
 			? [{ role: "system", content: systemPrompt }, ...addReasoningContent(convertedMessages, messages)]
 			: [{ role: "system", content: systemPrompt }, ...convertedMessages]
