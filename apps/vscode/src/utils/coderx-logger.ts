@@ -2,7 +2,7 @@
  * @Author: darcy.zhang , tech.darcy.zhang@outlook.com
  * @Date: 2026-07-16 21:32:28
  * @LastEditors: darcy.zhang , tech.darcy.zhang@outlook.com
- * @LastEditTime: 2026-07-16 23:20:16
+ * @LastEditTime: 2026-07-17 09:32:11
  * @FilePath: /vscode/src/utils/coderx-logger.ts
  * @Description:
  *
@@ -80,7 +80,7 @@ export function logAgentStep(
 		const cleanStepName = toSingleLine(stepName);
 		const cleanDescription = toSingleLine(description);
 
-		const turnStr = turn !== undefined && turn !== null ? `，当前请求周期的轮次：第 ${turn} 轮` : "";
+		const turnStr = turn !== undefined && turn !== null ? `，${turn}轮` : "";
 
 		let paramsStr = "";
 		if (params !== undefined && params !== null) {
