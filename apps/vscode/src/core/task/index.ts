@@ -91,6 +91,7 @@ import { USER_CONTENT_TAGS } from "@shared/messages/constants";
 import { convertClineMessageToProto } from "@shared/proto-conversions/cline-message";
 import { type ClineDefaultTool, READ_ONLY_TOOLS } from "@shared/tools";
 import type { ClineAskResponse } from "@shared/WebviewMessage";
+import { logAgentStep } from "@utils/coderx-logger";
 import {
 	isClaude4PlusModelFamily,
 	isGPT5ModelFamily,
@@ -401,14 +402,13 @@ export class Task {
 			taskIsFavorited: this.taskIsFavorited,
 			updateTaskHistory: this.updateTaskHistory,
 			onApiConversationMessageAdded: async (message, metadata) => {
-				if (message.role === "assistant") {
-					await this.conversationHistoryRecorder.recordModelMessage({
-						sessionId: this.taskId,
-						message,
-						rawResponseText: metadata?.rawResponseText,
-						model: this.getConversationModelMetadata(message),
-					});
-				}
+				await this.conversationHistoryRecorder.recordApiConversationMessage({
+					sessionId: this.taskId,
+					message,
+					rawResponseText: metadata?.rawResponseText,
+					model: this.getConversationModelMetadata(message),
+					requestSequence: this.taskState.apiRequestCount,
+				});
 			},
 		});
 
@@ -1949,13 +1949,13 @@ export class Task {
 		return { model, providerId, customPrompt, mode };
 	}
 
-	private getConversationModelMetadata(message: ClineStorageMessage): ConversationModelMetadata {
+	private getConversationModelMetadata(message?: ClineStorageMessage): ConversationModelMetadata {
 		const providerInfo = this.getCurrentProviderInfo();
 		const apiConfiguration = this.stateManager.getApiConfiguration();
-		const mode = message.modelInfo?.mode ?? providerInfo.mode;
+		const mode = message?.modelInfo?.mode ?? providerInfo.mode;
 		return {
-			providerId: message.modelInfo?.providerId ?? providerInfo.providerId,
-			modelId: message.modelInfo?.modelId ?? providerInfo.model.id,
+			providerId: message?.modelInfo?.providerId ?? providerInfo.providerId,
+			modelId: message?.modelInfo?.modelId ?? providerInfo.model.id,
 			modelName: providerInfo.model.info.name ?? providerInfo.model.id,
 			mode,
 			reasoningEffort:
@@ -2284,6 +2284,14 @@ export class Task {
 		// coderX-stored conversation history (ClineStorageMessage[]), so narrow it back for the provider boundary.
 		const truncatedConversationHistory =
 			contextManagementMetadata.truncatedConversationHistory as ClineStorageMessage[];
+		await this.conversationHistoryRecorder.recordModelRequest({
+			sessionId: this.taskId,
+			systemPrompt,
+			messages: truncatedConversationHistory,
+			tools,
+			model: this.getConversationModelMetadata(),
+			requestSequence: this.taskState.apiRequestCount,
+		});
 		const stream = this.api.createMessage(
 			systemPrompt,
 			truncatedConversationHistory,
@@ -2370,13 +2378,26 @@ export class Task {
 				const shouldRetry =
 					!isAuthError &&
 					!quotaExceeded &&
-					this.taskState.autoRetryAttempts < 3;
+					this.taskState.autoRetryAttempts < 10;
 				if (shouldRetry) {
-					// Auto-retry enabled with max 3 attempts: automatically approve the retry
+					// Auto-retry enabled with max 10 attempts: automatically approve the retry
 					this.taskState.autoRetryAttempts++;
 
-					// Calculate delay: 2s, 4s, 8s
-					const delay = 2000 * 2 ** (this.taskState.autoRetryAttempts - 1);
+					// Calculate delay: 2 seconds
+					const delay = 2000;
+
+					logAgentStep(
+						"自动重试中 (Auto-Retry in Progress)",
+						`API请求失败（流式异常），准备自动重试第 ${this.taskState.autoRetryAttempts} 次`,
+						{
+							attempt: this.taskState.autoRetryAttempts,
+							maxAttempts: 10,
+							delaySeconds: delay / 1000,
+							error: streamingFailedMessage,
+						},
+						this.taskId,
+						this.taskState.apiRequestCount,
+					);
 
 					await updateApiReqMsg({
 						messageStateHandler: this.messageStateHandler,
@@ -2398,7 +2419,7 @@ export class Task {
 						"error_retry",
 						JSON.stringify({
 							attempt: this.taskState.autoRetryAttempts,
-							maxAttempts: 3,
+							maxAttempts: 10,
 							delaySeconds: delay / 1000,
 							errorMessage: streamingFailedMessage,
 						}),
@@ -2429,11 +2450,23 @@ export class Task {
 					// Show error_retry after transient retries are exhausted.
 					const showRetry = !isAuthError && !quotaExceeded;
 					if (showRetry) {
+						logAgentStep(
+							"自动重试失败 (Auto-Retry Failed)",
+							"自动重试次数已达上限，已失败。需要人工介入。",
+							{
+								maxAttempts: 10,
+								reason: streamingFailedMessage,
+							},
+							this.taskId,
+							this.taskState.apiRequestCount,
+						);
+						Logger.error(`[Task ${this.taskId}] Auto-Retry Failed. Reason: ${streamingFailedMessage}`);
+
 						await this.say(
 							"error_retry",
 							JSON.stringify({
-								attempt: 3,
-								maxAttempts: 3,
+								attempt: 10,
+								maxAttempts: 10,
 								delaySeconds: 0,
 								failed: true, // Special flag to indicate retries exhausted
 								errorMessage: streamingFailedMessage,
@@ -3401,18 +3434,31 @@ export class Task {
 						this.api.getModel().id,
 					);
 					const errorMessage = clineError.serialize();
-					if (this.taskState.autoRetryAttempts < 3) {
+					if (this.taskState.autoRetryAttempts < 10) {
 						this.taskState.autoRetryAttempts++;
 
-						// Calculate exponential backoff for streaming failures: 2s, 4s, 8s
-						const delay = 2000 * 2 ** (this.taskState.autoRetryAttempts - 1);
+						// Calculate delay: 2 seconds
+						const delay = 2000;
+
+						logAgentStep(
+							"自动重试中 (Auto-Retry in Progress)",
+							`API请求失败（流中途异常），准备自动重试第 ${this.taskState.autoRetryAttempts} 次`,
+							{
+								attempt: this.taskState.autoRetryAttempts,
+								maxAttempts: 10,
+								delaySeconds: delay / 1000,
+								error: errorMessage,
+							},
+							this.taskId,
+							this.taskState.apiRequestCount,
+						);
 
 						// API Request component is updated to show error message, we then display retry information underneath that...
 						await this.say(
 							"error_retry",
 							JSON.stringify({
 								attempt: this.taskState.autoRetryAttempts,
-								maxAttempts: 3,
+								maxAttempts: 10,
 								delaySeconds: delay / 1000,
 								errorMessage,
 							}),
@@ -3432,13 +3478,25 @@ export class Task {
 								);
 							}
 						});
-					} else if (this.taskState.autoRetryAttempts >= 3) {
+					} else if (this.taskState.autoRetryAttempts >= 10) {
+						logAgentStep(
+							"自动重试失败 (Auto-Retry Failed)",
+							"自动重试次数已达上限，已失败。需要人工介入。",
+							{
+								maxAttempts: 10,
+								reason: errorMessage,
+							},
+							this.taskId,
+							this.taskState.apiRequestCount,
+						);
+						Logger.error(`[Task ${this.taskId}] Auto-Retry Failed. Reason: ${errorMessage}`);
+
 						// Show error_retry with failed flag to indicate all retries exhausted
 						await this.say(
 							"error_retry",
 							JSON.stringify({
-								attempt: 3,
-								maxAttempts: 3,
+								attempt: 10,
+								maxAttempts: 10,
 								delaySeconds: 0,
 								failed: true, // Special flag to indicate retries exhausted
 								errorMessage,
@@ -3663,30 +3721,56 @@ export class Task {
 				const noResponseErrorMessage =
 					"No assistant message was received. Would you like to retry the request?";
 
-				if (this.taskState.autoRetryAttempts < 3) {
-					// Auto-retry enabled with max 3 attempts: automatically approve the retry
+				if (this.taskState.autoRetryAttempts < 10) {
+					// Auto-retry enabled with max 10 attempts: automatically approve the retry
 					this.taskState.autoRetryAttempts++;
 
-					// Calculate delay: 2s, 4s, 8s
-					const delay = 2000 * 2 ** (this.taskState.autoRetryAttempts - 1);
+					// Calculate delay: 2 seconds
+					const delay = 2000;
 					response = "yesButtonClicked";
+
+					logAgentStep(
+						"自动重试中 (Auto-Retry in Progress)",
+						`未接收到模型响应，准备自动重试第 ${this.taskState.autoRetryAttempts} 次`,
+						{
+							attempt: this.taskState.autoRetryAttempts,
+							maxAttempts: 10,
+							delaySeconds: delay / 1000,
+							error: noResponseErrorMessage,
+						},
+						this.taskId,
+						this.taskState.apiRequestCount,
+					);
+
 					await this.say(
 						"error_retry",
 						JSON.stringify({
 							attempt: this.taskState.autoRetryAttempts,
-							maxAttempts: 3,
+							maxAttempts: 10,
 							delaySeconds: delay / 1000,
 							errorMessage: noResponseErrorMessage,
 						}),
 					);
 					await setTimeoutPromise(delay);
 				} else {
-					// Max retries exhausted (>= 3 attempts), ask user
+					logAgentStep(
+						"自动重试失败 (Auto-Retry Failed)",
+						"自动重试次数已达上限，已失败。需要人工介入。",
+						{
+							maxAttempts: 10,
+							reason: noResponseErrorMessage,
+						},
+						this.taskId,
+						this.taskState.apiRequestCount,
+					);
+					Logger.error(`[Task ${this.taskId}] Auto-Retry Failed. Reason: ${noResponseErrorMessage}`);
+
+					// Max retries exhausted (>= 10 attempts), ask user
 					await this.say(
 						"error_retry",
 						JSON.stringify({
-							attempt: 3,
-							maxAttempts: 3,
+							attempt: 10,
+							maxAttempts: 10,
 							delaySeconds: 0,
 							failed: true, // Special flag to indicate retries exhausted
 							errorMessage: noResponseErrorMessage,

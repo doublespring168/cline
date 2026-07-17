@@ -1,4 +1,4 @@
-import { ApiHandler } from "@core/api"
+ import { ApiHandler } from "@core/api"
 import { FileContextTracker } from "@core/context/context-tracking/FileContextTracker"
 import { getHookModelContext } from "@core/hooks/hook-model-context"
 import { getHooksEnabledSafe } from "@core/hooks/hooks-utils"
@@ -15,6 +15,7 @@ import { Logger } from "@shared/services/Logger"
 import { ClineDefaultTool, toolUseNames } from "@shared/tools"
 import { ClineAskResponse } from "@shared/WebviewMessage"
 import { isParallelToolCallingEnabled, modelDoesntSupportWebp } from "@/utils/model-utils"
+import { logAgentStep } from "@/utils/coderx-logger"
 import { ToolUse } from "../assistant-message"
 import { ContextManager } from "../context/context-management/ContextManager"
 import { formatResponse } from "../prompts/responses"
@@ -331,6 +332,12 @@ export class ToolExecutor {
 
 		const config = this.asToolConfig()
 
+		logAgentStep("执行工具前检验 (execute)", "智能体发出工具调用指令，开始校验执行限制、参数完整性以及安全策略", {
+			toolName: block.name,
+			params: block.params,
+			partial: block.partial,
+		}, this.taskId, this.taskState.apiRequestCount);
+
 		try {
 			// Check if user rejected a previous tool
 			if (this.taskState.didRejectTool) {
@@ -587,6 +594,12 @@ export class ToolExecutor {
 			toolWasExecuted = true
 			this.pushToolResult(toolResult, block)
 
+			logAgentStep("工具执行成功 (handleCompleteBlock)", "工具执行成功，输出结果并将其反馈到下一步LLM对话历史中", {
+				toolName: block.name,
+				params: block.params,
+				result: toolResult,
+			}, this.taskId, this.taskState.apiRequestCount);
+
 			// --- Repeated tool call loop detection ---
 			// Must run BEFORE updating lastToolName/lastToolParams so we compare
 			// against the previous call's values, not the current one.
@@ -631,6 +644,12 @@ export class ToolExecutor {
 		} catch (error) {
 			executionSuccess = false
 			toolResult = formatResponse.toolError(`Tool execution failed: ${error}`)
+
+			logAgentStep("工具执行失败 (handleCompleteBlock)", "工具执行失败或被异常终止，输出错误日志反馈给LLM进行自适应修复", {
+				toolName: block.name,
+				params: block.params,
+				error: error instanceof Error ? error.message : String(error),
+			}, this.taskId, this.taskState.apiRequestCount);
 
 			// Check abort before running PostToolUse hook (error path)
 			if (this.taskState.abort) {
