@@ -79,6 +79,7 @@ export class NotebookDiffView {
 			uri,
 			this.tempModifiedUri,
 			`${fileName}: Original ↔ coderX Changes (Notebook)`,
+			{ preserveFocus: true },
 		);
 
 		// Brief delay to allow VS Code to render the notebook diff view

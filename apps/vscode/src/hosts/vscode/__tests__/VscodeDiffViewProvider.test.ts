@@ -11,6 +11,11 @@ class TestDiffViewProvider {
 	editType?: "create" | "modify";
 	originalContent?: string;
 	documentWasOpen = false;
+	relPath?: string;
+
+	isNotebookFile(): boolean {
+		return this.relPath?.toLowerCase().endsWith(".ipynb") ?? false;
+	}
 }
 
 function createUri(fsPath: string) {
@@ -27,6 +32,8 @@ describe("VscodeDiffViewProvider.openDiffEditor", () => {
 	const targetPath = "/workspace/example.ts";
 	let executeCommand: sinon.SinonStub;
 	let showTextDocument: sinon.SinonStub;
+	let closeTab: sinon.SinonStub;
+	let getExtension: sinon.SinonStub;
 	let loggerError: sinon.SinonStub;
 	let editor: {
 		document: { uri: ReturnType<typeof createUri>; lineCount: number };
@@ -35,6 +42,8 @@ describe("VscodeDiffViewProvider.openDiffEditor", () => {
 	beforeEach(() => {
 		executeCommand = sinon.stub().resolves();
 		showTextDocument = sinon.stub();
+		closeTab = sinon.stub().resolves(true);
+		getExtension = sinon.stub().returns(undefined);
 		loggerError = sinon.stub();
 		editor = {
 			document: {
@@ -44,21 +53,26 @@ describe("VscodeDiffViewProvider.openDiffEditor", () => {
 		};
 	});
 
-	function createProvider(visibleTextEditors: (typeof editor)[] = [editor]) {
+	function createProvider(
+		visibleTextEditors: (typeof editor)[] = [editor],
+		tabGroups: { tabs: unknown[] }[] = [],
+	) {
 		const DecorationController = class {
 			addLines = sinon.stub();
 		};
 		const vscode = {
 			commands: { executeCommand },
+			extensions: { getExtension },
 			Uri: {
 				file: (value: string) => createUri(value),
 				parse: (value: string) => createUri(value),
 			},
 			window: {
 				showTextDocument,
-				tabGroups: { all: [], close: sinon.stub().resolves() },
+				tabGroups: { all: tabGroups, close: closeTab },
 				visibleTextEditors,
 			},
+			ViewColumn: { Active: 1 },
 			TabInputText,
 			TabInputTextDiff,
 		};
@@ -98,6 +112,9 @@ describe("VscodeDiffViewProvider.openDiffEditor", () => {
 
 		sinon.assert.calledOnce(executeCommand);
 		assert.equal(executeCommand.firstCall.args[0], "vscode.diff");
+		assert.deepEqual(executeCommand.firstCall.args[4], {
+			preserveFocus: true,
+		});
 		sinon.assert.notCalled(showTextDocument);
 	});
 
@@ -112,6 +129,63 @@ describe("VscodeDiffViewProvider.openDiffEditor", () => {
 			sinon.match({ fsPath: targetPath }),
 			{ preserveFocus: true },
 		);
+	});
+
+	it("preserves focus when closing an existing file tab", async () => {
+		const input = Object.assign(new TabInputText(), {
+			uri: createUri(targetPath),
+		});
+		const tab = { input, isDirty: false };
+		const provider = createProvider([editor], [{ tabs: [tab] }]);
+
+		await provider.openDiffEditor();
+
+		sinon.assert.calledOnceWithExactly(closeTab, tab, true);
+	});
+
+	it("preserves focus when closing a coderX diff tab", async () => {
+		const input = Object.assign(new TabInputTextDiff(), {
+			original: createUri("coderx-diff:example.ts"),
+			modified: createUri(targetPath),
+		});
+		const tab = { input, isDirty: false };
+		const provider = createProvider([editor], [{ tabs: [tab] }]);
+
+		await (provider as any).closeAllDiffViews();
+
+		sinon.assert.calledOnceWithExactly(closeTab, tab, true);
+	});
+
+	it("shows the saved text file without taking focus", async () => {
+		showTextDocument.resolves(editor);
+		const provider = createProvider();
+		provider.relPath = "example.ts";
+
+		await provider.showFile(targetPath);
+
+		sinon.assert.calledOnceWithExactly(
+			showTextDocument,
+			sinon.match({ fsPath: targetPath }),
+			{ preserveFocus: true, preview: false },
+		);
+	});
+
+	it("opens the saved notebook editor without taking focus", async () => {
+		getExtension.returns({});
+		const provider = createProvider();
+		provider.relPath = "notebook.ipynb";
+
+		await provider.showFile(targetPath);
+
+		sinon.assert.calledOnceWithExactly(
+			executeCommand,
+			"vscode.openWith",
+			sinon.match({ fsPath: targetPath }),
+			"jupyter-notebook",
+			1,
+			{ preserveFocus: true, preview: false },
+		);
+		sinon.assert.notCalled(showTextDocument);
 	});
 
 	it("logs and preserves the VS Code command error", async () => {

@@ -34,7 +34,7 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 		for (const tab of tabs) {
 			if (!tab.isDirty) {
 				try {
-					await vscode.window.tabGroups.close(tab);
+					await vscode.window.tabGroups.close(tab, true);
 				} catch (error) {
 					Logger.error("[VscodeDiffViewProvider] failed to close an existing file tab", error);
 				}
@@ -270,7 +270,7 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 			// trying to close dirty views results in save popup
 			if (!tab.isDirty) {
 				try {
-					await vscode.window.tabGroups.close(tab);
+					await vscode.window.tabGroups.close(tab, true);
 				} catch (error) {
 					Logger.error("[VscodeDiffViewProvider] failed to close a diff tab", error);
 				}
@@ -321,13 +321,18 @@ export class VscodeDiffViewProvider extends DiffViewProvider {
 					"vscode.openWith",
 					uri,
 					"jupyter-notebook",
+					vscode.ViewColumn.Active,
+					{ preserveFocus: true, preview: false },
 				);
 				return;
 			}
 		}
 
 		// Default: open as text
-		await vscode.window.showTextDocument(uri, { preview: false });
+		await vscode.window.showTextDocument(uri, {
+			preserveFocus: true,
+			preview: false,
+		});
 	}
 }
 

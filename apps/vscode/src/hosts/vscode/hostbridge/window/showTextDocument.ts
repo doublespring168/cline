@@ -18,7 +18,7 @@ export async function showTextDocument(request: ShowTextDocumentRequest): Promis
 				const activeColumn = vscode.window.activeTextEditor?.viewColumn
 				const tabColumn = vscode.window.tabGroups.all.find((group) => group.tabs.includes(existingTab))?.viewColumn
 				if (activeColumn && activeColumn !== tabColumn && !existingTab.isDirty) {
-					await vscode.window.tabGroups.close(existingTab)
+					await vscode.window.tabGroups.close(existingTab, request.options?.preserveFocus)
 				}
 				break
 			}
