@@ -717,9 +717,9 @@
 .markdown-body table th,
 .markdown-body table td {
 	padding: 6px 13px;
-	border-top: 1px solid var(--borderColor-default);
+	border-top: 1px solid color-mix(in srgb, var(--borderColor-default) 50%, transparent);
 	border-right: 0;
-	border-bottom: 1px solid var(--borderColor-default);
+	border-bottom: 1px solid color-mix(in srgb, var(--borderColor-default) 50%, transparent);
 	border-left: 0;
 }
 
@@ -733,11 +733,11 @@
 }
 
 .markdown-body table tr:nth-child(odd) {
-	background-color: color-mix(in srgb, var(--bgColor-muted) 50%, transparent);
+	background-color: transparent;
 }
 
 .markdown-body table tr:nth-child(even) {
-	background-color: transparent;
+	background-color: color-mix(in srgb, var(--bgColor-muted) 30%, transparent);
 }
 
 .markdown-body table img {

@@ -30,7 +30,7 @@ e2e.describe("Diff Editor", () => {
 
 			// Wait for the sidebar to load the file edit request
 			await sidebar.waitForSelector(
-				'span:has-text("coderX wants to edit this file:")',
+				'span:has-text("coderX editing edit this file:")',
 			);
 
 			// coderX Diff Editor should open with the file name and diff

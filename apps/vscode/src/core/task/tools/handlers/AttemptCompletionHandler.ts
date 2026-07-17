@@ -38,8 +38,7 @@ function getInitialTaskPreview(config: TaskConfig): string | undefined {
 }
 
 export class AttemptCompletionHandler
-	implements IToolHandler, IPartialBlockHandler
-{
+	implements IToolHandler, IPartialBlockHandler {
 	readonly name = ClineDefaultTool.ATTEMPT;
 
 	getDescription(block: ToolUse): string {
@@ -104,14 +103,14 @@ export class AttemptCompletionHandler
 
 			return formatResponse.toolError(
 				"Before completing, re-verify your work against the original task requirements. Check that:\n" +
-					"1. All requested changes have been made\n" +
-					"2. No steps were skipped or partially completed\n" +
-					"3. Edge cases and error handling are addressed\n" +
-					"4. The solution matches what was asked for, not just what was convenient\n" +
-					"5. Output files contain exactly what was specified--no extra columns, fields, debug output, or commentary\n" +
-					"6. If the task specifies numerical thresholds or accuracy targets, verify your result meets the criteria. If close but not passing, iterate rather than declaring completion" +
-					taskSection +
-					"\n\nIf everything checks out, call attempt_completion again with your final result.",
+				"1. All requested changes have been made\n" +
+				"2. No steps were skipped or partially completed\n" +
+				"3. Edge cases and error handling are addressed\n" +
+				"4. The solution matches what was asked for, not just what was convenient\n" +
+				"5. Output files contain exactly what was specified--no extra columns, fields, debug output, or commentary\n" +
+				"6. If the task specifies numerical thresholds or accuracy targets, verify your result meets the criteria. If close but not passing, iterate rather than declaring completion" +
+				taskSection +
+				"\n\nIf everything checks out, call attempt_completion again with your final result.",
 			);
 		}
 		// Reset so the next attempt_completion pair triggers double-check again
@@ -240,7 +239,7 @@ export class AttemptCompletionHandler
 			} else {
 				// Manual approval flow - need to ask for approval
 				showNotificationForApproval(
-					`coderX wants to execute a command: ${command}`,
+					`coderX editing execute a command: ${command}`,
 					config.autoApprovalSettings.enableNotifications,
 				);
 

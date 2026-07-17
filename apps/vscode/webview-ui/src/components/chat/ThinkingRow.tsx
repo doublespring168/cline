@@ -2,6 +2,7 @@ import { ChevronDownIcon, ChevronRightIcon } from "lucide-react"
 import { memo } from "react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { ThinkingDots } from "./ThinkingDots"
 
 interface ThinkingRowProps {
 	showTitle: boolean
@@ -60,6 +61,7 @@ export const ThinkingRow = memo(
 								"select-none": isStreaming,
 							})}>
 							{title}
+							{isStreaming && <ThinkingDots />}
 						</span>
 						{showChevron &&
 							(isExpanded ? (

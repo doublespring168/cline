@@ -24,12 +24,11 @@ import { ToolResultUtils } from "../utils/ToolResultUtils";
 export class SearchFilesToolHandler implements IFullyManagedTool {
 	readonly name = ClineDefaultTool.SEARCH;
 
-	constructor(private validator: ToolValidator) {}
+	constructor(private validator: ToolValidator) { }
 
 	getDescription(block: ToolUse): string {
-		return `[${block.name} for '${block.params.regex}'${
-			block.params.file_pattern ? ` in '${block.params.file_pattern}'` : ""
-		}]`;
+		return `[${block.name} for '${block.params.regex}'${block.params.file_pattern ? ` in '${block.params.file_pattern}'` : ""
+			}]`;
 	}
 
 	/**
@@ -317,9 +316,9 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 			searchPaths.length === 0
 				? true
 				: searchPaths.length > 1 ||
-					(primaryWorkspaceRoot
-						? !arePathsEqual(primaryWorkspaceRoot, config.cwd)
-						: true);
+				(primaryWorkspaceRoot
+					? !arePathsEqual(primaryWorkspaceRoot, config.cwd)
+					: true);
 		const workspaceContext = {
 			isMultiRootEnabled: config.isMultiRootEnabled || false,
 			usedWorkspaceHint: !!workspaceHint,
@@ -426,7 +425,7 @@ export class SearchFilesToolHandler implements IFullyManagedTool {
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `coderX wants to search files for ${regex}`;
+			const notificationMessage = `coderX editing search files for ${regex}`;
 
 			// Show notification
 			showNotificationForApproval(

@@ -75,19 +75,19 @@ export class UseSubagentsToolHandler implements IFullyManagedTool {
 		const configuredSubagentName = resolveConfiguredSubagentName(block.name);
 		const prompts = configuredSubagentName
 			? [
-					uiHelpers
-						.removeClosingTag(
-							block,
-							"prompt",
-							block.params.prompt?.trim() || block.params.prompt_1?.trim(),
-						)
-						?.trim(),
-				].filter((prompt): prompt is string => !!prompt)
+				uiHelpers
+					.removeClosingTag(
+						block,
+						"prompt",
+						block.params.prompt?.trim() || block.params.prompt_1?.trim(),
+					)
+					?.trim(),
+			].filter((prompt): prompt is string => !!prompt)
 			: PROMPT_KEYS.map((key) =>
-					uiHelpers.removeClosingTag(block, key, block.params[key]?.trim()),
-				)
-					.map((prompt) => prompt?.trim())
-					.filter((prompt): prompt is string => !!prompt);
+				uiHelpers.removeClosingTag(block, key, block.params[key]?.trim()),
+			)
+				.map((prompt) => prompt?.trim())
+				.filter((prompt): prompt is string => !!prompt);
 
 		if (prompts.length === 0) {
 			return;
@@ -174,8 +174,8 @@ export class UseSubagentsToolHandler implements IFullyManagedTool {
 		} else {
 			showNotificationForApproval(
 				prompts.length === 1
-					? `coderX wants to use ${configuredSubagentName ? `the '${configuredSubagentName}' subagent` : "a subagent"}`
-					: `coderX wants to use ${prompts.length} subagents`,
+					? `coderX editing use ${configuredSubagentName ? `the '${configuredSubagentName}' subagent` : "a subagent"}`
+					: `coderX editing use ${prompts.length} subagents`,
 				config.autoApprovalSettings.enableNotifications,
 			);
 			const didApprove = await ToolResultUtils.askApprovalAndPushFeedback(

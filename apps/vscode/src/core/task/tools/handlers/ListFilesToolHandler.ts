@@ -21,7 +21,7 @@ import { ToolResultUtils } from "../utils/ToolResultUtils";
 export class ListFilesToolHandler implements IFullyManagedTool {
 	readonly name = ClineDefaultTool.LIST_FILES;
 
-	constructor(private validator: ToolValidator) {}
+	constructor(private validator: ToolValidator) { }
 
 	getDescription(block: ToolUse): string {
 		return `[${block.name} for '${block.params.path}']`;
@@ -197,7 +197,7 @@ export class ListFilesToolHandler implements IFullyManagedTool {
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `coderX wants to view directory ${getWorkspaceBasename(absolutePath, "ListFilesToolHandler.notification")}/`;
+			const notificationMessage = `coderX editing view directory ${getWorkspaceBasename(absolutePath, "ListFilesToolHandler.notification")}/`;
 
 			// Show notification
 			showNotificationForApproval(

@@ -16,7 +16,7 @@ import { ToolResultUtils } from "../utils/ToolResultUtils";
 export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 	readonly name = ClineDefaultTool.LIST_CODE_DEF;
 
-	constructor(private validator: ToolValidator) {}
+	constructor(private validator: ToolValidator) { }
 
 	getDescription(block: ToolUse): string {
 		return `[${block.name} for '${block.params.path}']`;
@@ -169,7 +169,7 @@ export class ListCodeDefinitionNamesToolHandler implements IFullyManagedTool {
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `coderX wants to analyze code definitions in ${getWorkspaceBasename(absolutePath, "ListCodeDefinitionNamesToolHandler.notification")}`;
+			const notificationMessage = `coderX editing analyze code definitions in ${getWorkspaceBasename(absolutePath, "ListCodeDefinitionNamesToolHandler.notification")}`;
 
 			// Show notification
 			showNotificationForApproval(

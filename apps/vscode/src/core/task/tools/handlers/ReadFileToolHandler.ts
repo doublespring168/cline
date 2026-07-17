@@ -185,7 +185,7 @@ async function emitReadFileToolUiComplete(
 export class ReadFileToolHandler implements IFullyManagedTool {
 	readonly name = ClineDefaultTool.FILE_READ;
 
-	constructor(private validator: ToolValidator) {}
+	constructor(private validator: ToolValidator) { }
 
 	getDescription(block: ToolUse): string {
 		return `[${block.name} for '${block.params.path}']`;
@@ -317,7 +317,7 @@ export class ReadFileToolHandler implements IFullyManagedTool {
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `coderX wants to read ${getWorkspaceBasename(absolutePath, "ReadFileToolHandler.notification")}`;
+			const notificationMessage = `coderX editing read ${getWorkspaceBasename(absolutePath, "ReadFileToolHandler.notification")}`;
 
 			// Show notification
 			showNotificationForApproval(

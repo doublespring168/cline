@@ -122,7 +122,7 @@ export class AccessMcpResourceHandler implements IFullyManagedTool {
 			// Capture telemetry
 		} else {
 			// Manual approval flow
-			const notificationMessage = `coderX wants to access ${uri || "unknown resource"} on ${server_name || "unknown server"}`;
+			const notificationMessage = `coderX editing access ${uri || "unknown resource"} on ${server_name || "unknown server"}`;
 
 			// Show notification
 			showNotificationForApproval(

@@ -7,6 +7,7 @@ import { cleanPathPrefix } from "../common/CodeAccordian"
 import { getIconByToolName } from "./chat-view"
 import { isApiReqAbsorbable, isLowStakesTool } from "./chat-view/utils/messageUtils"
 import ErrorRow from "./ErrorRow"
+import { ThinkingDots } from "./ThinkingDots"
 import { ThinkingRow } from "./ThinkingRow"
 import { TypewriterText } from "./TypewriterText"
 
@@ -228,11 +229,12 @@ export const RequestStartRow: React.FC<RequestStartRowProps> = ({
 			)}
 			{reasoningContent &&
 				(!hasCost ? (
-					// Still streaming - show "Thinking..." text with shimmer
+					// Still streaming - show the animated Thinking indicator with shimmer
 					<div className="ml-1 pl-0 mb-1 -mt-1.25 pt-1">
 						<div className="inline-flex justify-baseline gap-0.5 text-left select-none px-0 w-full">
 							<span className="animate-shimmer bg-linear-90 from-foreground to-description bg-[length:200%_100%] bg-clip-text text-transparent text-[13px] leading-none">
-								Thinking...
+								Thinking
+								<ThinkingDots />
 							</span>
 						</div>
 					</div>

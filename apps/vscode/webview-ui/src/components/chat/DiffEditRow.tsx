@@ -153,7 +153,7 @@ const FileBlock = memo<{
 		}, [file.lines, startLineNumber])
 
 		return (
-			<div className="bg-code rounded-xs border border-editor-group-border overflow-hidden">
+			<div className="file-preview-scrollbar bg-code rounded-xs border border-editor-group-border overflow-hidden">
 				<button
 					className="w-full flex items-center gap-2 p-2 bg-code transition-colors justify-between cursor-pointer"
 					onClick={() => setIsExpanded((prev) => !prev)}

@@ -56,7 +56,7 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 	private pathResolver?: PathResolver;
 	private providerOps?: FileProviderOperations;
 
-	constructor(private validator: ToolValidator) {}
+	constructor(private validator: ToolValidator) { }
 
 	private initializeHelpers(config: TaskConfig): void {
 		if (!this.pathResolver || this.config !== config) {
@@ -862,7 +862,7 @@ export class ApplyPatchHandler implements IFullyManagedTool {
 		}
 
 		showNotificationForApproval(
-			`coderX wants to edit '${message.path}'`,
+			`coderX editing edit '${message.path}'`,
 			config.autoApprovalSettings.enableNotifications,
 		);
 

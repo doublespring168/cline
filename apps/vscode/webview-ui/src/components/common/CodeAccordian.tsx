@@ -49,7 +49,7 @@ const CodeAccordian = ({
 	}, [code])
 
 	return (
-		<div className="code-preview bg-code overflow-hidden rounded-xs border border-editor-group-border">
+		<div className="code-preview file-preview-scrollbar bg-code overflow-hidden rounded-xs border border-editor-group-border">
 			{(path || isFeedback || isConsoleLogs) && (
 				<Button
 					aria-label={isExpanded ? "Collapse code block" : "Expand code block"}

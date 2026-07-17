@@ -138,7 +138,7 @@ export class BrowserToolHandler implements IFullyManagedTool {
 				} else {
 					// Show notification for approval if enabled
 					showNotificationForApproval(
-						`coderX wants to use a browser and launch ${url}`,
+						`coderX editing use a browser and launch ${url}`,
 						config.autoApprovalSettings.enableNotifications,
 					);
 					await config.callbacks.removeLastPartialMessageIfExistsWithType(
@@ -253,8 +253,7 @@ export class BrowserToolHandler implements IFullyManagedTool {
 						JSON.stringify(browserActionResult),
 					);
 					const result = formatResponse.toolResult(
-						`The browser action has been executed. The console logs and screenshot have been captured for your analysis.\n\nConsole logs:\n${
-							browserActionResult.logs || "(No new logs)"
+						`The browser action has been executed. The console logs and screenshot have been captured for your analysis.\n\nConsole logs:\n${browserActionResult.logs || "(No new logs)"
 						}\n\n(REMEMBER: if you need to proceed to using non-\`browser_action\` tools or launch a new browser, you MUST first close this browser. For example, if after analyzing the logs and screenshot you need to edit a file, you must first close the browser before you can use the write_to_file tool.)`,
 						browserActionResult.screenshot
 							? [browserActionResult.screenshot]

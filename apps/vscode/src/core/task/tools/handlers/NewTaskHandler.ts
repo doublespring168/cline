@@ -52,7 +52,7 @@ export class NewTaskHandler implements IToolHandler, IPartialBlockHandler {
 		// Show notification if enabled
 		if (config.autoApprovalSettings.enableNotifications) {
 			showSystemNotification({
-				subtitle: "coderX wants to start a new task...",
+				subtitle: "coderX editing start a new task...",
 				message: `coderX is suggesting to start a new task with: ${context}`,
 			});
 		}

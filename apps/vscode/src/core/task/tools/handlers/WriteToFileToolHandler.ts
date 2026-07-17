@@ -293,7 +293,7 @@ export class WriteToFileToolHandler implements IFullyManagedTool {
 				await setTimeoutPromise(3_500);
 			} else {
 				// Manual approval flow with detailed feedback handling
-				const notificationMessage = `coderX wants to ${fileExists ? "edit" : "create"} ${getWorkspaceBasename(relPath, "WriteToFile.notification")}`;
+				const notificationMessage = `coderX editing ${fileExists ? "edit" : "create"} ${getWorkspaceBasename(relPath, "WriteToFile.notification")}`;
 
 				// Show notification
 				showNotificationForApproval(
