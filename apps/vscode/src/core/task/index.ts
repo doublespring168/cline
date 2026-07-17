@@ -356,8 +356,13 @@ export class Task {
 		this.cwd = cwd;
 		this.stateManager = stateManager;
 		this.workspaceManager = workspaceManager;
+		const projectName = historyItem?.cwdOnTaskInitialization
+			? path.basename(path.resolve(historyItem.cwdOnTaskInitialization))
+			: workspaceManager?.getPrimaryRoot()?.name || path.basename(cwd);
 		this.conversationHistoryRecorder = new ConversationHistoryRecorder({
-			getHistoryPath: () => this.stateManager.getGlobalSettingsKey("historyPath"),
+			getHistoryPath: () =>
+				this.stateManager.getGlobalSettingsKey("historyPath"),
+			getProjectName: () => projectName,
 		});
 
 		// DiffViewProvider opens Diff Editor during edits while FileEditProvider performs

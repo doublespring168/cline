@@ -85,8 +85,8 @@ const GeneralSettingsSection = ({ renderSectionHeader }: GeneralSettingsSectionP
 						</VSCodeButton>
 					</div>
 					<div className="mt-2 text-xs text-description">
-						Stores daily raw user/model message logs and copies user attachments into a matching date folder. Leave
-						blank to disable recording.
+						Stores raw user/model message logs by project and session, with attachments kept inside the matching
+						session folder. Leave blank to disable recording.
 					</div>
 				</div>
 

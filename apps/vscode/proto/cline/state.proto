@@ -20,6 +20,7 @@ service StateService {
   rpc togglePlanActModeProto(TogglePlanActModeRequest) returns (Boolean);
   rpc updateAutoApprovalSettings(AutoApprovalSettingsRequest) returns (Empty);
   rpc updateSettings(UpdateSettingsRequest) returns (Empty);
+  rpc backupTaskHistory(EmptyRequest) returns (BackupTaskHistoryResponse);
   rpc updateTaskSettings(UpdateTaskSettingsRequest) returns (Empty);
   rpc setWelcomeViewCompleted(BooleanRequest) returns (Empty);
   rpc getProcessInfo(EmptyRequest) returns (ProcessInfo);
@@ -283,6 +284,13 @@ message TerminalProfileUpdateResponse {
   int32 closed_count = 1;
   int32 busy_terminals_count = 2;
   bool has_busy_terminals = 3;
+}
+
+message BackupTaskHistoryResponse {
+  bool success = 1;
+  optional string file_path = 2;
+  int32 record_count = 3;
+  string message = 4;
 }
 
 message TogglePlanActModeRequest {

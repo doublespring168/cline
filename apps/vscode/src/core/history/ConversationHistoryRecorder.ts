@@ -47,6 +47,7 @@ interface ModelRequestRecordInput {
 
 interface RecorderDependencies {
 	getHistoryPath: () => string | undefined;
+	getProjectName: () => string;
 	now?: () => Date;
 	createId?: () => string;
 	getUserId?: () => string;
@@ -65,12 +66,14 @@ let historyWriteChain: Promise<void> = Promise.resolve();
 
 export class ConversationHistoryRecorder {
 	private readonly getHistoryPath: () => string | undefined;
+	private readonly getProjectName: () => string;
 	private readonly now: () => Date;
 	private readonly createId: () => string;
 	private readonly getUserId: () => string;
 
 	constructor(dependencies: RecorderDependencies) {
 		this.getHistoryPath = dependencies.getHistoryPath;
+		this.getProjectName = dependencies.getProjectName;
 		this.now = dependencies.now ?? (() => new Date());
 		this.createId = dependencies.createId ?? randomUUID;
 		this.getUserId = dependencies.getUserId ?? getDistinctId;
@@ -90,28 +93,39 @@ export class ConversationHistoryRecorder {
 		}
 
 		const recordedAt = this.now();
-		const dateKey = formatLocalDate(recordedAt);
 		const eventId = this.createId();
 		const images = input.images ?? [];
 		const files = input.files ?? [];
+		const storagePaths = getConversationStoragePaths(
+			historyPath,
+			this.getProjectName(),
+			input.sessionId,
+		);
 
 		await this.enqueue(async () => {
-			const attachmentsDirectory = path.join(historyPath, dateKey);
-			await fs.mkdir(attachmentsDirectory, { recursive: true });
+			await fs.mkdir(storagePaths.attachmentsDirectory, { recursive: true });
 
 			const attachments: StoredAttachment[] = [];
 			for (const image of images) {
 				attachments.push(
-					await this.storeImage(image, historyPath, attachmentsDirectory),
+					await this.storeImage(
+						image,
+						historyPath,
+						storagePaths.attachmentsDirectory,
+					),
 				);
 			}
 			for (const file of files) {
 				attachments.push(
-					await this.storeFile(file, historyPath, attachmentsDirectory),
+					await this.storeFile(
+						file,
+						historyPath,
+						storagePaths.attachmentsDirectory,
+					),
 				);
 			}
 
-			await appendRecord(historyPath, dateKey, {
+			await appendRecord(storagePaths.sessionDirectory, {
 				schemaVersion: 1,
 				eventId,
 				uuid: getSessionUuid(input.sessionId),
@@ -140,11 +154,15 @@ export class ConversationHistoryRecorder {
 		}
 
 		const recordedAt = this.now();
-		const dateKey = formatLocalDate(recordedAt);
 		const eventId = this.createId();
 		const isModelResponse = input.message.role === "assistant";
+		const storagePaths = getConversationStoragePaths(
+			historyPath,
+			this.getProjectName(),
+			input.sessionId,
+		);
 		await this.enqueue(async () => {
-			await appendRecord(historyPath, dateKey, {
+			await appendRecord(storagePaths.sessionDirectory, {
 				schemaVersion: 1,
 				eventId,
 				uuid: getSessionUuid(input.sessionId),
@@ -176,10 +194,14 @@ export class ConversationHistoryRecorder {
 		}
 
 		const recordedAt = this.now();
-		const dateKey = formatLocalDate(recordedAt);
 		const eventId = this.createId();
+		const storagePaths = getConversationStoragePaths(
+			historyPath,
+			this.getProjectName(),
+			input.sessionId,
+		);
 		await this.enqueue(async () => {
-			await appendRecord(historyPath, dateKey, {
+			await appendRecord(storagePaths.sessionDirectory, {
 				schemaVersion: 1,
 				eventId,
 				uuid: getSessionUuid(input.sessionId),
@@ -267,7 +289,9 @@ export class ConversationHistoryRecorder {
 	}
 }
 
-function resolveHistoryPath(configuredPath?: string): string | undefined {
+export function resolveHistoryPath(
+	configuredPath?: string,
+): string | undefined {
 	const trimmedPath = configuredPath?.trim();
 	if (!trimmedPath) {
 		return undefined;
@@ -277,13 +301,6 @@ function resolveHistoryPath(configuredPath?: string): string | undefined {
 			? os.homedir()
 			: trimmedPath.replace(/^~(?=[/\\])/, os.homedir());
 	return path.resolve(expandedPath);
-}
-
-function formatLocalDate(date: Date): string {
-	const year = String(date.getFullYear()).padStart(4, "0");
-	const month = String(date.getMonth() + 1).padStart(2, "0");
-	const day = String(date.getDate()).padStart(2, "0");
-	return `${year}${month}${day}`;
 }
 
 function parseImageDataUrl(
@@ -315,17 +332,50 @@ function extensionForMimeType(mimeType?: string): string {
 }
 
 async function appendRecord(
-	historyPath: string,
-	dateKey: string,
+	sessionDirectory: string,
 	record: unknown,
 ): Promise<void> {
-	await fs.mkdir(historyPath, { recursive: true });
-	const logFile = path.join(historyPath, `${dateKey}.txt`);
+	await fs.mkdir(sessionDirectory, { recursive: true });
+	const logFile = path.join(sessionDirectory, "chat.txt");
 	await fs.appendFile(
 		logFile,
 		`${JSON.stringify(record, jsonReplacer)}\n`,
 		"utf8",
 	);
+}
+
+function getConversationStoragePaths(
+	historyPath: string,
+	projectName: string,
+	sessionId: string,
+): { sessionDirectory: string; attachmentsDirectory: string } {
+	const projectDirectory = path.join(
+		historyPath,
+		sanitizePathSegment(projectName, "unnamed-project"),
+	);
+	const sessionDirectory = path.join(
+		projectDirectory,
+		sanitizePathSegment(sessionId, "unknown-session"),
+	);
+	return {
+		sessionDirectory,
+		attachmentsDirectory: path.join(sessionDirectory, "attachments"),
+	};
+}
+
+function sanitizePathSegment(value: string, fallback: string): string {
+	const sanitized = value
+		.trim()
+		.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_")
+		.replace(/[. ]+$/g, "")
+		.slice(0, 120);
+	if (!sanitized || sanitized === "." || sanitized === "..") {
+		return fallback;
+	}
+	if (/^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(sanitized)) {
+		return `_${sanitized}`;
+	}
+	return sanitized;
 }
 
 function jsonReplacer(_key: string, value: unknown): unknown {

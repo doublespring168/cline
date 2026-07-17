@@ -1,6 +1,7 @@
 import type { ExtensionMessage } from "@shared/ExtensionMessage";
 import { ResetStateRequest } from "@shared/proto/cline/state";
 import {
+	Archive,
 	CheckCheck,
 	FlaskConical,
 	Info,
@@ -25,6 +26,7 @@ import ViewHeader from "../common/ViewHeader";
 import SectionHeader from "./SectionHeader";
 import AboutSection from "./sections/AboutSection";
 import ApiConfigurationSection from "./sections/ApiConfigurationSection";
+import BackupSettingsSection from "./sections/BackupSettingsSection";
 import BrowserSettingsSection from "./sections/BrowserSettingsSection";
 import DebugSection from "./sections/DebugSection";
 import FeatureSettingsSection from "./sections/FeatureSettingsSection";
@@ -40,6 +42,7 @@ type SettingsTabID =
 	| "browser"
 	| "terminal"
 	| "general"
+	| "backup"
 	| "about"
 	| "debug";
 interface SettingsTab {
@@ -88,6 +91,13 @@ export const SETTINGS_TABS: SettingsTab[] = [
 		icon: Wrench,
 	},
 	{
+		id: "backup",
+		name: "Backup",
+		tooltipText: "Backup conversation history",
+		headerText: "Backup",
+		icon: Archive,
+	},
+	{
 		id: "about",
 		name: "About",
 		tooltipText: "About coderX",
@@ -132,6 +142,7 @@ const SettingsView = ({ onDone, targetSection }: SettingsViewProps) => {
 	const TAB_CONTENT_MAP: Record<SettingsTabID, React.FC<any>> = useMemo(
 		() => ({
 			"api-config": ApiConfigurationSection,
+			backup: BackupSettingsSection,
 			general: GeneralSettingsSection,
 			features: FeatureSettingsSection,
 			browser: BrowserSettingsSection,

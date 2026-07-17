@@ -21,12 +21,13 @@ describe("ConversationHistoryRecorder", () => {
 		await fs.rm(temporaryDirectory, { recursive: true, force: true });
 	});
 
-	it("appends ordered daily JSONL records and maps attachments by generated fileId", async () => {
+	it("appends ordered JSONL records under project and session folders", async () => {
 		const sourceFile = path.join(temporaryDirectory, "notes.txt");
 		await fs.writeFile(sourceFile, "attached file", "utf8");
 		const generatedIds = ["user-event", "image-id", "file-id", "model-event"];
 		const recorder = new ConversationHistoryRecorder({
 			getHistoryPath: () => historyDirectory,
+			getProjectName: () => "sample-project",
 			now: () => new Date(2026, 6, 16, 12, 30, 0),
 			createId: () => generatedIds.shift() ?? "unexpected-id",
 			getUserId: () => "test-user",
@@ -58,7 +59,7 @@ describe("ConversationHistoryRecorder", () => {
 		});
 
 		const logContents = await fs.readFile(
-			path.join(historyDirectory, "20260716.txt"),
+			path.join(historyDirectory, "sample-project", "session-1", "chat.txt"),
 			"utf8",
 		);
 		const records = logContents
@@ -84,8 +85,8 @@ describe("ConversationHistoryRecorder", () => {
 				(attachment: { storedPath: string }) => attachment.storedPath,
 			),
 		).to.deep.equal([
-			path.join("20260716", "image-id.png"),
-			path.join("20260716", "file-id.txt"),
+			path.join("sample-project", "session-1", "attachments", "image-id.png"),
+			path.join("sample-project", "session-1", "attachments", "file-id.txt"),
 		]);
 		expect(records[1].source).to.equal("model");
 		expect(records[1].model).to.deep.include({
@@ -97,13 +98,25 @@ describe("ConversationHistoryRecorder", () => {
 
 		expect(
 			await fs.readFile(
-				path.join(historyDirectory, "20260716", "image-id.png"),
+				path.join(
+					historyDirectory,
+					"sample-project",
+					"session-1",
+					"attachments",
+					"image-id.png",
+				),
 				"utf8",
 			),
 		).to.equal("image data");
 		expect(
 			await fs.readFile(
-				path.join(historyDirectory, "20260716", "file-id.txt"),
+				path.join(
+					historyDirectory,
+					"sample-project",
+					"session-1",
+					"attachments",
+					"file-id.txt",
+				),
 				"utf8",
 			),
 		).to.equal("attached file");
@@ -112,6 +125,7 @@ describe("ConversationHistoryRecorder", () => {
 	it("does not create history files while History Path is blank", async () => {
 		const recorder = new ConversationHistoryRecorder({
 			getHistoryPath: () => "",
+			getProjectName: () => "sample-project",
 		});
 		await recorder.recordUserMessage({
 			sessionId: "session-1",
@@ -124,6 +138,7 @@ describe("ConversationHistoryRecorder", () => {
 		const generatedIds = ["tool-result-event", "request-event"];
 		const recorder = new ConversationHistoryRecorder({
 			getHistoryPath: () => historyDirectory,
+			getProjectName: () => "sample-project",
 			now: () => new Date(2026, 6, 16, 14, 0, 0),
 			createId: () => generatedIds.shift() ?? "unexpected-id",
 		});
@@ -176,7 +191,12 @@ describe("ConversationHistoryRecorder", () => {
 		});
 
 		const logContents = await fs.readFile(
-			path.join(historyDirectory, "20260716.txt"),
+			path.join(
+				historyDirectory,
+				"sample-project",
+				"session-tools",
+				"chat.txt",
+			),
 			"utf8",
 		);
 		const records = logContents
@@ -213,6 +233,31 @@ describe("ConversationHistoryRecorder", () => {
 			agentToolResult,
 		]);
 		expect(records[1].request.tools[0].name).to.equal("read_file");
+	});
+
+	it("sanitizes project and session folder names without escaping History Path", async () => {
+		const recorder = new ConversationHistoryRecorder({
+			getHistoryPath: () => historyDirectory,
+			getProjectName: () => "../unsafe/project",
+			now: () => new Date(2026, 6, 16, 14, 0, 0),
+			createId: () => "event-id",
+		});
+
+		await recorder.recordUserMessage({
+			sessionId: "../session/id",
+			text: "Stored safely",
+		});
+
+		const logContents = await fs.readFile(
+			path.join(
+				historyDirectory,
+				".._unsafe_project",
+				".._session_id",
+				"chat.txt",
+			),
+			"utf8",
+		);
+		expect(JSON.parse(logContents).message.content).to.equal("Stored safely");
 	});
 });
 
